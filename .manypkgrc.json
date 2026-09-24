@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json.schemastore.org/manypkgrc.json",
+  "root": ".",
+  "packages": ["packages/*"]
+}

@@ -41,6 +41,12 @@ All orchestration runs through [Turbo](https://turbo.build):
 Changesets drive versioning: `pnpm changeset`, then `pnpm version` and
 `pnpm release` when publishing.
 
+## Documentation
+
+- [`docs/README.md`](docs/README.md) — documentation hub: per-package guides,
+  combined workflows, monorepo operations, and portable AI agent guides.
+  Plain Markdown — read it directly in the repository or any Markdown viewer.
+
 ## License
 
 MIT
@@ -53,4 +59,5 @@ This project validates dependency licenses against an allowlist
 ### Commands
 
 - `pnpm security:licenses` — check dependency licenses against the policy
+
 # Units-manager

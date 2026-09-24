@@ -1,0 +1,7 @@
+MSG_FILE="$1"
+MSG=$(head -n1 "$MSG_FILE")
+
+if [ ${#MSG} -lt 10 ]; then
+  echo "Commit message is too short. Please write a descriptive message (min 10 characters)."
+  exit 1
+fi

@@ -1,0 +1,14 @@
+{
+  "name": "permissive",
+  "failOnUnknown": true,
+  "allow": [
+    "MIT",
+    "ISC",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "0BSD",
+    "MIT-0",
+    "Unlicense"
+  ]
+}

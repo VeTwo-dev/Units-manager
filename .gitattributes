@@ -1,0 +1,61 @@
+# Auto detect text files and normalize line endings
+* text=auto eol=lf
+
+# Binary files - keep as-is
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.ttf binary
+*.otf binary
+*.mp4 binary
+*.webm binary
+*.mov binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.zip binary
+*.tar.gz binary
+*.gz binary
+*.rar binary
+*.7z binary
+*.pdf binary
+*.doc binary
+*.xls binary
+*.ppt binary
+
+# Generated files
+dist/** linguist-generated
+coverage/** linguist-generated
+node_modules/** linguist-vendored
+.next/** linguist-generated
+.cache/** linguist-generated
+.turbo/** linguist-generated
+
+# Vendored dependencies
+vendor/** linguist-vendored
+
+# Export ignore
+.DS_Store export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
+.editorconfig export-ignore
+.prettierrc* export-ignore
+.prettierignore export-ignore
+eslint.config.* export-ignore
+tsconfig*.json export-ignore
+tsup.config.* export-ignore
+vitest.config.* export-ignore
+.dockerignore export-ignore
+.husky/** export-ignore
+.vscode/** export-ignore
+.github/** export-ignore
+docs/ export-ignore
+examples/ export-ignore

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["scripts/**/*", "src/examples/*.ts", "tests/**/*.test.ts"],
+  "project": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*"],
+  "ignoreDependencies": [
+    "@changesets/cli",
+    "@eslint/js",
+    "eslint-config-prettier",
+    "typescript-eslint",
+    "open",
+    "license-checker"
+  ]
+}

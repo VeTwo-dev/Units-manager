@@ -1,0 +1,140 @@
+{
+  "name": "@vetwo/nutrition-units",
+  "version": "0.0.1",
+  "description": "Nutrition/feed-formulation calculation rules built on top of @vetwo/units. Contains ALL domain knowledge (nutrient reporting units, basis conversion, coefficient resolution for the LP solver). No generic unit-conversion logic lives here.",
+  "type": "module",
+  "dependencies": {
+    "@vetwo/units": "^0.0.2"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "VeTwo.dev"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "nutrition",
+    "feed-formulation",
+    "animal-nutrition",
+    "diet-optimization",
+    "linear-programming",
+    "veterinary",
+    "typescript",
+    "units"
+  ],
+  "homepage": "https://github.com/vetwo/nutrition-units#readme",
+  "bugs": {
+    "url": "https://github.com/vetwo/nutrition-units/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VeTwo-dev/nutrition-units.git"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "packageManager": "pnpm@11.21.0",
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "clean": "rm -rf dist coverage temp .turbo",
+    "check-types": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "coverage": "vitest run --coverage",
+    "coverage:open": "node -e \"require('open')('coverage/index.html')\"",
+    "coverage:ui": "vitest --ui --coverage",
+    "test": "vitest run",
+    "test:e2e": "vitest run --project e2e",
+    "test:integration": "vitest run --project integration",
+    "test:types": "tsc -p tsconfig.test.json --noEmit",
+    "test:unit": "vitest run --project unit",
+    "test:watch": "vitest",
+    "circular": "madge src --circular",
+    "knip": "knip",
+    "pack:check": "npm pack --dry-run",
+    "pack:check:pnpm": "pnpm pack --pack-destination /tmp",
+    "packit": "npm pack",
+    "prepack": "npm pack --dry-run",
+    "publint": "publint",
+    "check": "pnpm run check-types && pnpm run lint && pnpm run test",
+    "ci": "pnpm run knip && pnpm run publint && pnpm run circular",
+    "verify": "pnpm run check-types && pnpm run lint && pnpm run test && pnpm run build",
+    "verify:bun": "bun run lint && bun run check-types && bun run test && bun run build",
+    "verify:bun:full": "bun run verify:bun && bun run knip && bun run publint && bun run pack:check",
+    "verify:pnpm": "pnpm run lint && pnpm run check-types && pnpm run test && pnpm run build",
+    "verify:pnpm:full": "pnpm run verify:pnpm && pnpm run knip && pnpm run publint && pnpm run pack:check:pnpm",
+    "prepublish": "pnpm run verify:pnpm",
+    "prepublish:full": "pnpm run verify:pnpm:full",
+    "publish": "npm publish --access public",
+    "analyze": "madge src",
+    "analyze:circular": "madge src --circular",
+    "analyze:deps": "madge src --json > reports/architecture/dependency-graph.json",
+    "deps": "pnpm list --depth 0",
+    "deps:check": "pnpm list --depth 0 && pnpm outdated",
+    "deps:dedupe": "pnpm dedupe",
+    "deps:list": "pnpm list",
+    "deps:outdated": "pnpm outdated",
+    "deps:update": "pnpm update",
+    "deps:why": "pnpm why",
+    "prepare": "husky",
+    "security": "pnpm run security:licenses",
+    "security:ci": "pnpm run security:licenses",
+    "security:licenses": "node scripts/check-licenses.js",
+    "test:browser": "vitest run --browser.enabled",
+    "test:ci": "vitest run",
+    "test:debug": "vitest --inspect-brk",
+    "test:performance": "vitest bench --run",
+    "test:smoke": "vitest run --project smoke",
+    "clean-cache": "pnpm exec tsx scripts/clean-cache.ts",
+    "analyze-bundle": "pnpm exec tsx scripts/analyze-bundle.ts",
+    "check-license": "pnpm exec tsx scripts/check-license.ts",
+    "validate-exports": "pnpm exec tsx scripts/validate-exports.ts",
+    "check-dependencies": "pnpm exec tsx scripts/check-dependencies.ts",
+    "health-report": "pnpm exec tsx scripts/health-report.ts",
+    "dependency-graph": "pnpm exec tsx scripts/dependency-graph.ts"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.9",
+    "@eslint/js": "^9.12.0",
+    "@types/node": "^20.14.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/ui": "^4.1.10",
+    "eslint": "^9.12.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.6",
+    "knip": "^5.31.0",
+    "license-checker": "^25.0.1",
+    "lint-staged": "^15.2.10",
+    "madge": "^6.1.0",
+    "open": "^10.1.0",
+    "prettier": "^3.3.3",
+    "publint": "^0.2.11",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.8.0",
+    "vitest": "^4.1.10"
+  }
+}

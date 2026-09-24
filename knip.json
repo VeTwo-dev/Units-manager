@@ -1,0 +1,37 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.ts", "turbo.json", "pnpm-workspace.yaml"],
+      "project": ["scripts/**/*.ts"]
+    },
+    "packages/Units": {
+      "entry": ["scripts/**/*", "tests/**/*.test.ts"],
+      "project": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*"],
+      "ignoreDependencies": [
+        "@changesets/cli",
+        "@eslint/js",
+        "eslint-config-prettier",
+        "typescript-eslint",
+        "open",
+        "lint-staged"
+      ]
+    },
+    "packages/Nutrition-units": {
+      "entry": ["scripts/**/*", "src/examples/*.ts", "tests/**/*.test.ts"],
+      "project": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*"],
+      "ignoreDependencies": [
+        "@changesets/cli",
+        "@eslint/js",
+        "eslint-config-prettier",
+        "typescript-eslint",
+        "open",
+        "lint-staged"
+      ]
+    },
+    "apps/nutrition-units-example": {
+      "entry": ["tests/**/*.test.ts"],
+      "project": ["src/**/*.ts", "tests/**/*.ts"]
+    }
+  }
+}
