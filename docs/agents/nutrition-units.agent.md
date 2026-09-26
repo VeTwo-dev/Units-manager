@@ -1,92 +1,156 @@
 # `@vetwo/nutrition-units` — AI Coding-Agent Guide
 
-> Portable guidance. Copy this file into any TypeScript/JavaScript project that
-> installs `@vetwo/nutrition-units` from npm. It assumes only the **published
-> packages**, never any monorepo's internals. Requires `@vetwo/units`
-> (installed automatically as a dependency).
+> Portable operating guide. Copy into any TypeScript/JavaScript project that
+> installs `@vetwo/nutrition-units` from npm (requires `@vetwo/units`,
+> installed automatically). Assumes only the **published packages** — never
+> any monorepo's internals.
 
-## 1. Identity
+## 1. Agent Operating Rules
 
-`@vetwo/nutrition-units` is the **nutrition-domain semantic layer built on top
-of `@vetwo/units`**. It adds nutrition meaning — nutrient identity, basis,
-context, metadata/provenance, semantic compatibility, collections — to physical
-quantities. All unit math, dimensional analysis, and uncertainty propagation
-still belong to (and delegate to) `@vetwo/units`.
+```text
+MUST:
+- Preserve nutrient identity, basis, context, and provenance end to end.
+- Use @vetwo/units for generic physical operations (units, uncertainty).
+- Reuse NutritionMeasurement / NutritionQuantity / NutritionSample /
+  NutritionMeasurementSet when they fit — check first (§8).
+- Require explicit context for context-dependent conversions.
+- Import only from the public entrypoints of both packages.
+- Add tests for new integration behavior.
 
-Install:
+MUST NOT:
+- Infer missing dry-matter values (no hidden "DM = 0.90" defaults).
+- Treat nutrient identity as dimensions.
+- Duplicate nutrition conversion rules by hand.
+- Bypass semantic compatibility with casts.
+- Build a second uncertainty system.
+- Silently drop scientific context or metadata.
+- Put formulation/optimization logic into this package (§13).
+- Invent APIs not present in the installed package.
+```
+
+## 2. What This Library Owns vs. What `@vetwo/units` Owns
+
+| Concern                                  | Owner                      |
+| ---------------------------------------- | -------------------------- |
+| Physical quantity, unit, dimension       | `@vetwo/units`             |
+| Physical conversion, generic uncertainty | `@vetwo/units`             |
+| Nutrient identity, compatibility         | `@vetwo/nutrition-units`   |
+| Basis, nutrition context                 | `@vetwo/nutrition-units`   |
+| Nutrition metadata, collections          | `@vetwo/nutrition-units`   |
+| Formulation, optimization, LP/MILP/HiGHS | external application layer |
+
+```text
+@vetwo/units          → physical meaning
+@vetwo/nutrition-units → nutrition meaning (built on top)
+```
 
 ```sh
 npm install @vetwo/units @vetwo/nutrition-units
 ```
 
-Import from the public entrypoint only:
+## 3. When to Use Each
+
+```text
+ordinary number → physical quantity → nutrition measurement
+      → nutrition-domain calculation → business workflow → optimization
+```
+
+- Not a quantity (id, count, enum)? → plain types; never a `Quantity`.
+- Physical quantity, no nutrition meaning? → `@vetwo/units` alone.
+- Adds nutrient identity, basis, context, or provenance? → this package.
+
+## 4. Semantic Safety (strongest rule)
+
+```text
+Same physical representation ≠ same nutrition meaning.
+```
+
+- `10 g/kg` crude protein vs `10 g/kg` calcium: incompatible. Never add,
+  substitute, or interchange. Gate with `checkNutrientCompatibility` /
+  `canConvert` / `assertNutrientCompatible` — never dimensions alone.
+- Vitamin A IU vs vitamin D IU (both `IU/kg`): not interchangeable.
+- Energy kinds are distinct: `ge` ≠ `de` ≠ `me` ≠ `nel`. Never substitute.
+- Families enforced: minerals → mass/molar/fraction/ppm; energy nutrients →
+  energy-density only; activity vitamins → IU or mass. Violations throw
+  `NutritionUnitCompatibilityError`.
+- Ambiguity is explicit: `AmbiguousNutrientError`, `AmbiguousMeasurementError`.
+
+## 5. Nutrient Identity
+
+Canonical IDs with aliases, resolved case-insensitively:
+
+| Canonical               | Aliases include                 |
+| ----------------------- | ------------------------------- |
+| `cp`                    | `crudeProtein`, `protein`, `CP` |
+| `ca`, `p`, `fe`         | —                               |
+| `ge`, `de`, `me`, `nel` | distinct energy identities      |
+| `vitA`, `vitD`, …       | activity (IU) nutrients         |
 
 ```ts
-import {
-  NutritionMeasurement,
-  NutritionSample,
-  createNutritionContext,
-} from "@vetwo/nutrition-units";
-import { Measurement, Quantity } from "@vetwo/units";
+isNutrientKindId("CP"); // true (alias-aware)
+defaultNutrientKindRegistry.require("cp"); // NutrientKind
 ```
 
-## 2. Nutrition vs Generic Units (the core distinction)
+`require(unknownId)` throws — never invent nutrient IDs, and never scatter
+raw nutrient strings when the registry can resolve them.
+
+## 6. Basis Safety
 
 ```text
-@vetwo/units            = physical meaning  (dimensions, units, uncertainty)
-@vetwo/nutrition-units  = nutrition meaning (nutrient, basis, context, provenance)
+unit conversion ≠ basis conversion
 ```
 
-**Same physical unit ≠ same nutrient.** Crude protein (`cp`) at `10 g/kg` and
-calcium (`ca`) at `10 g/kg` are physically compatible but nutritionally
-**incompatible** — they must never be added, substituted, or interchanged.
-The library enforces this via semantic compatibility checks, not dimensions.
+Bases: `asFed` (bare), `dryMatter` (`DM`), `freshMatter` (`FM`), `wet`
+(`WB`), `normalized`; aliases resolve deterministically.
+
+```ts
+const dm = af.convertBasis("dryMatter", ctx); // 9% @0.9 DM → 10%
+```
+
+Basis conversion rescales by the dry-matter fraction. Without that fraction
+there is no answer — only a typed error. DO NOT guess a DM value; DO require
+explicit context. Conversions preserve nutrient identity and stamp
+`metadata.conversion` (`sourceBasis`, `targetBasis`, `dryMatterFraction`,
+`conversionType`).
+
+## 7. Context (validated, immutable)
+
+```ts
+createNutritionContext({ dryMatterFraction: 0.9 }); // moisture derived (0.1)
+createNutritionContext({ moistureFraction: 0.1 }); // DM derived (0.9)
+```
+
+Rules: finite, `0 < DM ≤ 1`, `DM + moisture ≈ 1` within `1e-6`; frozen;
+`resolvedDryMatterFraction` / `resolvedMoistureFraction` always derived when
+either input exists. `resolveDryMatterFraction(context | Quantity(%) | number)`
+extracts it where it legitimately lives.
+
+## 8. Existing Abstraction First
+
+Before creating a new application abstraction, check whether these already
+model it:
 
 ```text
-physical compatibility  — handled by @vetwo/units (dimensions)
-nutrition compatibility — handled by @vetwo/nutrition-units (nutrient identity)
+Quantity / Measurement               → @vetwo/units
+NutritionQuantity                     → value + nutrient + basis
+NutritionMeasurement                 → + uncertainty, context, metadata
+NutritionSample                       → identified collection
+NutritionMeasurementSet               → lookup/filter/serialize collections
+NutritionMeasurementSeries            → repeated/ordered points
 ```
 
-## 3. Decision: Which Library?
+Do not introduce duplicates without a documented reason.
 
-```text
-Is this a nutrition-domain measurement?
-│
-├── No → use @vetwo/units (or another domain model).
-│
-└── Yes → does it need nutrient identity, basis, context, or provenance?
-          │
-          ├── No  → @vetwo/units alone may suffice (document why).
-          │
-          └── Yes → @vetwo/nutrition-units (+ @vetwo/units underneath).
-```
-
-## 4. Nutrient Identity (verified)
-
-- Nutrients have stable canonical IDs with aliases, resolved case-insensitively:
-  `cp` accepts `crudeProtein`, `protein`, `CP`; others include `ca`, `p`,
-  `fe`, `de`, `me`, `ge`, `nel`, `vitA`, `vitD`.
-- `NutrientKindRegistry` / `defaultNutrientKindRegistry` / `isNutrientKindId(id)`
-  manage identity. `require(unknownId)` throws a typed error — never invent IDs.
-- Compatibility: `checkNutrientCompatibility("cp", "ca")` → incompatible;
-  `checkNutrientCompatibility("CP", "crudeProtein")` → compatible (alias-aware);
-  `canConvert(...)` gates conversions; `assertNutrientCompatible(...)` throws.
-
-DO NOT hard-code nutrient semantics as raw strings scattered through app code —
-resolve through the registry and keep the `NutrientKind` on the measurement.
-
-## 5. Nutrition Measurement Model (verified)
+## 9. Measurement Model (verified)
 
 ```text
 NutritionMeasurement
-├── Measurement     (@vetwo/units: value Quantity + uncertainty Quantity)
-├── Nutrient        (NutrientKind: cp, ca, …)
-├── Basis           (asFed, dryMatter, …)
-├── Context         (optional NutritionContext: dry-matter info, …)
-└── Metadata        (optional NutritionMetadata: provenance, …)
+├── Measurement      (@vetwo/units: Quantity value + Quantity uncertainty)
+├── Nutrient         (NutrientKind)
+├── Basis            (BasisDefinition)
+├── Context          (optional NutritionContext)
+└── Metadata         (optional NutritionMetadata)
 ```
-
-Construction (the `NutritionMeasurementOptions` contract is public API):
 
 ```ts
 import { Measurement, Quantity } from "@vetwo/units";
@@ -106,256 +170,215 @@ const calcium = NutritionMeasurement.of(
   "asFed",
   opts,
 );
-// Shorthand: value + unit + uncertainty in one call
 const protein = NutritionMeasurement.from(9, "%", "cp", "asFed");
 ```
 
-Rules: the first argument must be a real `Measurement` (else
-`InvalidNutritionQuantityError`); unknown nutrient/basis IDs throw; a unit
-from the wrong family throws `NutritionUnitCompatibilityError` (e.g. `ca`
-in `MJ/kg`, `me` in `mg/kg`). Measurements are frozen — caller mutation of
-the options object afterwards cannot corrupt them.
+`NutritionQuantity` is the uncertainty-free variant
+(`of`/`from`/`to`/`withBasis`/`convertBasis`/`convert`). Construction
+validates nutrient, basis (incl. unit-tag agreement), and unit family; results
+are frozen, so later mutation of your options object cannot corrupt them.
 
-## 6. Nutrition Basis (verified)
+Conversion: `.to(unit)` (physical, delegated), `.convertBasis(basis, ctx)`
+(domain), `.convert(unit, basis, ctx)` (both). Comparison: `equals`,
+`exactEquals`, `compare` (same nutrient **and** basis), `isCompatibleWith`.
 
-Basis IDs: `asFed` (bare), `dryMatter` (`DM`), `freshMatter` (`FM`), `wet`
-(`WB`), `normalized`. Aliases like `DM`/`dm`/`AF` resolve deterministically.
-
-> **A basis conversion is NOT a unit conversion.** `asFed → dryMatter`
-> rescales by the dry-matter fraction; it requires explicit context.
+## 10. Metadata / Provenance
 
 ```ts
-const dm = protein.convertBasis("dryMatter", ctx); // 9% @0.9 DM → 10%
+{
+  provenance: { sourceId, laboratoryId, instrumentId, timestamp, method, sample, conversion },
+  sample, method, qualityFlag, detectionLimits, reference, custom,
+}
 ```
-
-`NutritionQuantity` offers the same (`of`/`from`/`to`/`withBasis`/
-`convertBasis`/`convert`). Conversions preserve nutrient identity and record
-`metadata.conversion` traceability. Legacy helpers
-`BasisConverter.toAsFed` / `toDryMatterBasis` operate on plain `Quantity`
-with an explicit dry-matter `Quantity`.
-
-## 7. Nutrition Context (verified)
-
-Context carries the dry-matter/moisture facts that make basis conversion safe:
-
-```ts
-createNutritionContext({ dryMatterFraction: 0.9 }); // moisture derived (0.1)
-createNutritionContext({ moistureFraction: 0.1 }); // DM derived (0.9)
-```
-
-Rules: `0 < DM ≤ 1`, finite; `DM + moisture ≈ 1` within `1e-6`. Contexts are
-frozen; derived `resolvedDryMatterFraction` / `resolvedMoistureFraction` are
-always populated when either fraction is supplied.
-
-- **Missing context** (conversion needs DM info, none provided) →
-  `MissingNutritionContextError`. Never a silent `NaN` or plausible wrong number.
-- **Malformed context** (non-object, forbidden `__proto__` keys, inconsistent
-  DM+moisture, non-Measurement DM measurement, bad `sampleState`/metadata) →
-  `InvalidNutritionContextError` (a subclass of `NutritionContextError`).
-- Out-of-range fractions raise basis errors. Failed conversions never mutate
-  the source object.
-
-DO NOT invent dry-matter fractions. If the fraction is unknown, fail with the
-typed error and ask for data — a guessed 0.9 is a silent-corruption bug.
-
-## 8. Metadata and Provenance (verified)
-
-`createNutritionMetadata` / `mergeNutritionMetadata` build frozen, validated
-descriptive context for measurements, samples, and conversions. Metadata
-describes the science — it is not a LIMS, and it never affects calculations.
-
-**Unknown top-level keys are dropped, not stored.** `{ source: "lab-a" }`
-becomes `{}` — always use `provenance.sourceId`. Forbidden keys
-(`__proto__`, `constructor`, `prototype`) are rejected.
-
-## 9. Semantic Safety (strongest rule)
 
 ```text
-Same physical unit ≠ same nutrient. Never interchange on dimensions alone.
+DO:  preserve metadata (and conversion traces) through pipelines.
+DO NOT: silently discard metadata when the operation can preserve it.
 ```
 
-- `cp` vs `ca` at identical `g/kg`: incompatible.
-- Vitamin A IU vs vitamin D IU at identical `IU/kg`: **not interchangeable**
-  (activity units are nutrient-specific).
-- Energy kinds are distinct identities: `ge` (gross), `de` (digestible),
-  `me` (metabolizable), `nel` (net) — never substitute silently.
-- Unit-family guardrails: minerals accept mass/molar/fraction/ppm families;
-  energy nutrients accept energy-density only. Violations throw
-  `NutritionUnitCompatibilityError`.
-- `isNutrientCompatible` / `assertNutrientCompatible` /
-  `assertSemanticCompatibility` are the gates — call them instead of comparing
-  ID strings by hand.
+Verified behavior: unknown top-level keys are **dropped** (`{ source: "x" }`
+→ `{}`) — use `provenance.sourceId`; forbidden keys (`__proto__`,
+`constructor`, `prototype`), over-deep nesting, and executable values are
+rejected. Metadata is descriptive scientific context, never a LIMS, and never
+affects calculations.
 
-## 10. Molar Values (verified)
-
-`getMolarMass(nutrientId)` returns `number | undefined` (e.g. `ca` →
-`40.078`); `convertMolarToMass` requires a nutrient **with** chemical
-identity and throws without it (`cp` has none). Never invent molecular
-weights — a missing molar mass is a typed error, not a default of 1.
-
-## 11. Collections (verified)
+## 11. Collections
 
 ```ts
-import { NutritionSample, NutritionMeasurementSet } from "@vetwo/nutrition-units";
-import type { NutritionSampleOptions } from "@vetwo/nutrition-units";
-
-const sample = new NutritionSample({
-  id: "sample-001",
-  measurements: [calcium, protein],
-} satisfies NutritionSampleOptions);
-const grown = sample.withMeasurement(extra); // new instance; no mutation
+const sample = new NutritionSample({ id: "s-1", measurements: [ca, cp] } satisfies NutritionSampleOptions);
 const set = new NutritionMeasurementSet([...sample]);
-set.get("ca"); // single hit or undefined
-set.get("ca", "asFed"); // basis-aware lookup
-set.getAll("ca"); // all matches
+set.get("ca");            // single hit, else undefined
+set.get("ca", "asFed");   // basis-aware
 set.getOrThrow("ca", "asFed"); // MeasurementNotFoundError | AmbiguousMeasurementError
-set.has("zn");
-set.add(m);
-set.remove("ca");
-set.filter(pred);
-set.filterByNutrient("cp");
-set.filterByBasis("dryMatter");
+set.add(m); set.remove("ca"); set.filter(...);
+set.filterByNutrient("cp"); set.filterByBasis("dryMatter");
 ```
 
-Duplicate nutrient+basis+unit entries are **ambiguous by design**: `get`
-returns `undefined`, `getOrThrow` raises `AmbiguousMeasurementError` — never a
-silent first-pick. Samples/sets are immutable and iterable;
-`toJSON`/`fromJSON` round-trip deterministically (a time-ordered
-`NutritionMeasurementSeries` of `SeriesPoint`s exists for replicates — inspect
-its exports before use).
+Immutable and iterable; `add`/`remove`/`filter` return new instances.
+Duplicate nutrient+basis+unit entries are **ambiguous by design** — `get`
+returns `undefined`, never a silent first pick:
 
-## 12. Serialization (verified)
+```text
+Never silently choose one measurement when the collection reports ambiguity.
+```
 
-`toJSON`/`fromJSON` on measurements, quantities, samples, sets, and series;
-canonical JSON (`toCanonicalJson`/`fromCanonicalJson`,
-`canonicalJsonStringify`), migrations (`registerMigration`), and tabular-row
-mapping (`mapTabularRowToNutritionMeasurement`) for external data. Malformed
-payloads (wrong version/type, forbidden keys) throw typed errors — never
-default. Prefer these over ad-hoc formats.
-
-## 13. Anti-Patterns
+## 12. Molar & Activity Safety
 
 ```ts
-// ❌ Bare numbers with parallel nutrient strings (no identity, no basis).
-const cp = 9;
-const cpUnit = "%";
-
-// ❌ Treating cp and ca as interchangeable (same g/kg ≠ same nutrient).
-
-// ❌ Basis conversion without context, or with an invented DM fraction.
-
-// ❌ Assuming every value is as-fed.
-
-// ❌ Dropping provenance/metadata across a conversion boundary.
-
-// ❌ Confusing nutrient identity with physical dimensions.
-
-// ❌ Re-implementing %-to-fraction, asFed-to-DM, or IU logic by hand.
-
-// ❌ Importing internals (".../dist/nutrition-quantity.js"). Use entrypoints.
-
-// ❌ Putting formulation/optimization/HiGHS code in this package (see §14).
+getMolarMass("ca"); // 40.078 | undefined
+convertMolarToMass(quantity, "ca"); // requires chemical identity
 ```
 
-## 14. Critical Scope Boundary: NO Feed Formulation
+```text
+Never invent molecular weights or activity equivalences.
+```
 
-`@vetwo/nutrition-units` is **NOT** a formulation engine. It must never
-implement: feed/ration/diet formulation or balancing, least-cost formulation,
-ingredient optimization/selection/allocation, animal/species requirement
-calculations, linear programming, LP, MILP, nonlinear optimization,
+`getMolarMass` returns `undefined` without chemical identity (`cp`);
+`convertMolarToMass` throws rather than assuming. IU↔mass factors are
+nutrient-specific reference data the library does not provide — supply them
+from your own domain data with provenance.
+
+## 13. DO NOT TURN THIS INTO A FORMULATION ENGINE
+
+Never add to this package: feed/ration/diet formulation or balancing,
+least-cost formulation, ingredient selection/optimization/allocation, animal
+or species requirement calculations, LP, MILP, nonlinear optimization,
 optimization infrastructure, HiGHS, or solver infrastructure.
 
 ```text
-Need formulation/optimization? → build a SEPARATE domain/application layer
-that consumes @vetwo/nutrition-units measurements as input data.
+Need formulation/optimization? → separate application/domain/optimization
+layer that consumes nutrition measurements as input data.
 ```
 
-The library provides the unit/measurement foundation a future optimizer may
-consume; the optimizer itself lives elsewhere. If an agent proposes adding
-solver code here, refuse and redirect.
+The library provides measurements and plain-number building blocks
+(`FeedSchemaLoader`, `coefficientResolver`, `NUTRIENT_CONTRIBUTION_RULE`,
+`DIET_COST_RULE`); the optimizer lives elsewhere. If asked to add solver code
+here, refuse and redirect.
 
-## 15. Correct End-to-End Pattern (verified)
+## 14. Anti-Patterns
 
 ```ts
-// 1. Options-typed construction with context + metadata
+const cp = 9; const cpUnit = "%";              // ❌ number + parallel nutrient string
+cp.add(ca);                                    // ❌ treating cp and ca as interchangeable
+protein.convertBasis("dryMatter");             // ❌ no context → typed error (by design)
+af.convertBasis("dryMatter", { dryMatterFraction: 0.9 }); // ❌ hidden invented default
+m.metadata = undefined;                        // ❌ dropping provenance
+as unknown as NutritionMeasurement;            // ❌ cast around validation
+import ".../dist/nutrition-quantity.js";       // ❌ internal import
+```
+
+Also forbidden: manually re-implementing %-to-fraction / asFed-to-DM / IU
+logic; assuming every value is as-fed; adding optimization code here.
+
+## 15. Correct End-to-End Pattern
+
+```ts
 const calcium = NutritionMeasurement.of(
   Measurement.of(Quantity.of(100, "mg/kg"), Quantity.of(3, "mg/kg")),
   "ca",
   "asFed",
   { context: createNutritionContext({ dryMatterFraction: 0.9 }) },
 );
-// 2. Safe unit conversion (delegates to @vetwo/units)
 const inGram = calcium.to("g/kg"); // 0.1 g/kg
-// 3. Basis conversion with explicit context
 const asDM = calcium.convertBasis("dryMatter", calcium.context);
-// 4. Collection + lookup + serialization
-const sample = new NutritionSample({ id: "s1", measurements: [calcium] });
+const sample = new NutritionSample({ id: "s1", measurements: [calcium, asDM] });
 const back = NutritionSample.fromJSON(JSON.parse(JSON.stringify(sample.toJSON())));
 ```
 
-## 16. Error Handling (verified public errors)
+## 16. Serialization
 
-All extend `UnitEngineError` (via `NutritionError`):
-
-| Error                             | Meaning                                       |
-| --------------------------------- | --------------------------------------------- |
-| `MissingNutritionContextError`    | basis conversion needs DM info; none given    |
-| `InvalidNutritionContextError`    | malformed context object                      |
-| `NutritionContextError`           | base for context problems                     |
-| `InvalidNutritionBasisError`      | bad basis id/value                            |
-| `UnsupportedBasisConversionError` | unsupported basis pair                        |
-| `NutritionUnitCompatibilityError` | nutrient-to-unit family mismatch              |
-| `InvalidNutrientKindError`        | bad nutrient kind                             |
-| `UnknownNutrientError`            | unknown nutrient                              |
-| `AmbiguousNutrientError`          | ambiguous nutrient                            |
-| `IncompatibleNutrientError`       | semantic mismatch                             |
-| `InvalidNutritionQuantityError`   | malformed quantity/measurement/sample payload |
-| `MeasurementNotFoundError`        | collection lookup miss                        |
-| `AmbiguousMeasurementError`       | ambiguous collection lookup                   |
-
-Catch at trust boundaries; propagate from core logic.
-
-## 17. Public API Boundary & Source of Truth
+`toJSON`/`fromJSON` on quantities, measurements, samples, sets, series
+(versioned, typed payloads; malformed input throws). Canonical/deterministic
+forms: `toCanonicalJson`/`fromCanonicalJson`, `canonicalJsonStringify`,
+`serializeNutritionMeasurementCanonical`. External data: external nutrient/unit
+identifiers, `registerExternalNutrientMapping` /
+`resolveExternalNutrient` / `clearExternalNutrientMappings`,
+`handleUnknownNutrient` policies, `mapTabularRowToNutritionMeasurement` for
+tabular rows, and `registerMigration` /
+`migrateSerializedNutritionMeasurement` for schema evolution.
 
 ```text
-DO:    import { ... } from "@vetwo/nutrition-units"
-       import { ... } from "@vetwo/units"
-DO NOT: import internal files of either package.
+Prefer library serialization over ad-hoc application formats.
 ```
 
-If this guide conflicts with the installed packages, the packages win.
+## 17. Error Handling (verified exports)
+
+| Error                                                                          | Agent meaning                                          |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `MissingNutritionContextError`                                                 | required scientific context not supplied → go get data |
+| `InvalidNutritionContextError`                                                 | context structure/value invalid → fix data             |
+| `NutritionContextError`                                                        | base class for context problems                        |
+| `InvalidNutritionBasisError`                                                   | basis id/value invalid                                 |
+| `UnsupportedBasisConversionError`                                              | requested basis pair unsupported                       |
+| `NutritionUnitCompatibilityError`                                              | nutrient/unit family mismatch                          |
+| `InvalidNutrientKindError` / `UnknownNutrientError` / `AmbiguousNutrientError` | nutrient cannot be resolved unambiguously              |
+| `IncompatibleNutrientError` / `NutrientSemanticMismatchError`                  | nutrition meanings incompatible                        |
+| `InvalidNutritionQuantityError`                                                | malformed quantity/measurement/sample payload          |
+| `MeasurementNotFoundError` / `AmbiguousMeasurementError`                       | lookup miss vs ambiguity                               |
+| `MissingChemicalIdentityError`                                                 | molar operation without chemical identity              |
+
+All extend `UnitEngineError` (via `NutritionError`), so one
+`instanceof UnitEngineError` catch spans both layers while specific classes
+stay distinguishable. Core engine errors (`UnitMismatchError`,
+`ImpossibleConversionError`, `InvalidAffineOperationError`, …) surface
+unchanged.
+
+```text
+Catch at trust boundaries. Do not catch-and-suppress scientific
+validation errors inside core domain logic. Branch with instanceof.
+```
+
+## 18. Application Logic vs Library Responsibility
+
+```text
+Library:      represent · validate · convert · measure · serialize ·
+              preserve scientific semantics
+Application:  workflows · business rules · reporting · UI ·
+              persistence orchestration · domain decisions · optimization
+```
+
+## 19. Testing Guidance
+
+Test: nutrient compatibility **and** incompatibility; alias resolution
+(`CP` → `cp`); unit-family validation (`ca` in `MJ/kg`); basis conversion
+with explicit context; missing context → `MissingNutritionContextError`;
+invalid context → `InvalidNutritionContextError`; uncertainty preservation
+across conversion; metadata preservation; collection ambiguity;
+serialization round-trips; unknown-nutrient handling.
+
+## 20. Security and Safety (verified behaviors only)
+
+- Contexts and metadata reject `__proto__`/`constructor`/`prototype` keys and
+  executable/deeply-nested values.
+- Deserializers validate version/type/shape; malformed payloads throw instead
+  of defaulting.
+- External/tabular rows must pass through typed mapping APIs; never trust raw
+  input into a dataset.
+- Never `eval` unit or nutrient strings; never swallow validation errors.
+- Do not claim protections beyond the installed version's documented behavior.
+
+## 21. Performance Guidance
+
+Reuse registries and contexts; avoid repeated string parsing; convert at
+boundaries; don't rebuild equivalent domain objects in hot loops. Uncertainty
+and conversions are delegated to the engine's cached paths. No benchmark
+numbers claimed.
+
+## 22. Source of Truth
+
+```text
+This guide is operational guidance, not an API specification.
+If it conflicts with the installed package, the installed package wins.
+Never invent an API to satisfy this document.
+```
+
 Verify: (1) `node_modules/@vetwo/nutrition-units/dist/index.d.ts`,
-(2) `package.json` exports, (3) READMEs, (4) tests/examples, (5) source last.
-Never invent APIs.
+(2) `package.json` exports, (3) README/docs, (4) tests/examples, (5) source
+last. Never depend on repository-internal paths when installed from npm.
 
-## 18. Agent Workflow / Testing / Security / Performance
+## 23. Relationship to `@vetwo/units`
 
-- Workflow: identify domain meaning → physical quantity? → nutrition
-  semantics? → select layer → inspect public API → reuse abstractions →
-  preserve dimensional+semantic safety → validate → test.
-- Test: semantic compatibility/incompatibility, basis correctness with and
-  without context (typed errors), metadata preservation, collection lookup
-  incl. ambiguity, serialization round-trips, uncertainty preservation.
-- Security: contexts/metadata/deserializers reject `__proto__`-style keys;
-  validate external rows via the typed mapping APIs; never swallow validation
-  errors; only claim protections the installed version documents.
-- Performance: reuse registries/contexts, avoid repeated string parsing in hot
-  paths, convert at the edges. No benchmark numbers claimed.
-
-## 19. Relationship to `@vetwo/units`
-
-```text
-Application Domain
-       │
-       ▼
-@vetwo/nutrition-units   (nutrition-domain meaning)
-       │
-       ▼
-@vetwo/units             (physical meaning)
-```
-
-- `@vetwo/units` only: the problem is purely physical quantities.
-- Both: any value with nutrient identity, basis, context, or provenance.
-- `nutrition-units` builds on `units`; it never replaces it. Uncertainty,
-  dimensions, conversion, and formulas always come from `@vetwo/units`.
-  Full physical-quantity guidance: see `units.agent.md`.
+`@vetwo/units` alone for purely physical problems. Both layers whenever a
+value carries nutrient identity, basis, context, or provenance. Uncertainty,
+dimensions, conversion, and formulas always come from `@vetwo/units` — see
+`units.agent.md`.

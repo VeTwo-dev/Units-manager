@@ -1,321 +1,322 @@
 # `@vetwo/units` — AI Coding-Agent Guide
 
-> Portable guidance. Copy this file into any TypeScript/JavaScript project that
-> installs `@vetwo/units` from npm. It assumes only the **published package**,
-> never this monorepo's internals.
+> Portable operating guide. Copy this file into any TypeScript/JavaScript
+> project that installs `@vetwo/units` from npm. It assumes only the
+> **published package** — never any monorepo's internals.
 
-## 1. Identity
+## 1. Agent Operating Rules
+
+```text
+MUST:
+- Reuse existing public abstractions (Quantity, Measurement, parsers, serializers).
+- Inspect the installed public API before guessing (see §22).
+- Preserve dimensional safety; never bypass validation to make code compile.
+- Use the public package entrypoint "@vetwo/units" exclusively.
+- Add tests for new integration behavior.
+
+MUST NOT:
+- Invent APIs not present in the installed package.
+- Import internal files (e.g. "@vetwo/units/dist/quantity.js").
+- Duplicate unit/conversion/uncertainty logic in application code.
+- Bypass validation with casts (as any, as Quantity, @ts-ignore).
+- Swallow dimensional or conversion errors into guessed values.
+- Model non-physical values (ids, counters, enums) as Quantity.
+```
+
+## 2. Identity
 
 `@vetwo/units` is a **generic, domain-agnostic scientific units and
-dimensional-analysis engine**. It models physical quantities, converts between
-units, validates dimensions, propagates measurement uncertainty, evaluates
-scientific formulas, and serializes values. It knows **nothing** about
-nutrition, feed, medicine, or any other application domain.
-
-Install:
+dimensional-analysis engine**: physical quantities, unit conversion,
+dimensional validation, measurement uncertainty, scientific formulas,
+serialization. It knows **nothing** about nutrition, feed, medicine, or any
+application domain.
 
 ```sh
 npm install @vetwo/units
 ```
 
-Import everything from the public entrypoint only:
-
 ```ts
 import { Quantity, Measurement, parseUnit } from "@vetwo/units";
 ```
 
-## 2. When to Use It
+## 3. When to Use `@vetwo/units`
 
-Use `@vetwo/units` when the value is a **physical/scientific quantity**:
+A value is in scope when it is a **physical/scientific quantity**: masses,
+lengths, times, temperatures, energies, concentrations, rates — anything
+needing units, conversion, dimensional reasoning, uncertainty, or scientific
+formulas. Also in scope: parsing unit expressions (`"kg*m/s^2"`), formatting
+quantities, deterministic serialization round-trips.
 
-- masses, lengths, times, temperatures, energies, concentrations, rates
-- unit conversion (`kg → g`, `°C → K`, `% → fraction`)
-- dimensional validation (refusing `m + s`)
-- measured values with uncertainty (`100 ± 2 mg/kg`)
-- scientific formulas over quantities (`force = mass × accel`)
-- parsing unit expressions (`"kg*m/s^2"`) and formatting quantities
-- deterministic serialization round-trips
-
-## 3. When NOT to Use It
-
-DO NOT force `Quantity` onto values that are not physical quantities:
-
-- identifiers, names, codes, enums
-- arbitrary counters, indexes, pagination offsets
-- money stored as a plain ledger number (unless you genuinely model currency dimensions)
-- booleans, timestamps-as-strings, free text
+## 4. When Not to Use It
 
 ```text
-number  ≠  physical quantity. Only wrap the latter.
+DO NOT wrap: identifiers, names, codes, enums, counters, indexes,
+pagination offsets, plain ledger money, booleans, free text.
 ```
-
-## 4. API Selection Guide (verified public API)
 
 ```text
-Need a physical quantity?            → Quantity.of(value, "kg")
-Need conversion?                     → quantity.to("g"), quantity.toBase()
-Need to parse a unit string?         → parseUnit("kg*m/s^2")
-Need to display a value?             → formatQuantity(q), formatUnit(unit)
-Need value + uncertainty?            → Measurement.of(valueQ, uncQ) / Measurement.exact(q)
-Need serialization?                  → serializeQuantity / deserializeQuantity,
-                                       serializeMeasurement / deserializeMeasurement,
-                                       serializeUnit / deserializeUnit
-Need a formula?                      → defineFormula(...) + compileFormula(...),
-                                       Expression.* builders
-Need an isolated unit set?           → createRegistry({ packs: [SI_PACK] })
-Need semantic kind checks?           → quantity.withKind(...) + semantic-aware policies
+ordinary number → physical quantity → (nutrition measurement → …)
 ```
 
-Key signatures (verify against installed `.d.ts` if in doubt):
+Only ascend this ladder when the value genuinely gains the next level of
+meaning. An arbitrary integer ID must never become a `Quantity`.
 
-```ts
-Quantity.of(value: number, unitSymbol: string | Unit, registry?: UnitRegistry): Quantity
-quantity.to(target: string | Unit, registry?): Quantity
-quantity.toBase(): Quantity
-Measurement.of(value: Quantity, uncertainty: Quantity | number): Measurement
-Measurement.exact(value: Quantity): Measurement
-parseUnit(text: string, registry?, opts?): Unit
-createRegistry(options?: { packs?: [...] }): UnitRegistry
-```
-
-## 5. Dimensional Safety Rules (critical)
-
-- `add`/`subtract` require **identical dimensions**; mismatch throws the typed
-  `UnitMismatchError`. Never catch-and-ignore it to "make it compile".
-- `multiply`/`divide` derive dimensions automatically (`kg * m/s^2 → N`-shaped
-  composites). The emitted composite unit's symbol, scale, and value always agree.
-- `to()` between incompatible dimensions throws (`ImpossibleConversionError` family).
-- `hasSameDimension(other)` is the explicit pre-check; `exactEquals` /
-  `approximatelyEquals` compare within dimension.
-- Scalar helpers exist: `scale(factor)`, `negate()`, `pow(n)`, `sqrt()`,
-  `reciprocal()`. `divide(0)` throws `DivisionByZeroError`.
-
-DO:
-
-```ts
-const total = Quantity.of(10, "kg").add(Quantity.of(500, "g")); // 10.5 kg
-const grams = Quantity.of(25, "kg").to("g"); // 25000 g
-```
-
-DO NOT:
-
-```ts
-// A try/catch-and-ignore around this is always a bug:
-Quantity.of(1, "m").add(Quantity.of(1, "s"));
-```
-
-## 6. Conversion Rules
-
-- Convert with `.to(target)` / `.toBase()`. Never hand-write `* 1000` factors
-  for units the library supports — that duplicates the engine and drifts.
-- Temperature is special (verified semantics):
-  - `K` is **linear** (an interval): `K + K`, `K × kg`, `K / 2` are meaningful.
-  - `°C` / `°F` are **affine** (offset): `20°C + 10K = 30°C` works;
-    `20°C − 10°C = 10 K` (a delta); `°C + °C`, `°C × 2`, `°C × kg` throw
-    `InvalidAffineOperationError`.
-- `isAffineUnit(u)` / `isAbsoluteTemperatureUnit(u)` expose the distinction;
-  prefer them over string-matching unit symbols.
-
-## 7. Measurement and Uncertainty
-
-- `Measurement` = `Quantity` value + absolute-uncertainty `Quantity`.
-  Uncertainty must be finite and non-negative; affine (offset) units are
-  rejected for uncertainty.
-- `relativeUncertainty()` exists but **throws for affine units** — use it only
-  on linear-unit measurements.
-- `Measurement.of` rejects _relative_ uncertainty specifications for affine
-  units at construction time.
-- Arithmetic propagates uncertainty (addition in quadrature, relative
-  quadrature for multiply/divide) via the same methods (`m1.add(m2)`).
-- Comparisons/equality mirror `Quantity`. Never build a second uncertainty
-  engine in application code; delegate to `Measurement`.
-
-```ts
-import { Measurement, Quantity } from "@vetwo/units";
-const m = Measurement.of(Quantity.of(100, "g"), Quantity.of(2, "g"));
-const exact = Measurement.exact(Quantity.of(100, "g"));
-```
-
-## 8. Serialization
-
-- Use `serializeQuantity` / `deserializeQuantity`,
-  `serializeMeasurement` / `deserializeMeasurement`,
-  `serializeUnit` / `deserializeUnit`. Round-trips preserve value, unit, and
-  dimension — prefer them over ad-hoc `{ value, unit }` JSON.
-- Deserializers validate and throw typed errors on malformed payloads; never
-  `eval` unit strings or blindly trust incoming JSON.
-- Interop helpers (`toInterchange` / `fromInterchange`, canonicalization,
-  migrations) exist for cross-system exchange — use them instead of inventing
-  a wire format.
-
-## 9. Anti-Patterns
-
-```ts
-// ❌ Parallel number + unit-string: no dimensional safety.
-const mass = 25;
-const unit = "kg";
-
-// ❌ Manual conversion factors (drift, no validation).
-const grams = kg * 1000;
-
-// ❌ Stringly-typed units passed around instead of Quantity/Unit.
-
-// ❌ Catching UnitMismatchError/ImpossibleConversionError and continuing
-//    with a guessed value.
-
-// ❌ Casting: `as unknown as Quantity`, `@ts-ignore` around add/to.
-
-// ❌ Importing internals: "@vetwo/units/dist/quantity.js". Use the entrypoint.
-
-// ❌ Re-implementing conversion, parsing, or uncertainty in app code.
-
-// ❌ Inventing unit symbols ("calorieX") or APIs not in the public exports.
-
-// ❌ Using raw numbers where uncertainty matters (lab assays, sensors).
-```
-
-## 10. Correct Usage Patterns
-
-```ts
-import {
-  Quantity,
-  Measurement,
-  parseUnit,
-  formatQuantity,
-  serializeQuantity,
-  deserializeQuantity,
-  createRegistry,
-  SI_PACK,
-} from "@vetwo/units";
-
-// Quantity + conversion + formatting
-const dose = Quantity.of(500, "mg").to("g"); // 0.5 g
-console.log(formatQuantity(dose)); // "0.5 g"
-
-// Measurement with uncertainty
-const assay = Measurement.of(Quantity.of(100, "mg/kg"), Quantity.of(3, "mg/kg"));
-
-// Parsing (throws typed errors on malformed input, never crashes)
-const unit = parseUnit("kg*m/s^2");
-
-// Serialization round-trip
-const back = deserializeQuantity(JSON.parse(JSON.stringify(serializeQuantity(dose))));
-
-// Isolated registry (packs are additive; default registry exists)
-const si = createRegistry({ packs: [SI_PACK] });
-const v = Quantity.of(1, "N", si).to("kg*m/s^2", si);
-```
-
-## 11. Error Handling (verified public errors)
-
-All extend `UnitEngineError` (catch-all base):
-
-| Error                                                                                | Meaning                                                |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| `UnitMismatchError`                                                                  | `add`/`subtract` across dimensions                     |
-| `ImpossibleConversionError` / `ConversionError`                                      | `to()` across incompatible units                       |
-| `InvalidAffineOperationError`                                                        | meaningless temperature ops (`°C+°C`, `°C×2`)          |
-| `DivisionByZeroError`                                                                | zero divisor                                           |
-| `UnsupportedUnitError` / `InvalidUnitError` / `InvalidUnitExpressionError`           | unknown/malformed units                                |
-| `NumericalError`                                                                     | non-finite/unsafe numeric results                      |
-| `InvalidMeasurementError`                                                            | malformed measurement construction/payload             |
-| `UnsupportedTransformationError`                                                     | logarithmic/custom conversions without a context model |
-| `RuleNotFoundError`                                                                  | unregistered calculation rule                          |
-| `FormulaError` / `ExpressionError` / `UnknownVariableError` / `ExpressionLimitError` | formula problems                                       |
-
-Catch specific errors at trust boundaries (user input, file import); let
-dimensional errors propagate from core logic — swallowing them produces
-silently wrong science.
-
-## 12. Public API Boundary
-
-```text
-DO:    import { ... } from "@vetwo/units"
-DO NOT: import from "@vetwo/units/dist/..." or any internal file path.
-```
-
-Internal modules (`quantity.js`, `conversion-engine.js`, …) are
-implementation details even when visible in the published file layout.
-
-## 13. Source-of-Truth Rule
-
-If this guide conflicts with the installed package, **the installed package wins**.
-Verify in this order:
-
-1. `node_modules/@vetwo/units/dist/index.d.ts` (TypeScript declarations)
-2. `node_modules/@vetwo/units/package.json` (`exports`, version)
-3. Official package README/docs
-4. Tests/examples shipped or referenced by the docs
-5. Implementation source — last resort, never an excuse to use internals
-
-Never invent a missing API. If it is not exported, it does not exist for you.
-
-## 14. Decision Tree
+## 5. Decision Tree
 
 ```text
 Is this value a physical/scientific quantity?
 │
-├── No → ordinary application type (number/string/enum) is appropriate.
+├── No → ordinary application type (number/string/enum).
 │
-└── Yes → does it need units, conversion, or dimensional reasoning?
+└── Yes → needs units, conversion, or dimensional reasoning?
           │
-          ├── No → a plain number may suffice (document why).
+          ├── No → plain number may suffice (document why).
           │
-          └── Yes → @vetwo/units (Quantity; +Measurement if uncertain).
+          └── Yes → @vetwo/units: Quantity (+Measurement if uncertain).
 ```
 
-## 15. Agent Workflow
+## 6. Responsibility / Ownership
 
-1. Identify the domain meaning of each number (quantity vs. count vs. id).
-2. Wrap quantities in `Quantity` at trust boundaries (input parsing, I/O).
-3. Keep values as `Quantity` through calculations; convert only at the edges.
-4. Use `Measurement` wherever uncertainty exists; never track `±` separately.
-5. Validate with types (`hasSameDimension`, typed errors), not string checks.
-6. Serialize with library serializers; deserialize with library validators.
-7. Add tests: conversions, mismatch failures, round-trips, uncertainty.
+| Concern                                  | Owner                                     |
+| ---------------------------------------- | ----------------------------------------- |
+| Physical quantities, units, dimensions   | `@vetwo/units`                            |
+| Generic conversion (linear + affine)     | `@vetwo/units`                            |
+| Measurement + uncertainty (all math)     | `@vetwo/units`                            |
+| Formulas, expressions, dependency graphs | `@vetwo/units`                            |
+| Parsing, formatting, serialization       | `@vetwo/units`                            |
+| Unit systems, packs, standards profiles  | `@vetwo/units`                            |
+| Constants, statistics over measurements  | `@vetwo/units`                            |
+| Nutrient identity, basis, context        | `@vetwo/nutrition-units` (separate layer) |
+| Workflows, UI, persistence, optimization | application (never this library)          |
 
-## 16. Testing Guidance
-
-- conversion correctness against hand-derived values (include offsets: `°C↔K`)
-- incompatible-unit failures (`UnitMismatchError`, `ImpossibleConversionError`)
-- affine rejections (`°C+°C`, `°C×2`, `°C×kg`)
-- round-trip conversion (`a → b → a`) and serialization round-trips
-- uncertainty propagation and exact-vs-approximate equality
-- parser: malformed input throws typed errors, never crashes
-
-## 17. Security and Safety Guidance
-
-- Treat unit strings from users/files as **untrusted input**: parse with
-  `parseUnit`, handle typed errors, never `eval` or template them into code.
-- Validate deserialized payloads with the typed deserializers; reject
-  malformed shapes instead of defaulting.
-- Never swallow dimensional/conversion errors — a caught-and-ignored
-  `UnitMismatchError` is a silent wrong-result bug.
-- Only claim protections the installed version documents; re-verify per upgrade.
-
-## 18. Performance Guidance
-
-- Reuse parsed `Unit` / constructed `Quantity` objects in hot paths; the
-  engine caches parse results and conversion plans.
-- Prefer batching conversions over repeated string parsing in loops.
-- Do not micro-optimize by bypassing the engine (manual factors reintroduce
-  the bugs the library removes). No benchmark numbers are claimed here.
-
-## 19. Relationship to `@vetwo/nutrition-units`
+## 7. API Selection Guide (verified)
 
 ```text
-Application Domain
-       │
-       ▼
-@vetwo/nutrition-units   (nutrition-domain meaning: nutrient, basis, context)
-       │
-       ▼
-@vetwo/units             (physical meaning: dimensions, units, uncertainty)
+Physical quantity?            → Quantity.of(value, "kg")
+Conversion?                   → quantity.to("g"), quantity.toBase()
+Parse a unit string?          → parseUnit("kg*m/s^2")
+Display?                      → formatQuantity(q), formatUnit(unit)
+Value + uncertainty?          → Measurement.of(valueQ, uncQ) / Measurement.exact(q)
+Persist?                      → serializeQuantity / deserializeQuantity (+Measurement/Unit variants)
+Repeatable computation?       → defineFormula + compileFormula, Expression.* builders
+Isolated unit set?            → createRegistry({ packs: [SI_PACK] })
+Kind-strict checks?           → quantity.withKind(...) / requireKind(...)
 ```
 
-- Use `@vetwo/units` **only** when the problem is fundamentally about physical
-  quantities with no nutrition semantics.
-- Use `@vetwo/nutrition-units` **+** `@vetwo/units` when a quantity also
-  carries nutrition meaning (nutrient identity, basis, context, provenance).
-- `nutrition-units` builds on `units`; it never replaces it. See
-  `nutrition-units.agent.md` for the domain layer.
+Verified signatures (re-check against installed `.d.ts` on doubt):
+
+```ts
+Quantity.of(value: number, unitSymbol: string | Unit, registry?: UnitRegistry): Quantity
+quantity.to(target: string | Unit, registry?): Quantity
+Measurement.of(value: Quantity, uncertainty: Quantity | number): Measurement
+parseUnit(text: string, registry?, opts?): Unit
+createRegistry(options?: { packs?: [...] }): UnitRegistry
+```
+
+## 8. Quantity and Unit Usage
+
+```ts
+const mass = Quantity.of(25, "kg"); // value + unit, together
+const total = mass.add(Quantity.of(500, "g")); // 25.5 kg, new object
+const grams = Quantity.of(25, "kg").to("g"); // 25000 g
+```
+
+`Quantity` is immutable; every operation returns a new object. `Q()` is an
+equivalent factory alias. `withKind(kindId)` tags semantic kinds;
+`requireKind(kindId)` asserts them (`IncompatibleQuantityKindError` on
+mismatch). `toString()` renders `"25 kg"`-style output.
+
+## 9. Dimensional Safety (critical)
+
+```text
+compatible dimensions ≠ arbitrary numeric compatibility
+```
+
+- `add`/`subtract` require **identical dimensions** → else `UnitMismatchError`.
+- `multiply`/`divide` derive dimensions automatically; emitted composite
+  units keep symbol, scale, and value in agreement.
+- `to()` across dimensions → `ImpossibleConversionError` family.
+- Pre-check with `hasSameDimension(other)`; compare with `exactEquals` /
+  `approximatelyEquals` (tolerance-aware), `lessThan` / `greaterThan` / …,
+  `isZero` / `isPositive` / `isNegative`.
+
+DO NOT: add/subtract across dimensions, catch-and-ignore `UnitMismatchError`,
+cast incompatible values into compatible types, or coerce units silently.
+
+## 10. Conversion
+
+Convert with `.to(target)` / `.toBase()`; incompatible targets throw — never
+hand-write `* 1000` factors for supported units. Plans are cached
+(`getConversionPlan` / `convertWithPlan`); logarithmic/custom conversions are
+refused (`UnsupportedTransformationError`) because they need an explicit
+context model. Verified edge cases:
+
+- `K` is **linear** (interval): `K + K`, `K × kg`, `K / 2` are meaningful.
+- `°C` / `°F` are **affine** (offset): `20°C + 10K = 30°C`;
+  `20°C − 10°C = 10 K` (delta); `°C + °C`, `°C × 2`, `°C × kg` throw
+  `InvalidAffineOperationError`.
+- `isAffineUnit(u)` / `isAbsoluteTemperatureUnit(u)` expose the distinction —
+  prefer them over string-matching symbols.
+
+## 11. Derived Quantities
+
+`multiply`/`divide` produce derived dimensions automatically
+(`kg·m/s²`-shaped composites); `pow(n)`, `sqrt()`, `reciprocal()`,
+`negate()`, `scale(factor)` build powers, roots, inverses, and multiples.
+`divide(0)` (scalar or zero-valued quantity) throws `DivisionByZeroError`.
+Dimensionless results (`m/m`, `% → fraction`) are first-class quantities.
+
+## 12. Parsing and Formatting
+
+```ts
+parseUnit("kg*m/s^2"); // atomic, prefixed (mg, µm), composite, dimensionless
+formatQuantity(Quantity.of(12.5, "kg")); // "12.5 kg"
+```
+
+Parsing is cached on hot paths, offers strict mode, and throws typed errors
+(`InvalidUnitExpressionError`, `UnsupportedUnitError`) on malformed input —
+never crashes. There is no `currency` unit: unknown symbols throw; domain
+extensions define their own (e.g. `cur`).
+
+## 13. Measurement and Uncertainty
+
+```text
+@vetwo/units owns the generic measurement/uncertainty model. Do not build a second one.
+```
+
+```ts
+const m = Measurement.of(Quantity.of(100, "g"), Quantity.of(2, "g"));
+const exact = Measurement.exact(Quantity.of(100, "g"));
+```
+
+- Uncertainty is absolute, finite, non-negative; affine units rejected.
+- `relativeUncertainty()` throws for affine units — linear units only.
+- Arithmetic propagates automatically (quadrature for sums, relative
+  quadrature for products, incl. reciprocals); `equals`/`exactEquals`/
+  `approximatelyEquals` mirror `Quantity`.
+- `MeasurementSeries`, `CovarianceMatrix`, `combineUncertainties`, and
+  `propagateWithCovariance` cover repeated observations — use them before
+  hand-rolling statistics. Confidence-interval/metadata support exists on
+  measurements; inspect `MeasurementMetadata` in the installed `.d.ts`.
+
+## 14. Formula / Scientific Computation APIs
+
+```ts
+const expr = Expression.multiply(Expression.variable("mass"), Expression.variable("accel"));
+const compiled = compileExpression(expr);
+compiled.evaluate({ mass: Quantity.of(10, "kg"), accel: Quantity.of(9.81, "m/s^2") });
+```
+
+- `defineFormula({ id, expression, inputs, outputName }, { registry })`
+  validates dimensions up front; `compileFormula` evaluates `Quantity` or
+  `Measurement` bindings (uncertainty propagates).
+- `CalculationRuleRegistry` (`register` / `resolve` / `run`) hosts named
+  domain rules; missing rules throw `RuleNotFoundError`.
+- Function registry holds safe named functions only — no arbitrary execution.
+- `DependencyGraph` evaluates chains, fan-outs, diamonds deterministically.
+
+## 15. Serialization
+
+```ts
+const back = deserializeQuantity(JSON.parse(JSON.stringify(serializeQuantity(q))));
+```
+
+Prefer `serializeQuantity` / `deserializeQuantity`,
+`serializeMeasurement` / `deserializeMeasurement`,
+`serializeUnit` / `deserializeUnit` (+ constant-registry variants) over ad-hoc
+formats. Deserializers validate (wrong version/type, forbidden keys →
+typed errors). For cross-system exchange use `toInterchange` /
+`fromInterchange`, canonical keys (`canonicalUnitKey`, `unitExprKey`,
+`equivalentUnits`), namespaced symbols (`"si:kg"`), and `migrateSerialized`
+chains. Guards `isQuantity` / `isUnit` are cross-realm safe.
+
+## 16. Error Handling
+
+All errors extend `UnitEngineError`. Verified classes include:
+`UnitMismatchError`, `ImpossibleConversionError`/`ConversionError`,
+`InvalidAffineOperationError`, `DivisionByZeroError`, `UnsupportedUnitError`,
+`InvalidUnitError`, `InvalidUnitExpressionError`, `InvalidDimensionError`,
+`NumericalError`, `InvalidMeasurementError`,
+`UnsupportedTransformationError`, `RuleNotFoundError`, `FormulaError`/
+`ExpressionError`/`UnknownVariableError`/`ExpressionLimitError`,
+`IncompatibleQuantityKindError`, `AmbiguousUnitError`, `ExtensionError`,
+`MigrationError`, `CyclicDependencyError`.
+
+```text
+Catch specific errors at trust boundaries (input, files, APIs).
+Propagate dimensional errors from core logic — swallowing them
+produces silently wrong science. Branch with instanceof, never
+message string-matching.
+```
+
+## 17. Anti-Patterns
+
+```ts
+const weight = 25; const unit = "kg";   // ❌ parallel number + unit string
+const grams = kg * 1000;                // ❌ manual conversion factor
+quantity as unknown as Quantity;        // ❌ cast to bypass validation
+import ... from "@vetwo/units/dist/quantity.js";  // ❌ internal import
+```
+
+Also forbidden: stringly-typed units, duplicated conversion tables, parallel
+`Quantity` re-implementations, swallowed unit errors, invented symbols/APIs,
+raw numbers where uncertainty matters.
+
+## 18. Correct Usage Patterns
+
+See §8, §10, §12–§15 examples. Standing pattern:
+
+```text
+DO:  wrap at trust boundaries → keep Quantity through computation →
+     convert/serialize at the edges.
+DO NOT: destructure into { value, unit } pairs and reassemble later.
+```
+
+## 19. Testing Guidance
+
+Test: hand-derived conversions (incl. `°C↔K` offsets), mismatch failures,
+affine rejections, round-trip conversion + serialization, uncertainty
+propagation, exact-vs-approximate equality, parser malformed-input behavior.
+
+## 20. Security and Safety
+
+Unit strings and payloads are untrusted input: parse/deserialize through
+typed APIs, handle their errors, never `eval`. Never swallow dimensional
+errors. Claim only protections the installed version documents.
+
+## 21. Performance Guidance
+
+Reuse parsed `Unit`/`Quantity` objects and compiled expressions in hot paths
+(parse results and conversion plans are cached); batch conversions; convert
+at boundaries. No benchmark numbers are claimed here.
+
+## 22. Public API / Source of Truth
+
+```text
+This guide is operational guidance, not an API specification.
+If it conflicts with the installed package, the installed package wins.
+Never invent an API to satisfy this document.
+```
+
+Verify: (1) `node_modules/@vetwo/units/dist/index.d.ts`, (2) `package.json`
+exports, (3) README/docs, (4) tests/examples, (5) source last. Never depend
+on repository-internal paths when installed from npm.
+
+## 23. Agent Workflow
+
+1. Classify each number (quantity vs count vs id) per §5.
+2. Wrap quantities at trust boundaries; keep them through computation.
+3. Use `Measurement` wherever uncertainty exists.
+4. Validate with types, serialize with library serializers.
+5. Test conversions, failures, round-trips, uncertainty.
+
+## 24. Relationship to nutrition-units
+
+```text
+Application Domain → @vetwo/nutrition-units → @vetwo/units
+```
+
+Use `@vetwo/units` alone for purely physical problems. When a quantity also
+carries nutrition meaning (nutrient, basis, context, provenance), layer
+`@vetwo/nutrition-units` on top — it never replaces this engine. See
+`nutrition-units.agent.md`.

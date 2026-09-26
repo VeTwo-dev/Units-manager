@@ -14,7 +14,8 @@
     "dist",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "nutrition-units.agent.md"
   ],
   "keywords": [
     "nutrition",
