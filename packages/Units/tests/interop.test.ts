@@ -239,12 +239,15 @@ describe("extension manifests", () => {
   });
 
   it("validates requiresUnits ranges", () => {
+    expect(() => checkRequiresUnits(">=1.0.0", "x")).not.toThrow();
+    expect(() => checkRequiresUnits("^1.0.0", "x")).not.toThrow();
+    expect(() => checkRequiresUnits("~1.0.0", "x")).not.toThrow();
+    expect(() => checkRequiresUnits("=1.0.0", "x")).not.toThrow();
     expect(() => checkRequiresUnits(">=0.0.2", "x")).not.toThrow();
-    expect(() => checkRequiresUnits("^0.0.2", "x")).not.toThrow();
-    expect(() => checkRequiresUnits("~0.0.2", "x")).not.toThrow();
-    expect(() => checkRequiresUnits("=0.0.2", "x")).not.toThrow();
     expect(() => checkRequiresUnits(">=9.9.9", "x")).toThrow(ExtensionError);
-    expect(() => checkRequiresUnits("^1.0.0", "x")).toThrow(ExtensionError);
+    expect(() => checkRequiresUnits("^2.0.0", "x")).toThrow(ExtensionError);
+    expect(() => checkRequiresUnits("~1.1.0", "x")).toThrow(ExtensionError);
+    expect(() => checkRequiresUnits("=0.0.2", "x")).toThrow(ExtensionError);
     expect(() => checkRequiresUnits("sometime-later", "x")).toThrow(ExtensionError);
     expect(() => checkRequiresUnits("", "x")).toThrow(ExtensionError);
   });

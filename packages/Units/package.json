@@ -1,6 +1,6 @@
 {
   "name": "@vetwo/units",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "Generic, domain-agnostic scientific unit & dimensional-analysis engine (Mass, Time, Energy, Currency, Count). No knowledge of nutrition, feed, or any other domain.",
   "keywords": [
     "units",
@@ -16,13 +16,13 @@
   "author": {
     "name": "VeTwo.dev"
   },
-  "homepage": "https://github.com/vetwo/units#readme",
+  "homepage": "https://github.com/VeTwo-dev/Units-manager#readme",
   "bugs": {
-    "url": "https://github.com/vetwo/units/issues"
+    "url": "https://github.com/VeTwo-dev/Units-manager/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VeTwo-dev/units.git"
+    "url": "git+https://github.com/VeTwo-dev/Units-manager.git"
   },
   "type": "module",
   "main": "./dist/index.cjs",
@@ -40,7 +40,7 @@
     "./package.json": "./package.json"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "publishConfig": {
     "access": "public"

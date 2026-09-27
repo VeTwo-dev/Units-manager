@@ -170,7 +170,7 @@ export interface ExtensionConflict {
 }
 
 /** Current package version, used for requiresUnits checks. */
-export const ENGINE_VERSION = "0.0.2";
+export const ENGINE_VERSION = "1.0.0";
 
 function assertManifestShape(
   manifest: ExtensionManifest,
