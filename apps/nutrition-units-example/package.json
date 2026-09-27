@@ -22,7 +22,7 @@
     "verify": "pnpm run check-types && pnpm run lint && pnpm run test"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
+    "@types/node": "^26.6.2",
     "tsx": "^4.19.0",
     "typescript": "^5.9.0",
     "vitest": "^4.1.10"
