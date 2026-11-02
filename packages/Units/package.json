@@ -134,7 +134,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.19.0",
     "typescript": "^5.9.0",
-    "typescript-eslint": "^8.8.0",
+    "typescript-eslint": "^8.70.1",
     "vitest": "^4.1.10"
   }
 }
