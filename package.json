@@ -68,7 +68,7 @@
     "eslint-config-prettier": "^9.1.0",
     "knip": "^6.37.0",
     "madge": "^6.1.0",
-    "prettier": "^3.9.8",
+    "prettier": "^3.9.9",
     "publint": "^0.3.24",
     "tsx": "^4.23.15",
     "turbo": "^2.11.4",
