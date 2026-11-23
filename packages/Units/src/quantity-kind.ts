@@ -44,7 +44,10 @@ import {
  * - "strict-semantic":   kinds must be identical (unknown === unknown counts
  *   as identical; unknown vs known is incompatible).
  */
-export type SemanticPolicy = "dimensional-only" | "semantic-aware" | "strict-semantic";
+export type SemanticPolicy =
+  | "dimensional-only"
+  | "semantic-aware"
+  | "strict-semantic";
 
 const POLICY_PATTERN = /^(dimensional-only|semantic-aware|strict-semantic)$/;
 
@@ -84,11 +87,14 @@ export interface QuantityKind {
 const KIND_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 
 function assertDeclarative(value: unknown, owner: string, depth = 0): void {
-  if (depth > 4) throw new UnitEngineError(`${owner} metadata is nested too deeply`);
+  if (depth > 4)
+    throw new UnitEngineError(`${owner} metadata is nested too deeply`);
   if (value === null || value === undefined) return;
   const t = typeof value;
   if (t === "function" || t === "symbol") {
-    throw new UnitEngineError(`${owner} metadata must not contain executable values`);
+    throw new UnitEngineError(
+      `${owner} metadata must not contain executable values`,
+    );
   }
   if (t !== "object") return;
   if (Array.isArray(value)) {
@@ -136,13 +142,23 @@ export class QuantityKindRegistry {
       );
     }
     if (this.kinds.has(kind.id)) {
-      throw new UnitEngineError(`Quantity kind "${kind.id}" is already registered`);
+      throw new UnitEngineError(
+        `Quantity kind "${kind.id}" is already registered`,
+      );
     }
     if (typeof kind.name !== "string" || kind.name.trim().length === 0) {
-      throw new UnitEngineError(`Quantity kind "${kind.id}" needs a non-empty name`);
+      throw new UnitEngineError(
+        `Quantity kind "${kind.id}" needs a non-empty name`,
+      );
     }
-    if (!kind.dimension || typeof kind.dimension !== "object" || Array.isArray(kind.dimension)) {
-      throw new UnitEngineError(`Quantity kind "${kind.id}" needs a dimension vector`);
+    if (
+      !kind.dimension ||
+      typeof kind.dimension !== "object" ||
+      Array.isArray(kind.dimension)
+    ) {
+      throw new UnitEngineError(
+        `Quantity kind "${kind.id}" needs a dimension vector`,
+      );
     }
     if (kind.compatibleKinds !== undefined) {
       if (
@@ -154,7 +170,9 @@ export class QuantityKindRegistry {
         );
       }
       if (kind.compatibleKinds.includes(kind.id)) {
-        throw new UnitEngineError(`Quantity kind "${kind.id}" cannot list itself as compatible`);
+        throw new UnitEngineError(
+          `Quantity kind "${kind.id}" cannot list itself as compatible`,
+        );
       }
     }
     assertDeclarative(kind.metadata, `Quantity kind "${kind.id}"`);
@@ -164,7 +182,9 @@ export class QuantityKindRegistry {
         ...kind,
         dimension: Object.freeze({ ...kind.dimension }),
         compatibleKinds:
-          kind.compatibleKinds === undefined ? undefined : Object.freeze([...kind.compatibleKinds]),
+          kind.compatibleKinds === undefined
+            ? undefined
+            : Object.freeze([...kind.compatibleKinds]),
       }),
     );
   }
@@ -207,43 +227,50 @@ function defaultSeedKinds(): readonly QuantityKind[] {
       id: "angle",
       name: "Plane angle",
       dimension: dimensionless,
-      description: "Plane angle (rad, deg, rev). Dimensionless per SI; kind-gated for trig.",
+      description:
+        "Plane angle (rad, deg, rev). Dimensionless per SI; kind-gated for trig.",
     },
     {
       id: "solid-angle",
       name: "Solid angle",
       dimension: dimensionless,
-      description: "Solid angle (sr). Dimensionless per SI; distinct kind from plane angle.",
+      description:
+        "Solid angle (sr). Dimensionless per SI; distinct kind from plane angle.",
     },
     {
       id: "frequency",
       name: "Frequency",
       dimension: defineDimension({ T: -1 }),
-      description: "Periodic-event rate (Hz). Same dimension as activity, different kind.",
+      description:
+        "Periodic-event rate (Hz). Same dimension as activity, different kind.",
     },
     {
       id: "activity",
       name: "Radioactivity",
       dimension: defineDimension({ T: -1 }),
-      description: "Nuclear decay rate (Bq, Ci). Same dimension as frequency, different kind.",
+      description:
+        "Nuclear decay rate (Bq, Ci). Same dimension as frequency, different kind.",
     },
     {
       id: "absorbed-dose",
       name: "Absorbed dose",
       dimension: defineDimension({ E: 1, M: -1 }),
-      description: "Energy deposited per mass (Gy, rd). Same dimension vector as equivalent dose.",
+      description:
+        "Energy deposited per mass (Gy, rd). Same dimension vector as equivalent dose.",
     },
     {
       id: "equivalent-dose",
       name: "Equivalent dose",
       dimension: defineDimension({ E: 1, M: -1 }),
-      description: "Biologically weighted dose (Sv, rem). Same dimension vector as absorbed dose.",
+      description:
+        "Biologically weighted dose (Sv, rem). Same dimension vector as absorbed dose.",
     },
     {
       id: "temperature-absolute",
       name: "Absolute temperature",
       dimension: defineDimension({ Temp: 1 }),
-      description: "Thermodynamic temperature on an absolute scale (K, °C, °F, °R).",
+      description:
+        "Thermodynamic temperature on an absolute scale (K, °C, °F, °R).",
     },
     {
       id: "temperature-difference",
@@ -262,7 +289,8 @@ function defaultSeedKinds(): readonly QuantityKind[] {
       id: "luminous-flux",
       name: "Luminous flux",
       dimension: defineDimension({ J: 1 }),
-      description: "Photometric flux (lm = cd·sr). Same dimension as intensity, different kind.",
+      description:
+        "Photometric flux (lm = cd·sr). Same dimension as intensity, different kind.",
     },
     {
       id: "illuminance",
@@ -274,7 +302,8 @@ function defaultSeedKinds(): readonly QuantityKind[] {
       id: "information",
       name: "Digital information",
       dimension: defineDimension({ Info: 1 }),
-      description: "Digital information (bit, byte). Dedicated dimension, not a pure ratio.",
+      description:
+        "Digital information (bit, byte). Dedicated dimension, not a pure ratio.",
     },
   ];
 }
@@ -348,13 +377,19 @@ export function assertSemanticConvertible(
   const registry = opts.registry ?? defaultQuantityKindRegistry;
   if (policy === "dimensional-only") return; // kinds ignored entirely (legacy behavior)
   if (!areKindsCompatible(fromKind, toKind, policy, registry)) {
-    throw new UnsupportedSemanticConversionError(fromKind ?? "unknown", toKind ?? "unknown");
+    throw new UnsupportedSemanticConversionError(
+      fromKind ?? "unknown",
+      toKind ?? "unknown",
+    );
   }
   for (const kindId of [fromKind, toKind]) {
     if (kindId === undefined) continue;
     const def = registry.has(kindId) ? registry.require(kindId) : undefined;
     if (def?.requiresContext === true && opts.context === undefined) {
-      throw new MissingSemanticContextError(kindId, "caller-provided reference/standard");
+      throw new MissingSemanticContextError(
+        kindId,
+        "caller-provided reference/standard",
+      );
     }
   }
 }

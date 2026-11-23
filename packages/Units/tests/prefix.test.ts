@@ -2,7 +2,11 @@
  * tests/prefix.test.ts — Phase 5: Prefix Engine tests
  */
 import { describe, expect, it } from "vitest";
-import { PrefixRegistry, defaultPrefixRegistry, STANDARD_PREFIXES } from "../src/prefix.js";
+import {
+  PrefixRegistry,
+  defaultPrefixRegistry,
+  STANDARD_PREFIXES,
+} from "../src/prefix.js";
 import { PrefixRegistrationError } from "../src/prefix.js";
 import { UnitRegistry, defaultUnitRegistry } from "../src/unit-registry.js";
 import { parseUnit } from "../src/unit-parser.js";
@@ -89,7 +93,9 @@ describe("PrefixRegistry", () => {
   });
 
   it("throws on unknown prefix", () => {
-    expect(() => defaultPrefixRegistry.get("unknown")).toThrow(PrefixRegistrationError);
+    expect(() => defaultPrefixRegistry.get("unknown")).toThrow(
+      PrefixRegistrationError,
+    );
   });
 
   it("lists all prefixes", () => {
@@ -118,49 +124,59 @@ describe("PrefixRegistry registration safety", () => {
   it("rejects duplicate canonical symbol", () => {
     const r = new PrefixRegistry([]);
     r.register({ symbol: "k", name: "kilo", factor: 1e3, aliases: [] });
-    expect(() => r.register({ symbol: "k", name: "kilo2", factor: 1e3, aliases: [] })).toThrow(
-      PrefixRegistrationError,
-    );
+    expect(() =>
+      r.register({ symbol: "k", name: "kilo2", factor: 1e3, aliases: [] }),
+    ).toThrow(PrefixRegistrationError);
   });
 
   it("rejects alias that collides with existing symbol", () => {
     const r = new PrefixRegistry([]);
     r.register({ symbol: "k", name: "kilo", factor: 1e3, aliases: [] });
-    expect(() => r.register({ symbol: "M", name: "mega", factor: 1e6, aliases: ["k"] })).toThrow(
-      PrefixRegistrationError,
-    );
+    expect(() =>
+      r.register({ symbol: "M", name: "mega", factor: 1e6, aliases: ["k"] }),
+    ).toThrow(PrefixRegistrationError);
   });
 
   it("rejects alias that collides with existing alias", () => {
     const r = new PrefixRegistry([]);
     r.register({ symbol: "µ", name: "micro", factor: 1e-6, aliases: ["u"] });
     expect(() =>
-      r.register({ symbol: "u2", name: "micro2", factor: 1e-6, aliases: ["u"] }),
+      r.register({
+        symbol: "u2",
+        name: "micro2",
+        factor: 1e-6,
+        aliases: ["u"],
+      }),
     ).toThrow(PrefixRegistrationError);
   });
 
   it("rejects invalid prefixes (empty, zero factor, NaN, Infinity)", () => {
     const r = new PrefixRegistry([]);
-    expect(() => r.register({ symbol: "", name: "bad", factor: 1e3, aliases: [] })).toThrow(
-      PrefixRegistrationError,
-    );
-    expect(() => r.register({ symbol: "x", name: "", factor: 1e3, aliases: [] })).toThrow(
-      PrefixRegistrationError,
-    );
-    expect(() => r.register({ symbol: "x", name: "bad", factor: 0, aliases: [] })).toThrow(
-      PrefixRegistrationError,
-    );
-    expect(() => r.register({ symbol: "x", name: "bad", factor: NaN, aliases: [] })).toThrow(
-      PrefixRegistrationError,
-    );
-    expect(() => r.register({ symbol: "x", name: "bad", factor: Infinity, aliases: [] })).toThrow(
-      PrefixRegistrationError,
-    );
+    expect(() =>
+      r.register({ symbol: "", name: "bad", factor: 1e3, aliases: [] }),
+    ).toThrow(PrefixRegistrationError);
+    expect(() =>
+      r.register({ symbol: "x", name: "", factor: 1e3, aliases: [] }),
+    ).toThrow(PrefixRegistrationError);
+    expect(() =>
+      r.register({ symbol: "x", name: "bad", factor: 0, aliases: [] }),
+    ).toThrow(PrefixRegistrationError);
+    expect(() =>
+      r.register({ symbol: "x", name: "bad", factor: NaN, aliases: [] }),
+    ).toThrow(PrefixRegistrationError);
+    expect(() =>
+      r.register({ symbol: "x", name: "bad", factor: Infinity, aliases: [] }),
+    ).toThrow(PrefixRegistrationError);
   });
 
   it("prefixes are immutable after registration", () => {
     const r = new PrefixRegistry([]);
-    const p = r.register({ symbol: "k", name: "kilo", factor: 1e3, aliases: [] });
+    const p = r.register({
+      symbol: "k",
+      name: "kilo",
+      factor: 1e3,
+      aliases: [],
+    });
     expect(Object.isFrozen(p)).toBe(true);
     expect(() => {
       (p as unknown as Record<string, unknown>).factor = 999;
@@ -194,22 +210,36 @@ describe("Unit prefixability", () => {
   });
 
   it("kg is NOT prefixable (kilogram special case)", () => {
-    expect(defaultUnitRegistry.resolve("kg").metadata?.prefixable).not.toBe(true);
+    expect(defaultUnitRegistry.resolve("kg").metadata?.prefixable).not.toBe(
+      true,
+    );
   });
 
   it("°C and °F are NOT prefixable", () => {
-    expect(defaultUnitRegistry.resolve("°C").metadata?.prefixable).not.toBe(true);
-    expect(defaultUnitRegistry.resolve("°F").metadata?.prefixable).not.toBe(true);
-    expect(defaultUnitRegistry.resolve("K").metadata?.prefixable).not.toBe(true);
+    expect(defaultUnitRegistry.resolve("°C").metadata?.prefixable).not.toBe(
+      true,
+    );
+    expect(defaultUnitRegistry.resolve("°F").metadata?.prefixable).not.toBe(
+      true,
+    );
+    expect(defaultUnitRegistry.resolve("K").metadata?.prefixable).not.toBe(
+      true,
+    );
   });
 
   it("day is NOT prefixable", () => {
-    expect(defaultUnitRegistry.resolve("day").metadata?.prefixable).not.toBe(true);
+    expect(defaultUnitRegistry.resolve("day").metadata?.prefixable).not.toBe(
+      true,
+    );
   });
 
   it("in and ft are NOT prefixable", () => {
-    expect(defaultUnitRegistry.resolve("in").metadata?.prefixable).not.toBe(true);
-    expect(defaultUnitRegistry.resolve("ft").metadata?.prefixable).not.toBe(true);
+    expect(defaultUnitRegistry.resolve("in").metadata?.prefixable).not.toBe(
+      true,
+    );
+    expect(defaultUnitRegistry.resolve("ft").metadata?.prefixable).not.toBe(
+      true,
+    );
   });
 });
 
@@ -527,7 +557,9 @@ describe("Generated vs registered units", () => {
         metadata: { prefixable: true },
       }),
     );
-    expect(parseUnit("nm", reg1).toBaseFactor).toBe(parseUnit("nm", reg2).toBaseFactor);
+    expect(parseUnit("nm", reg1).toBaseFactor).toBe(
+      parseUnit("nm", reg2).toBaseFactor,
+    );
   });
 });
 
@@ -560,7 +592,12 @@ describe("Prefix security", () => {
   it("prefix registry doesn't use eval", () => {
     // Attempt to register a prefix with malicious name shouldn't execute
     const reg = new PrefixRegistry([]);
-    reg.register({ symbol: "bad", name: "bad'; eval('evil')", factor: 1e3, aliases: [] });
+    reg.register({
+      symbol: "bad",
+      name: "bad'; eval('evil')",
+      factor: 1e3,
+      aliases: [],
+    });
     expect(reg.get("bad").name).toBe("bad'; eval('evil')");
   });
 

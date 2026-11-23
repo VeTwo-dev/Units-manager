@@ -41,10 +41,17 @@ import { parenthesizeComposite, parseUnit } from "./unit-parser.js";
 import { DIMENSIONLESS_UNIT } from "./unit.js";
 import { Quantity } from "./quantity.js";
 import { defaultUnitRegistry, type UnitRegistry } from "./unit-registry.js";
-import { defaultFunctionRegistry, type FunctionRegistry } from "./function-registry.js";
+import {
+  defaultFunctionRegistry,
+  type FunctionRegistry,
+} from "./function-registry.js";
 import type { Unit } from "./unit.js";
 import { isDimension } from "./guards.js";
-import { ExpressionError, ExpressionLimitError, UnknownVariableError } from "./errors/index.js";
+import {
+  ExpressionError,
+  ExpressionLimitError,
+  UnknownVariableError,
+} from "./errors/index.js";
 
 // ---------------------------------------------------------------------------
 // AST node types (all immutable, frozen at construction)
@@ -92,7 +99,12 @@ export interface CallNode {
 }
 
 export type Expression =
-  LiteralNode | VariableNode | BinaryNode | PowerNode | ConvertNode | CallNode;
+  | LiteralNode
+  | VariableNode
+  | BinaryNode
+  | PowerNode
+  | ConvertNode
+  | CallNode;
 
 // ---------------------------------------------------------------------------
 // Limits & options
@@ -129,12 +141,17 @@ function resolveLimits(limits?: ExpressionLimits): {
 } {
   const maxDepth = limits?.maxDepth ?? DEFAULT_MAX_DEPTH;
   const maxNodes = limits?.maxNodes ?? DEFAULT_MAX_NODES;
-  const maxSerializedChars = limits?.maxSerializedChars ?? DEFAULT_MAX_SERIALIZED_CHARS;
+  const maxSerializedChars =
+    limits?.maxSerializedChars ?? DEFAULT_MAX_SERIALIZED_CHARS;
   if (!Number.isInteger(maxDepth) || maxDepth < 1) {
-    throw new ExpressionLimitError(`maxDepth must be a positive integer, got ${String(maxDepth)}`);
+    throw new ExpressionLimitError(
+      `maxDepth must be a positive integer, got ${String(maxDepth)}`,
+    );
   }
   if (!Number.isInteger(maxNodes) || maxNodes < 1) {
-    throw new ExpressionLimitError(`maxNodes must be a positive integer, got ${String(maxNodes)}`);
+    throw new ExpressionLimitError(
+      `maxNodes must be a positive integer, got ${String(maxNodes)}`,
+    );
   }
   return { maxDepth, maxNodes, maxSerializedChars };
 }
@@ -158,10 +175,14 @@ function freezeNode<T extends object>(node: T): T {
 /** A literal Quantity value with a unit expression string (e.g. 10, "kg/day"). */
 export function lit(value: number, unit: string): Expression {
   if (typeof value !== "number") {
-    throw new ExpressionError(`Literal value must be a number, got ${typeof value}.`);
+    throw new ExpressionError(
+      `Literal value must be a number, got ${typeof value}.`,
+    );
   }
   if (typeof unit !== "string" || unit.trim().length === 0) {
-    throw new ExpressionError("Literal unit must be a non-empty unit expression string.");
+    throw new ExpressionError(
+      "Literal unit must be a non-empty unit expression string.",
+    );
   }
   return freezeNode({ kind: "literal", value, unit } as LiteralNode);
 }
@@ -172,7 +193,11 @@ export function variable(name: string): Expression {
   return freezeNode({ kind: "variable", name } as VariableNode);
 }
 
-function binary(kind: BinaryNode["kind"], left: Expression, right: Expression): Expression {
+function binary(
+  kind: BinaryNode["kind"],
+  left: Expression,
+  right: Expression,
+): Expression {
   assertIsExpression(left, "left operand");
   assertIsExpression(right, "right operand");
   return freezeNode({ kind, left, right } as BinaryNode);
@@ -202,7 +227,9 @@ export function divide(left: Expression, right: Expression): Expression {
 export function power(base: Expression, exponent: number): Expression {
   assertIsExpression(base, "power base");
   if (!Number.isInteger(exponent)) {
-    throw new ExpressionError(`Power exponent must be an integer, got ${String(exponent)}.`);
+    throw new ExpressionError(
+      `Power exponent must be an integer, got ${String(exponent)}.`,
+    );
   }
   return freezeNode({ kind: "power", base, exponent } as PowerNode);
 }
@@ -211,7 +238,9 @@ export function power(base: Expression, exponent: number): Expression {
 export function convertTo(expr: Expression, unit: string): Expression {
   assertIsExpression(expr, "convert operand");
   if (typeof unit !== "string" || unit.trim().length === 0) {
-    throw new ExpressionError("Convert target must be a non-empty unit expression string.");
+    throw new ExpressionError(
+      "Convert target must be a non-empty unit expression string.",
+    );
   }
   return freezeNode({ kind: "convert", expr, unit } as ConvertNode);
 }
@@ -223,16 +252,25 @@ const FUNCTION_NAME_RE = /^[a-z][a-z0-9_]*$/;
  * validated syntactically here; existence/arity are checked at
  * evaluation/inference time against the active FunctionRegistry.
  */
-export function call(functionName: string, args: readonly Expression[]): Expression {
-  if (typeof functionName !== "string" || !FUNCTION_NAME_RE.test(functionName)) {
+export function call(
+  functionName: string,
+  args: readonly Expression[],
+): Expression {
+  if (
+    typeof functionName !== "string" ||
+    !FUNCTION_NAME_RE.test(functionName)
+  ) {
     throw new ExpressionError(
       `Invalid function name "${String(functionName)}" (expected /^[a-z][a-z0-9_]*$/).`,
     );
   }
   if (!Array.isArray(args)) {
-    throw new ExpressionError("Call arguments must be an array of expressions.");
+    throw new ExpressionError(
+      "Call arguments must be an array of expressions.",
+    );
   }
-  for (const arg of args) assertIsExpression(arg, `argument of "${functionName}"`);
+  for (const arg of args)
+    assertIsExpression(arg, `argument of "${functionName}"`);
   return freezeNode({
     kind: "call",
     function: functionName,
@@ -285,16 +323,23 @@ function hasPollutionKey(obj: Record<string, unknown>): boolean {
   );
 }
 
-function assertIsExpression(value: unknown, what = "expression"): asserts value is Expression {
+function assertIsExpression(
+  value: unknown,
+  what = "expression",
+): asserts value is Expression {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new ExpressionError(`Invalid ${what}: expected an expression node object.`);
+    throw new ExpressionError(
+      `Invalid ${what}: expected an expression node object.`,
+    );
   }
   const node = value as Record<string, unknown>;
   if (hasPollutionKey(node)) {
     throw new ExpressionError(`Invalid ${what}: forbidden prototype keys.`);
   }
   if (typeof node.kind !== "string" || !KNOWN_KINDS.has(node.kind)) {
-    throw new ExpressionError(`Invalid ${what}: unknown node kind "${String(node.kind)}".`);
+    throw new ExpressionError(
+      `Invalid ${what}: unknown node kind "${String(node.kind)}".`,
+    );
   }
 }
 
@@ -302,12 +347,17 @@ function assertIsExpression(value: unknown, what = "expression"): asserts value 
  * Validate structure, depth and node count iteratively.
  * Returns node count. Throws ExpressionError / ExpressionLimitError.
  */
-function validateStructure(root: Expression, limits?: ExpressionLimits): number {
+function validateStructure(
+  root: Expression,
+  limits?: ExpressionLimits,
+): number {
   const { maxDepth, maxNodes } = resolveLimits(limits);
   assertIsExpression(root, "root expression");
   let count = 0;
   // Stack of [node, depth]
-  const stack: Array<{ node: Expression; depth: number }> = [{ node: root, depth: 1 }];
+  const stack: Array<{ node: Expression; depth: number }> = [
+    { node: root, depth: 1 },
+  ];
   while (stack.length > 0) {
     const { node, depth } = stack.pop()!;
     if (depth > maxDepth) {
@@ -317,7 +367,9 @@ function validateStructure(root: Expression, limits?: ExpressionLimits): number 
     }
     count++;
     if (count > maxNodes) {
-      throw new ExpressionLimitError(`Expression exceeds maxNodes ${maxNodes}.`);
+      throw new ExpressionLimitError(
+        `Expression exceeds maxNodes ${maxNodes}.`,
+      );
     }
     assertIsExpression(node, "expression node");
     switch (node.kind) {
@@ -326,7 +378,9 @@ function validateStructure(root: Expression, limits?: ExpressionLimits): number 
           throw new ExpressionError("Literal node value must be a number.");
         }
         if (typeof node.unit !== "string" || node.unit.trim().length === 0) {
-          throw new ExpressionError("Literal node unit must be a non-empty string.");
+          throw new ExpressionError(
+            "Literal node unit must be a non-empty string.",
+          );
         }
         break;
       case "variable":
@@ -349,18 +403,26 @@ function validateStructure(root: Expression, limits?: ExpressionLimits): number 
         break;
       case "convert":
         if (typeof node.unit !== "string" || node.unit.trim().length === 0) {
-          throw new ExpressionError("Convert node unit must be a non-empty string.");
+          throw new ExpressionError(
+            "Convert node unit must be a non-empty string.",
+          );
         }
         stack.push({ node: node.expr, depth: depth + 1 });
         break;
       case "call":
-        if (typeof node.function !== "string" || !FUNCTION_NAME_RE.test(node.function)) {
-          throw new ExpressionError("Call node function must be a valid function name.");
+        if (
+          typeof node.function !== "string" ||
+          !FUNCTION_NAME_RE.test(node.function)
+        ) {
+          throw new ExpressionError(
+            "Call node function must be a valid function name.",
+          );
         }
         if (!Array.isArray(node.args)) {
           throw new ExpressionError("Call node args must be an array.");
         }
-        for (const arg of node.args) stack.push({ node: arg, depth: depth + 1 });
+        for (const arg of node.args)
+          stack.push({ node: arg, depth: depth + 1 });
         break;
       default:
         throw new ExpressionError(
@@ -376,12 +438,17 @@ function validateStructure(root: Expression, limits?: ExpressionLimits): number 
  * Bounded by a visit cap so cyclic hand-built objects terminate with
  * ExpressionLimitError instead of hanging.
  */
-export function expressionDepth(root: Expression, limits?: ExpressionLimits): number {
+export function expressionDepth(
+  root: Expression,
+  limits?: ExpressionLimits,
+): number {
   const { maxNodes } = resolveLimits(limits);
   assertIsExpression(root, "root expression");
   let max = 0;
   let visits = 0;
-  const stack: Array<{ node: Expression; depth: number }> = [{ node: root, depth: 1 }];
+  const stack: Array<{ node: Expression; depth: number }> = [
+    { node: root, depth: 1 },
+  ];
   while (stack.length > 0) {
     const { node, depth } = stack.pop()!;
     // Re-validate each node: callers may pass hand-built (hostile) objects.
@@ -408,7 +475,8 @@ export function expressionDepth(root: Expression, limits?: ExpressionLimits): nu
         break;
       case "call":
         if (Array.isArray(node.args)) {
-          for (const arg of node.args) stack.push({ node: arg, depth: depth + 1 });
+          for (const arg of node.args)
+            stack.push({ node: arg, depth: depth + 1 });
         }
         break;
       default:
@@ -428,7 +496,9 @@ export interface ExpressionContext {
 
 function lookupVariable(context: ExpressionContext, name: string): Quantity {
   if (context === null || typeof context !== "object") {
-    throw new ExpressionError("Evaluation context must be an object mapping names to Quantities.");
+    throw new ExpressionError(
+      "Evaluation context must be an object mapping names to Quantities.",
+    );
   }
   if (!Object.prototype.hasOwnProperty.call(context, name)) {
     throw new UnknownVariableError(name);
@@ -487,9 +557,14 @@ function evalNode(
       return left.divide(right);
     }
     case "power":
-      return evalNode(expr.base, context, registry, functions).pow(expr.exponent);
+      return evalNode(expr.base, context, registry, functions).pow(
+        expr.exponent,
+      );
     case "convert":
-      return evalNode(expr.expr, context, registry, functions).to(expr.unit, registry);
+      return evalNode(expr.expr, context, registry, functions).to(
+        expr.unit,
+        registry,
+      );
     case "call":
       return functions.call(
         expr.function,
@@ -521,7 +596,11 @@ function resolveVarDimension(
     if (declared.trim() === "1") return {};
     return parseUnit(declared, registry).dimension;
   }
-  if (declared !== null && typeof declared === "object" && !Array.isArray(declared)) {
+  if (
+    declared !== null &&
+    typeof declared === "object" &&
+    !Array.isArray(declared)
+  ) {
     if (!isDimension(declared)) {
       throw new ExpressionError(
         `Declared dimension for variable "${name}" is not a valid DimensionVector.`,
@@ -584,7 +663,10 @@ function inferNode(
       );
     case "power": {
       // Quantity.pow rejects non-integers; inference mirrors powDim (integer only).
-      return powDim(inferNode(expr.base, varDimensions, registry, functions), expr.exponent);
+      return powDim(
+        inferNode(expr.base, varDimensions, registry, functions),
+        expr.exponent,
+      );
     }
     case "convert": {
       const inner = inferNode(expr.expr, varDimensions, registry, functions);
@@ -599,7 +681,9 @@ function inferNode(
     case "call":
       return functions.infer(
         expr.function,
-        expr.args.map((arg) => inferNode(arg, varDimensions, registry, functions)),
+        expr.args.map((arg) =>
+          inferNode(arg, varDimensions, registry, functions),
+        ),
       );
     default:
       throw new ExpressionError(
@@ -623,7 +707,11 @@ function resolveLiteralUnit(unit: string, registry: UnitRegistry): Unit {
   return parseUnit(unit, registry);
 }
 
-function isDimensionlessLiteral(expr: Expression, value: number, registry: UnitRegistry): boolean {
+function isDimensionlessLiteral(
+  expr: Expression,
+  value: number,
+  registry: UnitRegistry,
+): boolean {
   if (expr.kind !== "literal" || expr.value !== value) return false;
   if (expr.unit.trim() === "1") return true;
   try {
@@ -640,7 +728,10 @@ function isDimensionlessLiteral(expr: Expression, value: number, registry: UnitR
  * (e.g. 1000 m + 1 km → 2000 m, since add preserves the left unit).
  * Never performs unsafe x/x→1. Returns a new frozen expression.
  */
-export function simplifyExpression(expr: Expression, opts: ExpressionOptions = {}): Expression {
+export function simplifyExpression(
+  expr: Expression,
+  opts: ExpressionOptions = {},
+): Expression {
   validateStructure(expr, opts.limits);
   const registry = opts.registry ?? defaultUnitRegistry;
   const functions = opts.functions ?? defaultFunctionRegistry;
@@ -766,7 +857,9 @@ function simplifyNode(
       return convertTo(inner, expr.unit);
     }
     case "call": {
-      const args = expr.args.map((arg) => simplifyNode(arg, registry, functions, limits));
+      const args = expr.args.map((arg) =>
+        simplifyNode(arg, registry, functions, limits),
+      );
       const folded = foldLiterals(
         { kind: "call", function: expr.function, args } as CallNode,
         registry,
@@ -795,7 +888,11 @@ type PlanOp =
   | { readonly op: "div" }
   | { readonly op: "pow"; readonly exponent: number }
   | { readonly op: "convert"; readonly unit: Unit }
-  | { readonly op: "call"; readonly function: string; readonly argCount: number };
+  | {
+      readonly op: "call";
+      readonly function: string;
+      readonly argCount: number;
+    };
 
 export interface CompiledExpression {
   /** The simplified, frozen expression this plan was built from. */
@@ -834,7 +931,10 @@ function compiledCacheFor(
   return m;
 }
 
-function buildPlan(expr: Expression, registry: UnitRegistry): readonly PlanOp[] {
+function buildPlan(
+  expr: Expression,
+  registry: UnitRegistry,
+): readonly PlanOp[] {
   // Iterative post-order traversal to avoid recursion on hostile depth
   // (depth pre-validated, but iterative keeps stack use constant).
   type Frame = { node: Expression; visited: boolean };
@@ -845,7 +945,11 @@ function buildPlan(expr: Expression, registry: UnitRegistry): readonly PlanOp[] 
     const { node } = frame;
     switch (node.kind) {
       case "literal":
-        out.push({ op: "lit", value: node.value, unit: resolveLiteralUnit(node.unit, registry) });
+        out.push({
+          op: "lit",
+          value: node.value,
+          unit: resolveLiteralUnit(node.unit, registry),
+        });
         break;
       case "variable":
         out.push({ op: "var", name: node.name });
@@ -915,7 +1019,11 @@ function buildPlan(expr: Expression, registry: UnitRegistry): readonly PlanOp[] 
             stack.push({ node: node.args[i]!, visited: false });
           }
         } else {
-          out.push({ op: "call", function: node.function, argCount: node.args.length });
+          out.push({
+            op: "call",
+            function: node.function,
+            argCount: node.args.length,
+          });
         }
         break;
       default:
@@ -937,7 +1045,9 @@ function runPlan(
   let steps = 0;
   for (const op of plan) {
     if (maxSteps !== undefined && ++steps > maxSteps) {
-      throw new ExpressionLimitError(`Evaluation exceeds maxEvaluationSteps ${maxSteps}.`);
+      throw new ExpressionLimitError(
+        `Evaluation exceeds maxEvaluationSteps ${maxSteps}.`,
+      );
     }
     switch (op.op) {
       case "lit":
@@ -949,40 +1059,46 @@ function runPlan(
       case "add": {
         const right = stack.pop();
         const left = stack.pop();
-        if (!left || !right) throw new ExpressionError("Malformed execution plan (add).");
+        if (!left || !right)
+          throw new ExpressionError("Malformed execution plan (add).");
         stack.push(left.add(right));
         break;
       }
       case "sub": {
         const right = stack.pop();
         const left = stack.pop();
-        if (!left || !right) throw new ExpressionError("Malformed execution plan (subtract).");
+        if (!left || !right)
+          throw new ExpressionError("Malformed execution plan (subtract).");
         stack.push(left.subtract(right));
         break;
       }
       case "mul": {
         const right = stack.pop();
         const left = stack.pop();
-        if (!left || !right) throw new ExpressionError("Malformed execution plan (multiply).");
+        if (!left || !right)
+          throw new ExpressionError("Malformed execution plan (multiply).");
         stack.push(left.multiply(right));
         break;
       }
       case "div": {
         const right = stack.pop();
         const left = stack.pop();
-        if (!left || !right) throw new ExpressionError("Malformed execution plan (divide).");
+        if (!left || !right)
+          throw new ExpressionError("Malformed execution plan (divide).");
         stack.push(left.divide(right));
         break;
       }
       case "pow": {
         const base = stack.pop();
-        if (!base) throw new ExpressionError("Malformed execution plan (power).");
+        if (!base)
+          throw new ExpressionError("Malformed execution plan (power).");
         stack.push(base.pow(op.exponent));
         break;
       }
       case "convert": {
         const value = stack.pop();
-        if (!value) throw new ExpressionError("Malformed execution plan (convert).");
+        if (!value)
+          throw new ExpressionError("Malformed execution plan (convert).");
         stack.push(value.to(op.unit));
         break;
       }
@@ -990,7 +1106,8 @@ function runPlan(
         const args: Quantity[] = [];
         for (let i = 0; i < op.argCount; i++) {
           const value = stack.pop();
-          if (!value) throw new ExpressionError("Malformed execution plan (call).");
+          if (!value)
+            throw new ExpressionError("Malformed execution plan (call).");
           args.unshift(value);
         }
         stack.push(functions.call(op.function, args));
@@ -1018,7 +1135,11 @@ export function compileExpression(
   validateStructure(expr, opts.limits);
   const registry = opts.registry ?? defaultUnitRegistry;
   const functions = opts.functions ?? defaultFunctionRegistry;
-  const simplified = simplifyExpression(expr, { registry, functions, limits: opts.limits });
+  const simplified = simplifyExpression(expr, {
+    registry,
+    functions,
+    limits: opts.limits,
+  });
   const key = canonicalExpressionKey(simplified);
   // Scope the cache entry to both registry generations: later
   // register/unregister calls may change unit or function resolution, so
@@ -1035,7 +1156,8 @@ export function compileExpression(
     expression: simplified,
     key,
     size: plan.length,
-    evaluate: (context: ExpressionContext = {}) => runPlan(plan, context, functions, maxSteps),
+    evaluate: (context: ExpressionContext = {}) =>
+      runPlan(plan, context, functions, maxSteps),
     inferDimension: (varDimensions: VariableDimensions = {}) =>
       inferExpressionDimension(simplified, varDimensions, {
         registry,
@@ -1056,7 +1178,10 @@ export function compileExpression(
  * Validates first so malformed/hostile input yields a typed error rather
  * than a stack overflow.
  */
-export function canonicalExpressionKey(expr: Expression, limits?: ExpressionLimits): string {
+export function canonicalExpressionKey(
+  expr: Expression,
+  limits?: ExpressionLimits,
+): string {
   validateStructure(expr, limits);
   return JSON.stringify(serializeExpressionRoot(expr));
 }
@@ -1087,9 +1212,17 @@ function serializeExpressionRoot(expr: Expression): unknown {
         right: serializeExpressionRoot(expr.right),
       };
     case "power":
-      return { kind: "power", base: serializeExpressionRoot(expr.base), exponent: expr.exponent };
+      return {
+        kind: "power",
+        base: serializeExpressionRoot(expr.base),
+        exponent: expr.exponent,
+      };
     case "convert":
-      return { kind: "convert", expr: serializeExpressionRoot(expr.expr), unit: expr.unit };
+      return {
+        kind: "convert",
+        expr: serializeExpressionRoot(expr.expr),
+        unit: expr.unit,
+      };
     case "call":
       return {
         kind: "call",
@@ -1120,33 +1253,50 @@ function rebuildNode(
   counter: { count: number },
 ): Expression {
   if (depth > limits.maxDepth) {
-    throw new ExpressionLimitError(`Serialized expression exceeds maxDepth ${limits.maxDepth}.`);
+    throw new ExpressionLimitError(
+      `Serialized expression exceeds maxDepth ${limits.maxDepth}.`,
+    );
   }
   if (data === null || typeof data !== "object" || Array.isArray(data)) {
-    throw new ExpressionError("Malformed serialized expression: node must be an object.");
+    throw new ExpressionError(
+      "Malformed serialized expression: node must be an object.",
+    );
   }
   const node = data as Record<string, unknown>;
   if (hasPollutionKey(node)) {
-    throw new ExpressionError("Malformed serialized expression: forbidden prototype keys.");
+    throw new ExpressionError(
+      "Malformed serialized expression: forbidden prototype keys.",
+    );
   }
   counter.count++;
   if (counter.count > limits.maxNodes) {
-    throw new ExpressionLimitError(`Serialized expression exceeds maxNodes ${limits.maxNodes}.`);
+    throw new ExpressionLimitError(
+      `Serialized expression exceeds maxNodes ${limits.maxNodes}.`,
+    );
   }
   const kind = node.kind;
   switch (kind) {
     case "literal": {
       if (typeof node.value !== "number") {
-        throw new ExpressionError("Malformed serialized literal: value must be a number.");
+        throw new ExpressionError(
+          "Malformed serialized literal: value must be a number.",
+        );
       }
-      if (typeof node.unit !== "string" || (node.unit as string).trim().length === 0) {
-        throw new ExpressionError("Malformed serialized literal: unit must be a non-empty string.");
+      if (
+        typeof node.unit !== "string" ||
+        (node.unit as string).trim().length === 0
+      ) {
+        throw new ExpressionError(
+          "Malformed serialized literal: unit must be a non-empty string.",
+        );
       }
       return lit(node.value, node.unit);
     }
     case "variable": {
       if (typeof node.name !== "string") {
-        throw new ExpressionError("Malformed serialized variable: name must be a string.");
+        throw new ExpressionError(
+          "Malformed serialized variable: name must be a string.",
+        );
       }
       return variable(node.name);
     }
@@ -1165,23 +1315,46 @@ function rebuildNode(
             : divide(left, right);
     }
     case "power": {
-      if (typeof node.exponent !== "number" || !Number.isInteger(node.exponent)) {
-        throw new ExpressionError("Malformed serialized power: exponent must be an integer.");
+      if (
+        typeof node.exponent !== "number" ||
+        !Number.isInteger(node.exponent)
+      ) {
+        throw new ExpressionError(
+          "Malformed serialized power: exponent must be an integer.",
+        );
       }
-      return power(rebuildNode(node.base, depth + 1, limits, counter), node.exponent);
+      return power(
+        rebuildNode(node.base, depth + 1, limits, counter),
+        node.exponent,
+      );
     }
     case "convert": {
-      if (typeof node.unit !== "string" || (node.unit as string).trim().length === 0) {
-        throw new ExpressionError("Malformed serialized convert: unit must be a non-empty string.");
+      if (
+        typeof node.unit !== "string" ||
+        (node.unit as string).trim().length === 0
+      ) {
+        throw new ExpressionError(
+          "Malformed serialized convert: unit must be a non-empty string.",
+        );
       }
-      return convertTo(rebuildNode(node.expr, depth + 1, limits, counter), node.unit);
+      return convertTo(
+        rebuildNode(node.expr, depth + 1, limits, counter),
+        node.unit,
+      );
     }
     case "call": {
-      if (typeof node.function !== "string" || !FUNCTION_NAME_RE.test(node.function)) {
-        throw new ExpressionError("Malformed serialized call: function must be a valid name.");
+      if (
+        typeof node.function !== "string" ||
+        !FUNCTION_NAME_RE.test(node.function)
+      ) {
+        throw new ExpressionError(
+          "Malformed serialized call: function must be a valid name.",
+        );
       }
       if (!Array.isArray(node.args)) {
-        throw new ExpressionError("Malformed serialized call: args must be an array.");
+        throw new ExpressionError(
+          "Malformed serialized call: args must be an array.",
+        );
       }
       const args = (node.args as unknown[]).map((arg) =>
         rebuildNode(arg, depth + 1, limits, counter),
@@ -1189,7 +1362,9 @@ function rebuildNode(
       return call(node.function, args);
     }
     default:
-      throw new ExpressionError(`Malformed serialized expression: unknown kind "${String(kind)}".`);
+      throw new ExpressionError(
+        `Malformed serialized expression: unknown kind "${String(kind)}".`,
+      );
   }
 }
 
@@ -1197,7 +1372,10 @@ function rebuildNode(
  * Deserialize an expression from its versioned declarative form.
  * Validates shape, version, depth and node counts. Never executes code.
  */
-export function deserializeExpression(data: unknown, limits?: ExpressionLimits): Expression {
+export function deserializeExpression(
+  data: unknown,
+  limits?: ExpressionLimits,
+): Expression {
   const resolved = resolveLimits(limits);
   if (typeof data === "string") {
     if (data.length > resolved.maxSerializedChars) {
@@ -1209,24 +1387,34 @@ export function deserializeExpression(data: unknown, limits?: ExpressionLimits):
     try {
       parsed = JSON.parse(data);
     } catch {
-      throw new ExpressionError("Malformed serialized expression: invalid JSON.");
+      throw new ExpressionError(
+        "Malformed serialized expression: invalid JSON.",
+      );
     }
     return deserializeExpression(parsed, limits);
   }
   if (data === null || typeof data !== "object" || Array.isArray(data)) {
-    throw new ExpressionError("Malformed serialized expression: expected an object.");
+    throw new ExpressionError(
+      "Malformed serialized expression: expected an object.",
+    );
   }
   const obj = data as Record<string, unknown>;
   if (hasPollutionKey(obj)) {
-    throw new ExpressionError("Malformed serialized expression: forbidden prototype keys.");
+    throw new ExpressionError(
+      "Malformed serialized expression: forbidden prototype keys.",
+    );
   }
   if (obj.version !== 1) {
     if (obj.version === undefined)
       throw new ExpressionError("Serialized expression missing version.");
-    throw new ExpressionError(`Unsupported serialized expression version ${String(obj.version)}.`);
+    throw new ExpressionError(
+      `Unsupported serialized expression version ${String(obj.version)}.`,
+    );
   }
   if (obj.type !== "expression") {
-    throw new ExpressionError(`Serialized expression has wrong type "${String(obj.type)}".`);
+    throw new ExpressionError(
+      `Serialized expression has wrong type "${String(obj.type)}".`,
+    );
   }
   return rebuildNode(obj.root, 1, resolved, { count: 0 });
 }
@@ -1269,13 +1457,17 @@ export class FormulaRegistry {
       throw new ExpressionError(`Invalid formula name "${String(name)}".`);
     }
     if (!Array.isArray(variables)) {
-      throw new ExpressionError(`Formula "${name}" variables must be an array.`);
+      throw new ExpressionError(
+        `Formula "${name}" variables must be an array.`,
+      );
     }
     const seen = new Set<string>();
     for (const v of variables) {
       assertValidVariableName(v as string);
       if (seen.has(v as string)) {
-        throw new ExpressionError(`Formula "${name}" has duplicate variable "${v}".`);
+        throw new ExpressionError(
+          `Formula "${name}" has duplicate variable "${v}".`,
+        );
       }
       seen.add(v as string);
     }
@@ -1287,7 +1479,9 @@ export class FormulaRegistry {
     const free = collectVariables(expression);
     for (const v of free) {
       if (!seen.has(v)) {
-        throw new ExpressionError(`Formula "${name}" uses undeclared variable "${v}".`);
+        throw new ExpressionError(
+          `Formula "${name}" uses undeclared variable "${v}".`,
+        );
       }
     }
     const registry = opts.registry ?? defaultUnitRegistry;
@@ -1323,7 +1517,11 @@ export class FormulaRegistry {
   }
 
   /** Evaluate a named formula with a context providing all declared variables. */
-  run(name: string, context: ExpressionContext, opts: ExpressionOptions = {}): Quantity {
+  run(
+    name: string,
+    context: ExpressionContext,
+    opts: ExpressionOptions = {},
+  ): Quantity {
     const def = this.get(name);
     for (const v of def.variables) {
       if (!Object.prototype.hasOwnProperty.call(context, v)) {

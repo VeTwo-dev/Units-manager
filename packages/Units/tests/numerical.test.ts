@@ -25,7 +25,9 @@ describe("11.1-11.3 number validation and finite values", () => {
   });
 
   it("Quantity.of rejects string value", () => {
-    expect(() => Quantity.of("10" as unknown as number, "kg")).toThrow(NumericalError);
+    expect(() => Quantity.of("10" as unknown as number, "kg")).toThrow(
+      NumericalError,
+    );
   });
 
   it("Quantity.of with NaN/Infinity allowed by default (permissive policy)", () => {
@@ -34,7 +36,11 @@ describe("11.1-11.3 number validation and finite values", () => {
   });
 
   it("finite-only policy rejects NaN/Infinity when enforced", () => {
-    setNumericalPolicy({ requireFinite: true, allowNaN: false, allowInfinity: false });
+    setNumericalPolicy({
+      requireFinite: true,
+      allowNaN: false,
+      allowInfinity: false,
+    });
     expect(() => Quantity.of(NaN, "kg")).toThrow(NumericalError);
     expect(() => Quantity.of(Infinity, "kg")).toThrow(NumericalError);
     resetNumericalPolicy();
@@ -45,7 +51,9 @@ describe("11.1-11.3 number validation and finite values", () => {
     setNumericalPolicy({ defaultAbsoluteTolerance: 1e-6 });
     expect(getNumericalPolicy().defaultAbsoluteTolerance).toBe(1e-6);
     resetNumericalPolicy();
-    expect(getNumericalPolicy().defaultAbsoluteTolerance).toBe(orig.defaultAbsoluteTolerance);
+    expect(getNumericalPolicy().defaultAbsoluteTolerance).toBe(
+      orig.defaultAbsoluteTolerance,
+    );
   });
 });
 
@@ -54,10 +62,14 @@ describe("11.4 division by zero", () => {
     expect(() => Quantity.of(10, "kg").divide(0)).toThrow(DivisionByZeroError);
   });
   it("Quantity.divide(zeroQuantity) throws", () => {
-    expect(() => Quantity.of(10, "kg").divide(Quantity.of(0, "kg"))).toThrow(DivisionByZeroError);
+    expect(() => Quantity.of(10, "kg").divide(Quantity.of(0, "kg"))).toThrow(
+      DivisionByZeroError,
+    );
   });
   it("0/0 throws", () => {
-    expect(() => Quantity.of(0, "kg").divide(Quantity.of(0, "kg"))).toThrow(DivisionByZeroError);
+    expect(() => Quantity.of(0, "kg").divide(Quantity.of(0, "kg"))).toThrow(
+      DivisionByZeroError,
+    );
   });
 });
 
@@ -71,7 +83,9 @@ describe("11.5-11.6 approximate vs exact equality", () => {
   });
 
   it("approx with absolute and relative", () => {
-    expect(approxEqual(1.0, 1.0000000005, { absoluteTolerance: 1e-9 })).toBe(true);
+    expect(approxEqual(1.0, 1.0000000005, { absoluteTolerance: 1e-9 })).toBe(
+      true,
+    );
     expect(approxEqual(1000, 1000.001, { relativeTolerance: 1e-6 })).toBe(true);
     expect(approxEqual(1, 2, { absoluteTolerance: 0.5 })).toBe(false);
   });
@@ -144,7 +158,9 @@ describe("11.12-11.13 rounding", () => {
     expect(r.value).toBe(2);
   });
   it("non-integer decimals throws", () => {
-    expect(() => Quantity.of(1, "kg").round(1.5 as unknown as number)).toThrow(NumericalError);
+    expect(() => Quantity.of(1, "kg").round(1.5 as unknown as number)).toThrow(
+      NumericalError,
+    );
   });
 });
 
@@ -219,11 +235,16 @@ describe("11.19 mathematical invariants", () => {
   it("a*b ≈ b*a", () => {
     const a = Quantity.of(2, "kg");
     const b = Quantity.of(3, "m");
-    expect(a.multiply(b).toBase().value).toBeCloseTo(b.multiply(a).toBase().value, 9);
+    expect(a.multiply(b).toBase().value).toBeCloseTo(
+      b.multiply(a).toBase().value,
+      9,
+    );
   });
   it("q/q dimensionless 1", () => {
     expect(Quantity.of(5, "kg").divide(Quantity.of(5, "kg")).value).toBe(1);
-    expect(Quantity.of(5, "kg").divide(Quantity.of(5, "kg")).isDimensionless()).toBe(true);
+    expect(
+      Quantity.of(5, "kg").divide(Quantity.of(5, "kg")).isDimensionless(),
+    ).toBe(true);
   });
   it("pow identity", () => {
     const q = Quantity.of(4, "m");

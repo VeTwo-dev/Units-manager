@@ -48,11 +48,14 @@ const KIND_ID_PATTERN = /^[a-z][a-zA-Z0-9_-]*$/;
 const ALIAS_PATTERN = /^[a-zA-Z][a-zA-Z0-9._\-:]*$/;
 
 function assertDeclarative(value: unknown, owner: string, depth = 0): void {
-  if (depth > 4) throw new UnitEngineError(`${owner} metadata is nested too deeply`);
+  if (depth > 4)
+    throw new UnitEngineError(`${owner} metadata is nested too deeply`);
   if (value === null || value === undefined) return;
   const t = typeof value;
   if (t === "function" || t === "symbol") {
-    throw new UnitEngineError(`${owner} metadata must not contain executable values`);
+    throw new UnitEngineError(
+      `${owner} metadata must not contain executable values`,
+    );
   }
   if (t !== "object") return;
   if (Array.isArray(value)) {
@@ -95,10 +98,16 @@ export class NutrientKindRegistry {
       Object.prototype.hasOwnProperty.call(record, "constructor") ||
       Object.prototype.hasOwnProperty.call(record, "prototype")
     ) {
-      throw new InvalidNutrientKindError(String(kind.id ?? "unknown"), "forbidden keys");
+      throw new InvalidNutrientKindError(
+        String(kind.id ?? "unknown"),
+        "forbidden keys",
+      );
     }
     if (typeof kind.id !== "string" || !KIND_ID_PATTERN.test(kind.id)) {
-      throw new InvalidNutrientKindError(String(kind.id), `id must match ${KIND_ID_PATTERN}`);
+      throw new InvalidNutrientKindError(
+        String(kind.id),
+        `id must match ${KIND_ID_PATTERN}`,
+      );
     }
     const lowerId = kind.id.toLowerCase();
     if (this.kinds.has(lowerId)) {
@@ -111,11 +120,17 @@ export class NutrientKindRegistry {
       kind.symbol !== undefined &&
       (typeof kind.symbol !== "string" || kind.symbol.trim().length === 0)
     ) {
-      throw new InvalidNutrientKindError(kind.id, "symbol must be a non-empty string if provided");
+      throw new InvalidNutrientKindError(
+        kind.id,
+        "symbol must be a non-empty string if provided",
+      );
     }
     if (kind.aliases !== undefined) {
       if (!Array.isArray(kind.aliases)) {
-        throw new InvalidNutrientKindError(kind.id, "aliases must be an array of strings");
+        throw new InvalidNutrientKindError(
+          kind.id,
+          "aliases must be an array of strings",
+        );
       }
       for (const alias of kind.aliases) {
         if (typeof alias !== "string" || !ALIAS_PATTERN.test(alias)) {
@@ -135,7 +150,8 @@ export class NutrientKindRegistry {
     }
     if (
       kind.defaultUnit !== undefined &&
-      (typeof kind.defaultUnit !== "string" || kind.defaultUnit.trim().length === 0)
+      (typeof kind.defaultUnit !== "string" ||
+        kind.defaultUnit.trim().length === 0)
     ) {
       throw new InvalidNutrientKindError(
         kind.id,
@@ -167,11 +183,15 @@ export class NutrientKindRegistry {
 
   require(id: string): NutrientKind {
     if (typeof id !== "string" || id.trim().length === 0) {
-      throw new InvalidNutrientKindError(String(id), "id must be a non-empty string");
+      throw new InvalidNutrientKindError(
+        String(id),
+        "id must be a non-empty string",
+      );
     }
     const lower = id.toLowerCase();
     const canonical = this.aliasToId.get(lower);
-    if (!canonical) throw new InvalidNutrientKindError(id, "unknown nutrient kind");
+    if (!canonical)
+      throw new InvalidNutrientKindError(id, "unknown nutrient kind");
     const kind = this.kinds.get(canonical);
     if (!kind) throw new InvalidNutrientKindError(id, "unknown nutrient kind");
     return kind;
@@ -190,7 +210,8 @@ export class NutrientKindRegistry {
   snapshot(): NutrientKindRegistry {
     const snap = new NutrientKindRegistry([]);
     for (const [id, kind] of this.kinds) snap.kinds.set(id, kind);
-    for (const [alias, canonical] of this.aliasToId) snap.aliasToId.set(alias, canonical);
+    for (const [alias, canonical] of this.aliasToId)
+      snap.aliasToId.set(alias, canonical);
     return snap;
   }
 
@@ -209,7 +230,13 @@ function defaultSeedKinds(): readonly NutrientKind[] {
     {
       id: "cp",
       name: "Crude Protein",
-      aliases: ["crudeProtein", "protein", "nutrient:crude-protein", "nutrient:protein", "CP"],
+      aliases: [
+        "crudeProtein",
+        "protein",
+        "nutrient:crude-protein",
+        "nutrient:protein",
+        "CP",
+      ],
       category: "macro-nutrient",
       family: "protein",
       description: "Crude protein",
@@ -631,7 +658,12 @@ function defaultSeedKinds(): readonly NutrientKind[] {
     {
       id: "vitB9",
       name: "Vitamin B9",
-      aliases: ["folate", "folicAcid", "nutrient:vitamin-b9", "nutrient:folate"],
+      aliases: [
+        "folate",
+        "folicAcid",
+        "nutrient:vitamin-b9",
+        "nutrient:folate",
+      ],
       category: "vitamin",
       family: "vitamin",
       description: "Folate",

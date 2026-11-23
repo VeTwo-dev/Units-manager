@@ -28,7 +28,11 @@ import {
   defaultFunctionRegistry,
   formatQuantity,
 } from "../src/index.js";
-import { ExpressionError, FormulaError, ExpressionLimitError } from "../src/errors/index.js";
+import {
+  ExpressionError,
+  FormulaError,
+  ExpressionLimitError,
+} from "../src/errors/index.js";
 
 const reg = createRegistry({ packs: [SI_PACK, ANGLE_PACK] });
 const radReg = createRegistry({ packs: [SI_PACK, RADIATION_PACK] });
@@ -53,7 +57,10 @@ describe("formula definition and evaluation", () => {
       {
         id: "force",
         expression: mul(v("mass"), v("accel")),
-        inputs: { mass: { dimension: Dim.Mass }, accel: { dimension: "m/s^2" } },
+        inputs: {
+          mass: { dimension: Dim.Mass },
+          accel: { dimension: "m/s^2" },
+        },
         outputName: "force",
         outputUnit: "N",
         expectedDimension: { M: 1, L: 1, T: -2 },
@@ -148,8 +155,12 @@ describe("dimensional validation", () => {
     ["mass + energy", add(v("m"), v("e")), { m: "kg", e: "J" }],
     ["velocity + force", add(v("u"), v("f")), { u: "m/s", f: "N" }],
   ])("rejects %s at define time", (_label, expression, dims) => {
-    const inputs = Object.fromEntries(Object.entries(dims).map(([k, d]) => [k, { dimension: d }]));
-    expect(() => defineFormula({ id: "bad", expression, inputs }, O)).toThrow(FormulaError);
+    const inputs = Object.fromEntries(
+      Object.entries(dims).map(([k, d]) => [k, { dimension: d }]),
+    );
+    expect(() => defineFormula({ id: "bad", expression, inputs }, O)).toThrow(
+      FormulaError,
+    );
   });
 
   it("expectedDimension mismatch fails validation", () => {
@@ -167,17 +178,34 @@ describe("dimensional validation", () => {
   });
 
   it("unbound variables, bad ids, bad declarations fail fast", () => {
-    expect(() => defineFormula({ id: "x", expression: v("ghost"), inputs: {} }, O)).toThrow(
-      FormulaError,
-    );
     expect(() =>
-      defineFormula({ id: "9bad", expression: v("x"), inputs: { x: { dimension: "1" } } }, O),
+      defineFormula({ id: "x", expression: v("ghost"), inputs: {} }, O),
     ).toThrow(FormulaError);
     expect(() =>
-      defineFormula({ id: "x", expression: v("x"), inputs: { x: { dimension: 42 as never } } }, O),
+      defineFormula(
+        { id: "9bad", expression: v("x"), inputs: { x: { dimension: "1" } } },
+        O,
+      ),
     ).toThrow(FormulaError);
     expect(() =>
-      defineFormula({ id: "x", expression: v("x"), inputs: { x: { dimension: "nope_xyz" } } }, O),
+      defineFormula(
+        {
+          id: "x",
+          expression: v("x"),
+          inputs: { x: { dimension: 42 as never } },
+        },
+        O,
+      ),
+    ).toThrow(FormulaError);
+    expect(() =>
+      defineFormula(
+        {
+          id: "x",
+          expression: v("x"),
+          inputs: { x: { dimension: "nope_xyz" } },
+        },
+        O,
+      ),
     ).toThrow(FormulaError);
   });
 
@@ -190,11 +218,19 @@ describe("dimensional validation", () => {
       },
       O,
     );
-    expect(() => evaluateFormula(f, { rate: Quantity.of(1, "kg") }, O)).toThrow(FormulaError); // dimension first
+    expect(() => evaluateFormula(f, { rate: Quantity.of(1, "kg") }, O)).toThrow(
+      FormulaError,
+    ); // dimension first
     // Same dimension (T⁻¹) but wrong kind: Hz is frequency, not activity.
-    expect(() => evaluateFormula(f, { rate: Quantity.of(60, "Hz") }, O)).toThrow(FormulaError);
+    expect(() =>
+      evaluateFormula(f, { rate: Quantity.of(60, "Hz") }, O),
+    ).toThrow(FormulaError);
     // Declared kind satisfied: Bq is activity (multiply yields base units).
-    const ok = evaluateFormula(f, { rate: Quantity.of(100, "Bq", radReg) }, { registry: radReg });
+    const ok = evaluateFormula(
+      f,
+      { rate: Quantity.of(100, "Bq", radReg) },
+      { registry: radReg },
+    );
     if (!(ok instanceof Quantity)) throw new Error("expected Quantity");
     expect(ok.to("Bq", radReg).value).toBe(200);
   });
@@ -219,7 +255,10 @@ describe("compilation and caching", () => {
     expect(c1).toBe(c2); // cache hit (same object)
     expect(c1.key).toBe(c2.key);
     for (const m of [1, 2, 3]) {
-      const r = c1.evaluate({ mass: Quantity.of(m, "kg"), accel: Quantity.of(2, "m/s^2", reg) });
+      const r = c1.evaluate({
+        mass: Quantity.of(m, "kg"),
+        accel: Quantity.of(2, "m/s^2", reg),
+      });
       if (!(r instanceof Quantity)) throw new Error("expected Quantity");
       expect(r.value).toBe(m * 2);
     }
@@ -237,9 +276,15 @@ describe("compilation and caching", () => {
     const c = compileFormula(f, O);
     expect(() => c.evaluate({ a: Quantity.of(1, "kg") })).toThrow(FormulaError);
     expect(() =>
-      c.evaluate({ a: Quantity.of(1, "kg"), b: Quantity.of(1, "kg"), z: 1 } as never),
+      c.evaluate({
+        a: Quantity.of(1, "kg"),
+        b: Quantity.of(1, "kg"),
+        z: 1,
+      } as never),
     ).toThrow(FormulaError);
-    expect(() => c.evaluate({ a: Quantity.of(1, "kg"), b: Quantity.of(1, "m") })).toThrow();
+    expect(() =>
+      c.evaluate({ a: Quantity.of(1, "kg"), b: Quantity.of(1, "m") }),
+    ).toThrow();
   });
 });
 
@@ -258,7 +303,11 @@ describe("measurement bindings", () => {
       O,
     );
     const m = Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.2, "kg"));
-    const r = evaluateFormula(f, { mass: m, accel: Quantity.of(10, "m/s^2", reg) }, O);
+    const r = evaluateFormula(
+      f,
+      { mass: m, accel: Quantity.of(10, "m/s^2", reg) },
+      O,
+    );
     if (!(r instanceof Measurement)) throw new Error("expected Measurement");
     expect(r.value.toBase().value).toBeCloseTo(100 * 86400 * 86400, 3);
     expect(r.uncertainty.toBase().value).toBeGreaterThan(0);
@@ -304,7 +353,10 @@ describe("constants and partial evaluation", () => {
       {
         id: "greet",
         expression: mul(v("x"), v("g")),
-        inputs: { x: { dimension: "1" }, g: { dimension: "1", optional: true, default: 2 } },
+        inputs: {
+          x: { dimension: "1" },
+          g: { dimension: "1", optional: true, default: 2 },
+        },
       },
       O,
     );
@@ -335,7 +387,11 @@ describe("constants and partial evaluation", () => {
 describe("functions", () => {
   it("sqrt/abs/min/max evaluate with dimensional rules", () => {
     const root = defineFormula(
-      { id: "root", expression: fn("sqrt", [v("a")]), inputs: { a: { dimension: "m^2" } } },
+      {
+        id: "root",
+        expression: fn("sqrt", [v("a")]),
+        inputs: { a: { dimension: "m^2" } },
+      },
       O,
     );
     const r = evaluateFormula(root, { a: Quantity.of(9, "m^2") }, O);
@@ -350,7 +406,11 @@ describe("functions", () => {
       },
       O,
     );
-    const r2 = evaluateFormula(m, { a: Quantity.of(3, "kg"), b: Quantity.of(5, "kg") }, O);
+    const r2 = evaluateFormula(
+      m,
+      { a: Quantity.of(3, "kg"), b: Quantity.of(5, "kg") },
+      O,
+    );
     if (!(r2 instanceof Quantity)) throw new Error("expected Quantity");
     expect(r2.value).toBe(3);
   });
@@ -358,13 +418,21 @@ describe("functions", () => {
   it("sin(length) and exp(length) fail; sin(angle) passes with kinds", () => {
     expect(() =>
       defineFormula(
-        { id: "s", expression: fn("sin", [v("x")]), inputs: { x: { dimension: "m" } } },
+        {
+          id: "s",
+          expression: fn("sin", [v("x")]),
+          inputs: { x: { dimension: "m" } },
+        },
         O,
       ),
     ).toThrow(FormulaError);
     expect(() =>
       defineFormula(
-        { id: "e", expression: fn("exp", [v("x")]), inputs: { x: { dimension: "kg" } } },
+        {
+          id: "e",
+          expression: fn("exp", [v("x")]),
+          inputs: { x: { dimension: "kg" } },
+        },
         O,
       ),
     ).toThrow(FormulaError);
@@ -376,7 +444,11 @@ describe("functions", () => {
       },
       { ...O, semanticPolicy: "semantic-aware" },
     );
-    const r = evaluateFormula(ok, { x: Quantity.of(Math.PI / 2, "rad", reg) }, O);
+    const r = evaluateFormula(
+      ok,
+      { x: Quantity.of(Math.PI / 2, "rad", reg) },
+      O,
+    );
     if (!(r instanceof Quantity)) throw new Error("expected Quantity");
     expect(r.value).toBeCloseTo(1, 12);
     // Kind-less fraction arg under semantic-aware: unknown passes (no claim).
@@ -388,7 +460,11 @@ describe("functions", () => {
   it("unknown functions and arity violations throw", () => {
     expect(() =>
       defineFormula(
-        { id: "u", expression: fn("nope_fn", [v("x")]), inputs: { x: { dimension: "1" } } },
+        {
+          id: "u",
+          expression: fn("nope_fn", [v("x")]),
+          inputs: { x: { dimension: "1" } },
+        },
         O,
       ),
     ).toThrow();
@@ -433,10 +509,18 @@ describe("functions", () => {
       }),
     ).toThrow(ExpressionError);
     const f = defineFormula(
-      { id: "d", expression: fn("double", [v("x")]), inputs: { x: { dimension: "kg" } } },
+      {
+        id: "d",
+        expression: fn("double", [v("x")]),
+        inputs: { x: { dimension: "kg" } },
+      },
       { registry: reg, functions },
     );
-    const r = evaluateFormula(f, { x: Quantity.of(5, "kg") }, { registry: reg, functions });
+    const r = evaluateFormula(
+      f,
+      { x: Quantity.of(5, "kg") },
+      { registry: reg, functions },
+    );
     if (!(r instanceof Quantity)) throw new Error("expected Quantity");
     expect(r.value).toBe(10);
     expect(defaultFunctionRegistry.list()).toContain("sqrt");
@@ -452,17 +536,28 @@ describe("expression call nodes", () => {
     const expr = fn("sqrt", [mul(v("x"), v("x"))]);
     const r = evaluateExpression(expr, { x: Quantity.of(4, "m") }, O);
     expect(r.to("m").value).toBeCloseTo(4, 12);
-    expect(inferExpressionDimension(expr, { x: Dim.Length }, O)).toEqual(Dim.Length);
-    const c = compileExpression(expr, O);
-    expect(c.evaluate({ x: Quantity.of(9, "m") }).to("m").value).toBeCloseTo(9, 12);
-    expect(deserializeExpression(JSON.parse(JSON.stringify(serializeExpression(expr))))).toEqual(
-      expr,
+    expect(inferExpressionDimension(expr, { x: Dim.Length }, O)).toEqual(
+      Dim.Length,
     );
+    const c = compileExpression(expr, O);
+    expect(c.evaluate({ x: Quantity.of(9, "m") }).to("m").value).toBeCloseTo(
+      9,
+      12,
+    );
+    expect(
+      deserializeExpression(
+        JSON.parse(JSON.stringify(serializeExpression(expr))),
+      ),
+    ).toEqual(expr);
   });
 
   it("unknown functions, arity violations and Measurement calls fail", () => {
     expect(() =>
-      evaluateExpression(fn("nope_fn", [v("x")]), { x: Quantity.of(1, "fraction") }, O),
+      evaluateExpression(
+        fn("nope_fn", [v("x")]),
+        { x: Quantity.of(1, "fraction") },
+        O,
+      ),
     ).toThrow(ExpressionError);
     expect(() =>
       evaluateExpression(
@@ -472,9 +567,9 @@ describe("expression call nodes", () => {
       ),
     ).toThrow(ExpressionError);
     expect(() => fn("Bad-Name", [v("x")])).toThrow(ExpressionError);
-    expect(() => inferExpressionDimension(fn("sin", [v("x")]), { x: Dim.Length }, O)).toThrow(
-      ExpressionError,
-    );
+    expect(() =>
+      inferExpressionDimension(fn("sin", [v("x")]), { x: Dim.Length }, O),
+    ).toThrow(ExpressionError);
   });
 });
 
@@ -500,7 +595,10 @@ describe("expected outputs", () => {
     if (!(kmh instanceof Quantity)) throw new Error("expected Quantity");
     expect(kmh.value).toBeCloseTo(36, 9);
     expect(() =>
-      c.evaluate({ d: Quantity.of(100, "m"), t: Quantity.of(10, "s") }, { outputUnit: "kg" }),
+      c.evaluate(
+        { d: Quantity.of(100, "m"), t: Quantity.of(10, "s") },
+        { outputUnit: "kg" },
+      ),
     ).toThrow();
     expect(() =>
       defineFormula(
@@ -565,7 +663,8 @@ describe("trace mode", () => {
       { mass: Quantity.of(10, "kg"), accel: Quantity.of(9.81, "m/s^2", reg) },
       { ...O, trace: true },
     );
-    if (!(typeof traced === "object" && "steps" in traced)) throw new Error("expected trace");
+    if (!(typeof traced === "object" && "steps" in traced))
+      throw new Error("expected trace");
     expect(traced.result.value).toBeCloseTo(98.1, 9);
     expect(traced.steps.length).toBeGreaterThanOrEqual(3);
     expect(traced.steps[traced.steps.length - 1]!.result).toContain("98.1");
@@ -597,7 +696,10 @@ describe("formula serialization", () => {
       },
       O,
     );
-    const restored = deserializeFormula(JSON.parse(JSON.stringify(serializeFormula(f))), O);
+    const restored = deserializeFormula(
+      JSON.parse(JSON.stringify(serializeFormula(f))),
+      O,
+    );
     expect(restored.id).toBe("force");
     expect(restored.description).toBe("Newton's second law");
     const r = evaluateFormula(
@@ -611,10 +713,17 @@ describe("formula serialization", () => {
 
   it("rejects malformed, versioned-wrong, and polluted payloads", () => {
     expect(() => deserializeFormula(null, O)).toThrow(FormulaError);
-    expect(() => deserializeFormula({ version: 2, type: "formula" }, O)).toThrow(FormulaError);
-    expect(() => deserializeFormula({ version: 1, type: "nope" }, O)).toThrow(FormulaError);
     expect(() =>
-      deserializeFormula(JSON.parse('{"version":1,"type":"formula","id":"x","__proto__":{}}'), O),
+      deserializeFormula({ version: 2, type: "formula" }, O),
+    ).toThrow(FormulaError);
+    expect(() => deserializeFormula({ version: 1, type: "nope" }, O)).toThrow(
+      FormulaError,
+    );
+    expect(() =>
+      deserializeFormula(
+        JSON.parse('{"version":1,"type":"formula","id":"x","__proto__":{}}'),
+        O,
+      ),
     ).toThrow(FormulaError);
     // Valid shape but dimensionally invalid expression still fails.
     expect(() =>
@@ -633,7 +742,9 @@ describe("formula serialization", () => {
 
   it("expression serialization still round-trips call nodes", () => {
     const expr = fn("sqrt", [v("x")]);
-    const restored = deserializeExpression(JSON.parse(JSON.stringify(serializeExpression(expr))));
+    const restored = deserializeExpression(
+      JSON.parse(JSON.stringify(serializeExpression(expr))),
+    );
     expect(restored).toEqual(expr);
   });
 });
@@ -648,23 +759,32 @@ describe("formula security", () => {
     for (let i = 0; i < 300; i++) manyInputs[`v${i}`] = { dimension: "1" };
     let expr = v("v0");
     for (let i = 1; i < 300; i++) expr = add(expr, v(`v${i}`));
-    expect(() => defineFormula({ id: "big", expression: expr, inputs: manyInputs }, O)).toThrow(
-      ExpressionLimitError,
-    );
+    expect(() =>
+      defineFormula({ id: "big", expression: expr, inputs: manyInputs }, O),
+    ).toThrow(ExpressionLimitError);
     let deep = v("x");
     for (let i = 0; i < 100; i++) deep = add(deep, lit(1, "1"));
     expect(() =>
-      defineFormula({ id: "deep", expression: deep, inputs: { x: { dimension: "1" } } }, O),
+      defineFormula(
+        { id: "deep", expression: deep, inputs: { x: { dimension: "1" } } },
+        O,
+      ),
     ).toThrow(ExpressionLimitError);
   });
 
   it("unknown variables in evaluation throw typed errors", () => {
     const f = defineFormula(
-      { id: "f", expression: add(v("a"), lit(1, "1")), inputs: { a: { dimension: "1" } } },
+      {
+        id: "f",
+        expression: add(v("a"), lit(1, "1")),
+        inputs: { a: { dimension: "1" } },
+      },
       O,
     );
     expect(() => evaluateFormula(f, {}, O)).toThrow(FormulaError);
-    expect(() => evaluateFormula(f, { a: "nope" } as never, O)).toThrow(FormulaError);
+    expect(() => evaluateFormula(f, { a: "nope" } as never, O)).toThrow(
+      FormulaError,
+    );
   });
 });
 
@@ -691,9 +811,15 @@ describe("formula properties", () => {
 
   it("dimension(mass × acceleration) = Force; dimension(distance/time) = Velocity", () => {
     expect(
-      analyzeDimensions(mul(v("m"), v("a")), { m: Dim.Mass, a: { L: 1, T: -2 } }, O).dimension,
+      analyzeDimensions(
+        mul(v("m"), v("a")),
+        { m: Dim.Mass, a: { L: 1, T: -2 } },
+        O,
+      ).dimension,
     ).toEqual({ M: 1, L: 1, T: -2 });
-    expect(analyzeDimensions(div(v("d"), v("t")), { d: "m", t: "s" }, O).dimension).toEqual({
+    expect(
+      analyzeDimensions(div(v("d"), v("t")), { d: "m", t: "s" }, O).dimension,
+    ).toEqual({
       L: 1,
       T: -1,
     });

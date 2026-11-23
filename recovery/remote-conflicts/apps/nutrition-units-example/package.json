@@ -1,0 +1,30 @@
+{
+  "name": "@vetwo/nutrition-units-example",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Small external-style consumer of @vetwo/units + @vetwo/nutrition-units. Exercises only public package APIs: measurements, options contracts, basis/context conversion, typed errors, serialization, deterministic reporting.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@11.21.0",
+  "dependencies": {
+    "@vetwo/nutrition-units": "workspace:*",
+    "@vetwo/units": "workspace:*"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run",
+    "verify": "pnpm run check-types && pnpm run lint && pnpm run test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.10"
+  }
+}

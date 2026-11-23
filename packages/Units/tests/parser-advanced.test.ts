@@ -24,7 +24,10 @@ import {
   InvalidUnitExpressionError,
   UnsupportedUnitError,
 } from "../src/index.js";
-import { MAX_UNIT_EXPRESSION_LENGTH, MAX_NESTING_DEPTH } from "../src/unit-parser.js";
+import {
+  MAX_UNIT_EXPRESSION_LENGTH,
+  MAX_NESTING_DEPTH,
+} from "../src/unit-parser.js";
 import { serializeUnit, deserializeUnit } from "../src/serializer.js";
 import { dimensionsEqual } from "../src/dimension.js";
 
@@ -33,16 +36,27 @@ import { dimensionsEqual } from "../src/dimension.js";
 // ---------------------------------------------------------------------------
 
 describe("Parser strict mode", () => {
-  it.each(["kg", "kg/s", "m^2", "m²", "kg·m/s²", "(kg*m)/s^2", "Mcal/kg", "%"] as const)(
-    "strict accepts %s",
+  it.each([
+    "kg",
+    "kg/s",
+    "m^2",
+    "m²",
+    "kg·m/s²",
+    "(kg*m)/s^2",
+    "Mcal/kg",
+    "%",
+  ] as const)("strict accepts %s", (expr) => {
+    expect(parseUnit(expr, undefined, { strict: true }).symbol).toBeTruthy();
+  });
+
+  it.each(["kg m", "m2", "(kg)(m)", "kg m^-2"] as const)(
+    "strict rejects %s",
     (expr) => {
-      expect(parseUnit(expr, undefined, { strict: true }).symbol).toBeTruthy();
+      expect(() => parseUnit(expr, undefined, { strict: true })).toThrow(
+        InvalidUnitExpressionError,
+      );
     },
   );
-
-  it.each(["kg m", "m2", "(kg)(m)", "kg m^-2"] as const)("strict rejects %s", (expr) => {
-    expect(() => parseUnit(expr, undefined, { strict: true })).toThrow(InvalidUnitExpressionError);
-  });
 
   it("lenient (default) still accepts conveniences", () => {
     expect(parseUnit("kg m").dimension).toEqual({ M: 1, L: 1 });
@@ -51,8 +65,13 @@ describe("Parser strict mode", () => {
 
   it("UnitParser honors constructor defaults and per-call override", () => {
     const strictParser = new UnitParser(undefined, { strict: true });
-    expect(() => strictParser.parse("kg m")).toThrow(InvalidUnitExpressionError);
-    expect(strictParser.parse("kg m", { strict: false }).dimension).toEqual({ M: 1, L: 1 });
+    expect(() => strictParser.parse("kg m")).toThrow(
+      InvalidUnitExpressionError,
+    );
+    expect(strictParser.parse("kg m", { strict: false }).dimension).toEqual({
+      M: 1,
+      L: 1,
+    });
     expect(() => UnitParser.parse("m2", undefined, { strict: true })).toThrow(
       InvalidUnitExpressionError,
     );
@@ -65,7 +84,9 @@ describe("Parser strict mode", () => {
 
 describe("Canonical unit keys", () => {
   it("same expression parses to identical keys (deterministic)", () => {
-    expect(canonicalUnitKey(parseUnit("kg/m³"))).toBe(canonicalUnitKey(parseUnit("kg/m³")));
+    expect(canonicalUnitKey(parseUnit("kg/m³"))).toBe(
+      canonicalUnitKey(parseUnit("kg/m³")),
+    );
   });
 
   it("N and kg·m/s² share dimension, scale and canonical key", () => {
@@ -78,15 +99,21 @@ describe("Canonical unit keys", () => {
   });
 
   it("m/s and m·s^-1 share canonical key", () => {
-    expect(canonicalUnitKey(parseUnit("m/s"))).toBe(canonicalUnitKey(parseUnit("m·s^-1")));
+    expect(canonicalUnitKey(parseUnit("m/s"))).toBe(
+      canonicalUnitKey(parseUnit("m·s^-1")),
+    );
   });
 
   it("kg and g have different keys", () => {
-    expect(canonicalUnitKey(parseUnit("kg"))).not.toBe(canonicalUnitKey(parseUnit("g")));
+    expect(canonicalUnitKey(parseUnit("kg"))).not.toBe(
+      canonicalUnitKey(parseUnit("g")),
+    );
   });
 
   it("basis participates in the key", () => {
-    expect(canonicalUnitKey(parseUnit("% DM"))).not.toBe(canonicalUnitKey(parseUnit("%")));
+    expect(canonicalUnitKey(parseUnit("% DM"))).not.toBe(
+      canonicalUnitKey(parseUnit("%")),
+    );
   });
 });
 
@@ -155,7 +182,9 @@ describe("Parse diagnostics", () => {
   });
 
   it("respects strict option", () => {
-    expect(parseWithDiagnostics("m2", undefined, { strict: true }).ok).toBe(false);
+    expect(parseWithDiagnostics("m2", undefined, { strict: true }).ok).toBe(
+      false,
+    );
     expect(parseWithDiagnostics("m2").ok).toBe(true);
   });
 });
@@ -236,7 +265,10 @@ describe("Prefix handling", () => {
 
   it("kPa and MHz resolve via prefix+unit", () => {
     const reg = createRegistry({ packs: [SI_PACK] });
-    expect(parseUnit("kPa", reg).toBaseFactor).toBeCloseTo(1000 * 7464960000, 0);
+    expect(parseUnit("kPa", reg).toBaseFactor).toBeCloseTo(
+      1000 * 7464960000,
+      0,
+    );
     // Phase 21.30 audit: Hz = 86400/day, so MHz = 1e6 × 86400 in base units.
     expect(parseUnit("MHz", reg).toBaseFactor).toBeCloseTo(1e6 * 86400, 0);
   });
@@ -284,10 +316,13 @@ describe("Compound units", () => {
 // ---------------------------------------------------------------------------
 
 describe("Whitespace handling", () => {
-  it.each(["kg/s", "kg / s", " kg / s ", "kg/s "] as const)("parses %s identically", (expr) => {
-    const u = parseUnit(expr);
-    expect(u.dimension).toEqual({ M: 1, T: -1 });
-  });
+  it.each(["kg/s", "kg / s", " kg / s ", "kg/s "] as const)(
+    "parses %s identically",
+    (expr) => {
+      const u = parseUnit(expr);
+      expect(u.dimension).toEqual({ M: 1, T: -1 });
+    },
+  );
 
   it("whitespace adjacency implies multiplication (lenient)", () => {
     expect(parseUnit("kg m").dimension).toEqual({ M: 1, L: 1 });
@@ -312,7 +347,9 @@ describe("Parser fast path", () => {
 
 describe("Parser DoS protection", () => {
   it("rejects over-long input", () => {
-    expect(() => parseUnit("kg" + "*kg".repeat(3000))).toThrow(InvalidUnitExpressionError);
+    expect(() => parseUnit("kg" + "*kg".repeat(3000))).toThrow(
+      InvalidUnitExpressionError,
+    );
     expect(MAX_UNIT_EXPRESSION_LENGTH).toBe(4096);
   });
 
@@ -345,16 +382,23 @@ describe("Parser DoS protection", () => {
 // ---------------------------------------------------------------------------
 
 describe("Parser round trips", () => {
-  it.each(["kg", "m/s", "kg·m/s²", "mg/kg", "m²", "cm²", "kg/m³", "%", "ppm"] as const)(
-    "parse(format(parse(%s))) preserves semantics",
-    (expr) => {
-      const once = parseUnit(expr);
-      const formatted = formatUnit(once);
-      const twice = parseUnit(formatted);
-      expect(dimensionsEqual(twice.dimension, once.dimension)).toBe(true);
-      expect(twice.toBaseFactor).toBeCloseTo(once.toBaseFactor, 9);
-    },
-  );
+  it.each([
+    "kg",
+    "m/s",
+    "kg·m/s²",
+    "mg/kg",
+    "m²",
+    "cm²",
+    "kg/m³",
+    "%",
+    "ppm",
+  ] as const)("parse(format(parse(%s))) preserves semantics", (expr) => {
+    const once = parseUnit(expr);
+    const formatted = formatUnit(once);
+    const twice = parseUnit(formatted);
+    expect(dimensionsEqual(twice.dimension, once.dimension)).toBe(true);
+    expect(twice.toBaseFactor).toBeCloseTo(once.toBaseFactor, 9);
+  });
 
   it("text → parse → serialize → deserialize preserves identity", () => {
     const reg = createRegistry({ packs: [SI_PACK] });

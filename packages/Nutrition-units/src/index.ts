@@ -14,13 +14,22 @@ registerNutritionRules(); // side-effect: populate the default rule registry onc
 
 // --- Core nutrition facades (Phase 1 — preserved) ---
 export { NutritionMath, nutritionMath } from "./nutrition-math.js";
-export { CoefficientResolver, coefficientResolver } from "./coefficient-resolver.js";
+export {
+  CoefficientResolver,
+  coefficientResolver,
+} from "./coefficient-resolver.js";
 export { BasisConverter } from "./basis-converter.js";
-export { TargetUnitRegistry, defaultTargetUnitRegistry } from "./target-unit-registry.js";
+export {
+  TargetUnitRegistry,
+  defaultTargetUnitRegistry,
+} from "./target-unit-registry.js";
 export type { NutrientKey } from "./target-unit-registry.js";
 export { FeedSchemaLoader } from "./feed-schema-loader.js";
 export type { UnitSchema } from "./feed-schema-loader.js";
-export { NUTRIENT_CONTRIBUTION_RULE, DIET_COST_RULE } from "./nutrition-rules.js";
+export {
+  NUTRIENT_CONTRIBUTION_RULE,
+  DIET_COST_RULE,
+} from "./nutrition-rules.js";
 
 // --- Phase 2: nutrition semantic model ---
 export {
@@ -44,8 +53,14 @@ export type {
 } from "./nutrition-quantity.js";
 
 // --- Phase 5: basis & context ---
-export { createNutritionContext, resolveDryMatterFraction } from "./nutrition-context.js";
-export type { NutritionContext, NutritionContextOptions } from "./nutrition-context.js";
+export {
+  createNutritionContext,
+  resolveDryMatterFraction,
+} from "./nutrition-context.js";
+export type {
+  NutritionContext,
+  NutritionContextOptions,
+} from "./nutrition-context.js";
 
 // --- Phase 6: unit families ---
 export {
@@ -56,7 +71,10 @@ export {
   getMolarMass,
   convertMolarToMass,
 } from "./unit-family.js";
-export type { NutritionUnitFamily, UnitFamilyDefinition } from "./unit-family.js";
+export type {
+  NutritionUnitFamily,
+  UnitFamilyDefinition,
+} from "./unit-family.js";
 
 // --- Phase 7: semantic compatibility ---
 export {
@@ -74,7 +92,10 @@ export type {
 } from "./semantic-compatibility.js";
 
 // --- Phase 8: metadata & provenance ---
-export { createNutritionMetadata, mergeNutritionMetadata } from "./nutrition-metadata.js";
+export {
+  createNutritionMetadata,
+  mergeNutritionMetadata,
+} from "./nutrition-metadata.js";
 export type {
   NutritionMetadata,
   Provenance,

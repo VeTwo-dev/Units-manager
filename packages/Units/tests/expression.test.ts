@@ -60,31 +60,40 @@ describe("Expression literals and variables", () => {
   it("prototype-named bindings cannot resolve via prototype chain", () => {
     // "constructor" passes the name pattern but lookup uses own-property
     // checks, so it cannot resolve Object.prototype members:
-    expect(() => evaluateExpression(Expression.variable("constructor"), {})).toThrow(
-      UnknownVariableError,
-    );
-    expect(() => evaluateExpression(Expression.variable("toString"), {})).toThrow(
-      UnknownVariableError,
-    );
+    expect(() =>
+      evaluateExpression(Expression.variable("constructor"), {}),
+    ).toThrow(UnknownVariableError);
+    expect(() =>
+      evaluateExpression(Expression.variable("toString"), {}),
+    ).toThrow(UnknownVariableError);
   });
 
   it("rejects non-number literal values and empty units", () => {
-    expect(() => Expression.literal("10" as unknown as number, "kg")).toThrow(ExpressionError);
+    expect(() => Expression.literal("10" as unknown as number, "kg")).toThrow(
+      ExpressionError,
+    );
     expect(() => Expression.literal(10, "")).toThrow(ExpressionError);
   });
 
   it("unknown variable throws UnknownVariableError", () => {
-    expect(() => evaluateExpression(Expression.variable("nope"), {})).toThrow(UnknownVariableError);
+    expect(() => evaluateExpression(Expression.variable("nope"), {})).toThrow(
+      UnknownVariableError,
+    );
   });
 
   it("variable bound to non-Quantity throws ExpressionError", () => {
     expect(() =>
-      evaluateExpression(Expression.variable("x"), { x: 5 as unknown as Quantity }),
+      evaluateExpression(Expression.variable("x"), {
+        x: 5 as unknown as Quantity,
+      }),
     ).toThrow(ExpressionError);
   });
 
   it("all nodes are frozen (immutable)", () => {
-    const e = Expression.add(Expression.literal(1, "kg"), Expression.variable("x"));
+    const e = Expression.add(
+      Expression.literal(1, "kg"),
+      Expression.variable("x"),
+    );
     expect(Object.isFrozen(e)).toBe(true);
     expect(Object.isFrozen((e as { left: unknown }).left)).toBe(true);
   });
@@ -105,35 +114,50 @@ describe("Expression arithmetic", () => {
 
   it("subtract: 2 kg - 500 g = 1.5 kg", () => {
     const q = evaluateExpression(
-      Expression.subtract(Expression.literal(2, "kg"), Expression.literal(500, "g")),
+      Expression.subtract(
+        Expression.literal(2, "kg"),
+        Expression.literal(500, "g"),
+      ),
     );
     expect(q.value).toBeCloseTo(1.5, 12);
   });
 
   it("multiply: 10 kg/day × 12 % → g/day", () => {
     const q = evaluateExpression(
-      Expression.multiply(Expression.literal(10, "kg/day"), Expression.literal(12, "%")),
+      Expression.multiply(
+        Expression.literal(10, "kg/day"),
+        Expression.literal(12, "%"),
+      ),
     );
     expect(q.to("g/day").value).toBeCloseTo(1200, 9);
   });
 
   it("multiply: 10 kg/day × 80 mg/kg → mg/day", () => {
     const q = evaluateExpression(
-      Expression.multiply(Expression.literal(10, "kg/day"), Expression.literal(80, "mg/kg")),
+      Expression.multiply(
+        Expression.literal(10, "kg/day"),
+        Expression.literal(80, "mg/kg"),
+      ),
     );
     expect(q.to("mg/day").value).toBeCloseTo(800, 9);
   });
 
   it("multiply: 3 Mcal/kg × 5 kg → Mcal", () => {
     const q = evaluateExpression(
-      Expression.multiply(Expression.literal(3, "Mcal/kg"), Expression.literal(5, "kg")),
+      Expression.multiply(
+        Expression.literal(3, "Mcal/kg"),
+        Expression.literal(5, "kg"),
+      ),
     );
     expect(q.to("Mcal").value).toBeCloseTo(15, 9);
   });
 
   it("divide: 10 kg / 2 s → 5 kg/s", () => {
     const q = evaluateExpression(
-      Expression.divide(Expression.literal(10, "kg"), Expression.literal(2, "s")),
+      Expression.divide(
+        Expression.literal(10, "kg"),
+        Expression.literal(2, "s"),
+      ),
     );
     // Quantity.divide returns base-unit values (s base = day); convert to kg/s
     expect(q.to("kg/s").value).toBeCloseTo(5, 9);
@@ -141,18 +165,26 @@ describe("Expression arithmetic", () => {
   });
 
   it("power: (2 m)^2 → 4 m²", () => {
-    const q = evaluateExpression(Expression.power(Expression.literal(2, "m"), 2));
+    const q = evaluateExpression(
+      Expression.power(Expression.literal(2, "m"), 2),
+    );
     expect(q.value).toBeCloseTo(4, 12);
     expect(q.dimension).toEqual({ L: 2 });
   });
 
   it("power rejects non-integer exponents", () => {
-    expect(() => Expression.power(Expression.literal(2, "m"), 1.5)).toThrow(ExpressionError);
-    expect(() => evaluateExpression(Expression.power(Expression.literal(2, "m"), 0))).not.toThrow();
+    expect(() => Expression.power(Expression.literal(2, "m"), 1.5)).toThrow(
+      ExpressionError,
+    );
+    expect(() =>
+      evaluateExpression(Expression.power(Expression.literal(2, "m"), 0)),
+    ).not.toThrow();
   });
 
   it("convert: 3000 g → 3 kg", () => {
-    const q = evaluateExpression(Expression.convert(Expression.literal(3000, "g"), "kg"));
+    const q = evaluateExpression(
+      Expression.convert(Expression.literal(3000, "g"), "kg"),
+    );
     expect(q.value).toBeCloseTo(3, 12);
     expect(q.unit.symbol).toBe("kg");
   });
@@ -165,7 +197,10 @@ describe("Expression arithmetic", () => {
 
   it("nested: (10 kg / 2 s) * 3 s → 15 kg", () => {
     const expr = Expression.multiply(
-      Expression.divide(Expression.literal(10, "kg"), Expression.literal(2, "s")),
+      Expression.divide(
+        Expression.literal(10, "kg"),
+        Expression.literal(2, "s"),
+      ),
       Expression.literal(3, "s"),
     );
     const q = evaluateExpression(expr);
@@ -174,14 +209,19 @@ describe("Expression arithmetic", () => {
 
   it("mass + length is invalid", () => {
     expect(() =>
-      evaluateExpression(Expression.add(Expression.literal(5, "kg"), Expression.literal(2, "m"))),
+      evaluateExpression(
+        Expression.add(Expression.literal(5, "kg"), Expression.literal(2, "m")),
+      ),
     ).toThrow(UnitMismatchError);
   });
 
   it("division by zero throws DivisionByZeroError", () => {
     expect(() =>
       evaluateExpression(
-        Expression.divide(Expression.literal(1, "kg"), Expression.literal(0, "kg")),
+        Expression.divide(
+          Expression.literal(1, "kg"),
+          Expression.literal(0, "kg"),
+        ),
       ),
     ).toThrow(DivisionByZeroError);
   });
@@ -193,24 +233,42 @@ describe("Expression arithmetic", () => {
 
 describe("Expression dimension inference", () => {
   it("infers intake × concentration → mg/day without evaluating", () => {
-    const expr = Expression.multiply(Expression.variable("intake"), Expression.variable("conc"));
-    const dim = inferExpressionDimension(expr, { intake: "kg/day", conc: "mg/kg" });
+    const expr = Expression.multiply(
+      Expression.variable("intake"),
+      Expression.variable("conc"),
+    );
+    const dim = inferExpressionDimension(expr, {
+      intake: "kg/day",
+      conc: "mg/kg",
+    });
     expect(dim).toEqual({ M: 1, T: -1 }); // mg/day: Count? no — mg is M, /day is T^-1 → M^1·T^-1
   });
 
   it("infers literals directly", () => {
-    expect(inferExpressionDimension(Expression.literal(5, "kg"))).toEqual(Dim.Mass);
+    expect(inferExpressionDimension(Expression.literal(5, "kg"))).toEqual(
+      Dim.Mass,
+    );
   });
 
   it("infers add/subtract as operand dimension, rejects mismatch", () => {
-    const ok = Expression.add(Expression.variable("a"), Expression.variable("b"));
+    const ok = Expression.add(
+      Expression.variable("a"),
+      Expression.variable("b"),
+    );
     expect(inferExpressionDimension(ok, { a: "kg", b: "g" })).toEqual(Dim.Mass);
-    const bad = Expression.add(Expression.variable("a"), Expression.variable("b"));
-    expect(() => inferExpressionDimension(bad, { a: "kg", b: "m" })).toThrow(ExpressionError);
+    const bad = Expression.add(
+      Expression.variable("a"),
+      Expression.variable("b"),
+    );
+    expect(() => inferExpressionDimension(bad, { a: "kg", b: "m" })).toThrow(
+      ExpressionError,
+    );
   });
 
   it("infers power by scaling exponents", () => {
-    expect(inferExpressionDimension(Expression.power(Expression.literal(2, "m"), 2))).toEqual({
+    expect(
+      inferExpressionDimension(Expression.power(Expression.literal(2, "m"), 2)),
+    ).toEqual({
       L: 2,
     });
   });
@@ -223,14 +281,16 @@ describe("Expression dimension inference", () => {
   });
 
   it("accepts DimensionVector declarations as well as unit strings", () => {
-    const dim = inferExpressionDimension(Expression.variable("x"), { x: Dim.Mass });
+    const dim = inferExpressionDimension(Expression.variable("x"), {
+      x: Dim.Mass,
+    });
     expect(dim).toEqual(Dim.Mass);
   });
 
   it("unknown variable in inference throws UnknownVariableError", () => {
-    expect(() => inferExpressionDimension(Expression.variable("zzz"), {})).toThrow(
-      UnknownVariableError,
-    );
+    expect(() =>
+      inferExpressionDimension(Expression.variable("zzz"), {}),
+    ).toThrow(UnknownVariableError);
   });
 });
 
@@ -241,7 +301,10 @@ describe("Expression dimension inference", () => {
 describe("Expression simplification", () => {
   it("folds 2 kg × 3 → 6 (mass dimension preserved)", () => {
     const s = simplifyExpression(
-      Expression.multiply(Expression.literal(2, "kg"), Expression.literal(3, "fraction")),
+      Expression.multiply(
+        Expression.literal(2, "kg"),
+        Expression.literal(3, "fraction"),
+      ),
     );
     expect(s.kind).toBe("literal");
     if (s.kind === "literal") {
@@ -254,14 +317,20 @@ describe("Expression simplification", () => {
 
   it("folds 2 m × 3 s → 6 m·s", () => {
     const s = simplifyExpression(
-      Expression.multiply(Expression.literal(2, "m"), Expression.literal(3, "s")),
+      Expression.multiply(
+        Expression.literal(2, "m"),
+        Expression.literal(3, "s"),
+      ),
     );
     expect(s.kind).toBe("literal");
   });
 
   it("normalizes 1000 m + 1 km → 2000 m", () => {
     const s = simplifyExpression(
-      Expression.add(Expression.literal(1000, "m"), Expression.literal(1, "km")),
+      Expression.add(
+        Expression.literal(1000, "m"),
+        Expression.literal(1, "km"),
+      ),
     );
     expect(s.kind).toBe("literal");
     if (s.kind === "literal") {
@@ -298,7 +367,10 @@ describe("Expression simplification", () => {
 
   it("simplification preserves semantics (evaluate equal)", () => {
     const expr = Expression.multiply(
-      Expression.add(Expression.literal(1000, "m"), Expression.literal(1, "km")),
+      Expression.add(
+        Expression.literal(1000, "m"),
+        Expression.literal(1, "km"),
+      ),
       Expression.literal(1, "1"),
     );
     const ctx = {};
@@ -314,23 +386,44 @@ describe("Expression simplification", () => {
 
 describe("Expression compilation", () => {
   it("compile ≈ evaluate for all valid expressions", () => {
-    const expr = Expression.multiply(Expression.variable("intake"), Expression.variable("conc"));
-    const ctx = { intake: Quantity.of(10, "kg/day"), conc: Quantity.of(80, "mg/kg") };
+    const expr = Expression.multiply(
+      Expression.variable("intake"),
+      Expression.variable("conc"),
+    );
+    const ctx = {
+      intake: Quantity.of(10, "kg/day"),
+      conc: Quantity.of(80, "mg/kg"),
+    };
     const direct = evaluateExpression(expr, ctx);
     const compiled = compileExpression(expr);
-    expect(compiled.evaluate(ctx).to("mg/day").value).toBeCloseTo(direct.to("mg/day").value, 9);
+    expect(compiled.evaluate(ctx).to("mg/day").value).toBeCloseTo(
+      direct.to("mg/day").value,
+      9,
+    );
   });
 
   it("compiled expression caches (same object on recompile)", () => {
-    const expr = Expression.add(Expression.literal(1, "kg"), Expression.literal(2, "kg"));
+    const expr = Expression.add(
+      Expression.literal(1, "kg"),
+      Expression.literal(2, "kg"),
+    );
     expect(compileExpression(expr)).toBe(compileExpression(expr));
   });
 
   it("compiled plan pre-resolves units (batch evaluation needs no parsing)", () => {
-    const expr = Expression.multiply(Expression.variable("a"), Expression.variable("b"));
+    const expr = Expression.multiply(
+      Expression.variable("a"),
+      Expression.variable("b"),
+    );
     const compiled = compileExpression(expr);
-    const r1 = compiled.evaluate({ a: Quantity.of(2, "kg"), b: Quantity.of(3, "m") });
-    const r2 = compiled.evaluate({ a: Quantity.of(4, "kg"), b: Quantity.of(5, "m") });
+    const r1 = compiled.evaluate({
+      a: Quantity.of(2, "kg"),
+      b: Quantity.of(3, "m"),
+    });
+    const r2 = compiled.evaluate({
+      a: Quantity.of(4, "kg"),
+      b: Quantity.of(5, "m"),
+    });
     expect(r1.toBase().value).toBeCloseTo(6, 9);
     expect(r2.toBase().value).toBeCloseTo(20, 9);
   });
@@ -339,7 +432,10 @@ describe("Expression compilation", () => {
     const compiled = compileExpression(
       Expression.multiply(Expression.variable("a"), Expression.variable("b")),
     );
-    expect(compiled.inferDimension({ a: "kg", b: "m" })).toEqual({ M: 1, L: 1 });
+    expect(compiled.inferDimension({ a: "kg", b: "m" })).toEqual({
+      M: 1,
+      L: 1,
+    });
   });
 
   it("compiled key is deterministic", () => {
@@ -367,7 +463,10 @@ describe("Expression compilation", () => {
 
 describe("Expression serialization", () => {
   it("round-trips literal/variable/compound", () => {
-    const expr = Expression.multiply(Expression.variable("intake"), Expression.literal(12, "%"));
+    const expr = Expression.multiply(
+      Expression.variable("intake"),
+      Expression.literal(12, "%"),
+    );
     const ser = serializeExpression(expr);
     expect(ser.version).toBe(1);
     expect(ser.type).toBe("expression");
@@ -376,36 +475,65 @@ describe("Expression serialization", () => {
   });
 
   it("round-trips power/convert", () => {
-    const expr = Expression.convert(Expression.power(Expression.variable("x"), 2), "m^2");
-    const back = deserializeExpression(JSON.parse(JSON.stringify(serializeExpression(expr))));
+    const expr = Expression.convert(
+      Expression.power(Expression.variable("x"), 2),
+      "m^2",
+    );
+    const back = deserializeExpression(
+      JSON.parse(JSON.stringify(serializeExpression(expr))),
+    );
     expect(canonicalExpressionKey(back)).toBe(canonicalExpressionKey(expr));
   });
 
   it("deterministic: same expression → byte-identical JSON", () => {
-    const a = Expression.add(Expression.literal(1, "kg"), Expression.variable("x"));
-    const b = Expression.add(Expression.literal(1, "kg"), Expression.variable("x"));
-    expect(JSON.stringify(serializeExpression(a))).toBe(JSON.stringify(serializeExpression(b)));
+    const a = Expression.add(
+      Expression.literal(1, "kg"),
+      Expression.variable("x"),
+    );
+    const b = Expression.add(
+      Expression.literal(1, "kg"),
+      Expression.variable("x"),
+    );
+    expect(JSON.stringify(serializeExpression(a))).toBe(
+      JSON.stringify(serializeExpression(b)),
+    );
   });
 
   it("rejects missing/unsupported version and wrong type", () => {
     expect(() => deserializeExpression({} as never)).toThrow(ExpressionError);
     expect(() =>
-      deserializeExpression({ version: 99, type: "expression", root: {} } as never),
+      deserializeExpression({
+        version: 99,
+        type: "expression",
+        root: {},
+      } as never),
     ).toThrow(ExpressionError);
     expect(() =>
-      deserializeExpression({ version: 1, type: "quantity", root: {} } as never),
+      deserializeExpression({
+        version: 1,
+        type: "quantity",
+        root: {},
+      } as never),
     ).toThrow(ExpressionError);
   });
 
   it("rejects malformed nodes (bad kind, bad power, empty unit)", () => {
     expect(() =>
-      deserializeExpression({ version: 1, type: "expression", root: { kind: "nope" } } as never),
+      deserializeExpression({
+        version: 1,
+        type: "expression",
+        root: { kind: "nope" },
+      } as never),
     ).toThrow(ExpressionError);
     expect(() =>
       deserializeExpression({
         version: 1,
         type: "expression",
-        root: { kind: "power", base: { kind: "literal", value: 1, unit: "m" }, exponent: 1.5 },
+        root: {
+          kind: "power",
+          base: { kind: "literal", value: 1, unit: "m" },
+          exponent: 1.5,
+        },
       } as never),
     ).toThrow(ExpressionError);
   });
@@ -436,32 +564,34 @@ describe("Expression serialization", () => {
 describe("Expression security limits", () => {
   function deepExpr(depth: number) {
     let e = Expression.literal(1, "kg");
-    for (let i = 0; i < depth; i++) e = Expression.add(e, Expression.literal(1, "kg"));
+    for (let i = 0; i < depth; i++)
+      e = Expression.add(e, Expression.literal(1, "kg"));
     return e;
   }
 
   it("rejects excessively deep ASTs", () => {
     const e = deepExpr(200);
     expect(expressionDepth(e)).toBeGreaterThan(64);
-    expect(() => evaluateExpression(e, {}, { limits: { maxDepth: 64 } })).toThrow(
-      ExpressionLimitError,
-    );
+    expect(() =>
+      evaluateExpression(e, {}, { limits: { maxDepth: 64 } }),
+    ).toThrow(ExpressionLimitError);
   });
 
   it("rejects huge node counts", () => {
     // Build a wide tree: (((1+1)+1)+...) with 3000 leaves
     let e = Expression.literal(1, "kg");
-    for (let i = 0; i < 3000; i++) e = Expression.add(e, Expression.literal(1, "kg"));
-    expect(() => evaluateExpression(e, {}, { limits: { maxNodes: 100 } })).toThrow(
-      ExpressionLimitError,
-    );
+    for (let i = 0; i < 3000; i++)
+      e = Expression.add(e, Expression.literal(1, "kg"));
+    expect(() =>
+      evaluateExpression(e, {}, { limits: { maxNodes: 100 } }),
+    ).toThrow(ExpressionLimitError);
   });
 
   it("rejects oversized serialized input", () => {
     const big = "x".repeat(70000);
-    expect(() => deserializeExpression(big, { maxSerializedChars: 100 })).toThrow(
-      ExpressionLimitError,
-    );
+    expect(() =>
+      deserializeExpression(big, { maxSerializedChars: 100 }),
+    ).toThrow(ExpressionLimitError);
   });
 
   it("rejects invalid JSON strings", () => {
@@ -486,29 +616,49 @@ describe("FormulaRegistry", () => {
     reg.define(
       "work",
       ["force", "distance"],
-      Expression.multiply(Expression.variable("force"), Expression.variable("distance")),
+      Expression.multiply(
+        Expression.variable("force"),
+        Expression.variable("distance"),
+      ),
     );
-    const q = reg.run("work", { force: Quantity.of(10, "kg"), distance: Quantity.of(5, "m") });
+    const q = reg.run("work", {
+      force: Quantity.of(10, "kg"),
+      distance: Quantity.of(5, "m"),
+    });
     expect(q.toBase().value).toBeCloseTo(50, 9);
   });
 
   it("validates undeclared variables at define time", () => {
     const reg = new FormulaRegistry();
-    expect(() => reg.define("bad", ["a"], Expression.variable("b"))).toThrow(ExpressionError);
+    expect(() => reg.define("bad", ["a"], Expression.variable("b"))).toThrow(
+      ExpressionError,
+    );
   });
 
   it("rejects duplicates, bad names, duplicate variables", () => {
     const reg = new FormulaRegistry();
     reg.define("f", ["a"], Expression.variable("a"));
-    expect(() => reg.define("f", ["a"], Expression.variable("a"))).toThrow(ExpressionError);
-    expect(() => reg.define("1bad", ["a"], Expression.variable("a"))).toThrow(ExpressionError);
-    expect(() => reg.define("g", ["a", "a"], Expression.variable("a"))).toThrow(ExpressionError);
+    expect(() => reg.define("f", ["a"], Expression.variable("a"))).toThrow(
+      ExpressionError,
+    );
+    expect(() => reg.define("1bad", ["a"], Expression.variable("a"))).toThrow(
+      ExpressionError,
+    );
+    expect(() => reg.define("g", ["a", "a"], Expression.variable("a"))).toThrow(
+      ExpressionError,
+    );
   });
 
   it("run requires all variables (UnknownVariableError)", () => {
     const reg = new FormulaRegistry();
-    reg.define("f", ["a", "b"], Expression.add(Expression.variable("a"), Expression.variable("b")));
-    expect(() => reg.run("f", { a: Quantity.of(1, "kg") })).toThrow(UnknownVariableError);
+    reg.define(
+      "f",
+      ["a", "b"],
+      Expression.add(Expression.variable("a"), Expression.variable("b")),
+    );
+    expect(() => reg.run("f", { a: Quantity.of(1, "kg") })).toThrow(
+      UnknownVariableError,
+    );
   });
 
   it("inferDimension validates output dimension", () => {
@@ -516,9 +666,15 @@ describe("FormulaRegistry", () => {
     reg.define(
       "rate",
       ["mass", "time"],
-      Expression.divide(Expression.variable("mass"), Expression.variable("time")),
+      Expression.divide(
+        Expression.variable("mass"),
+        Expression.variable("time"),
+      ),
     );
-    expect(reg.inferDimension("rate", { mass: "kg", time: "s" })).toEqual({ M: 1, T: -1 });
+    expect(reg.inferDimension("rate", { mass: "kg", time: "s" })).toEqual({
+      M: 1,
+      T: -1,
+    });
   });
 
   it("unknown formula throws", () => {
@@ -540,7 +696,10 @@ describe("FormulaRegistry", () => {
 
 describe("Expression immutability", () => {
   it("evaluate does not mutate the AST or context", () => {
-    const expr = Expression.add(Expression.literal(1, "kg"), Expression.variable("x"));
+    const expr = Expression.add(
+      Expression.literal(1, "kg"),
+      Expression.variable("x"),
+    );
     const before = JSON.stringify(serializeExpression(expr));
     const ctx = { x: Quantity.of(2, "kg") };
     evaluateExpression(expr, ctx);
@@ -561,20 +720,28 @@ describe("Expression immutability", () => {
 // ---------------------------------------------------------------------------
 
 describe("Expression properties", () => {
-  const ctx = { a: Quantity.of(2, "kg"), b: Quantity.of(3, "m"), c: Quantity.of(4, "s") };
+  const ctx = {
+    a: Quantity.of(2, "kg"),
+    b: Quantity.of(3, "m"),
+    c: Quantity.of(4, "s"),
+  };
   const A = Expression.variable("a");
   const B = Expression.variable("b");
   const C = Expression.variable("c");
 
   it("evaluate(a × b) ≈ evaluate(b × a) after normalization", () => {
-    const ab = evaluateExpression(Expression.multiply(A, B), ctx).toBase().value;
-    const ba = evaluateExpression(Expression.multiply(B, A), ctx).toBase().value;
+    const ab = evaluateExpression(Expression.multiply(A, B), ctx).toBase()
+      .value;
+    const ba = evaluateExpression(Expression.multiply(B, A), ctx).toBase()
+      .value;
     expect(ab).toBeCloseTo(ba, 9);
   });
 
   it("evaluate((a × b) × c) ≈ evaluate(a × (b × c))", () => {
-    const left = evaluateExpression(Expression.multiply(Expression.multiply(A, B), C), ctx).toBase()
-      .value;
+    const left = evaluateExpression(
+      Expression.multiply(Expression.multiply(A, B), C),
+      ctx,
+    ).toBase().value;
     const right = evaluateExpression(
       Expression.multiply(A, Expression.multiply(B, C)),
       ctx,
@@ -593,14 +760,19 @@ describe("Expression properties", () => {
     // (a*b has M·L, c has T — incompatible; use compatible variant)
     const ok = Expression.add(A, Expression.literal(1, "kg"));
     const back = deserializeExpression(serializeExpression(ok));
-    expect(evaluateExpression(back, ctx).value).toBeCloseTo(evaluateExpression(ok, ctx).value, 9);
+    expect(evaluateExpression(back, ctx).value).toBeCloseTo(
+      evaluateExpression(ok, ctx).value,
+      9,
+    );
   });
 
   it("dimension inference matches evaluated dimension", () => {
     const expr = Expression.multiply(A, B);
     const inferred = inferExpressionDimension(expr, { a: "kg", b: "m" });
     expect(inferred).toEqual({ M: 1, L: 1 });
-    expect(dimensionKey(evaluateExpression(expr, ctx).dimension)).toBe(dimensionKey(inferred));
+    expect(dimensionKey(evaluateExpression(expr, ctx).dimension)).toBe(
+      dimensionKey(inferred),
+    );
   });
 });
 
@@ -615,16 +787,23 @@ describe("Expression guards", () => {
     expect(isExpression(null)).toBe(false);
     expect(isExpression([])).toBe(false);
     // Object literals cannot carry __proto__ as an own key; JSON.parse can:
-    const polluted = JSON.parse('{"kind":"literal","value":1,"unit":"kg","__proto__":{}}');
+    const polluted = JSON.parse(
+      '{"kind":"literal","value":1,"unit":"kg","__proto__":{}}',
+    );
     expect(isExpression(polluted)).toBe(false);
   });
 
   it("isSerializedExpression validates shape", () => {
     const ser = serializeExpression(Expression.literal(1, "kg"));
     expect(isSerializedExpression(ser)).toBe(true);
-    expect(isSerializedExpression({ version: 1, type: "quantity", value: 1, unit: "kg" })).toBe(
-      false,
-    );
+    expect(
+      isSerializedExpression({
+        version: 1,
+        type: "quantity",
+        value: 1,
+        unit: "kg",
+      }),
+    ).toBe(false);
     expect(isSerializedExpression(null)).toBe(false);
   });
 });
@@ -638,24 +817,40 @@ describe("Expression audit fixes", () => {
     // Deeply nested hand-built object (bypasses builders): must not stack-overflow
     let evil: unknown = { kind: "literal", value: 1, unit: "kg" };
     for (let i = 0; i < 10000; i++) {
-      evil = { kind: "add", left: evil, right: { kind: "literal", value: 1, unit: "kg" } };
+      evil = {
+        kind: "add",
+        left: evil,
+        right: { kind: "literal", value: 1, unit: "kg" },
+      };
     }
-    expect(() => canonicalExpressionKey(evil as never)).toThrow(ExpressionLimitError);
+    expect(() => canonicalExpressionKey(evil as never)).toThrow(
+      ExpressionLimitError,
+    );
   });
 
   it("expressionDepth rejects malformed nodes with a typed error", () => {
-    expect(() => expressionDepth({ kind: "add" } as never)).toThrow(ExpressionError);
+    expect(() => expressionDepth({ kind: "add" } as never)).toThrow(
+      ExpressionError,
+    );
   });
 
   it("x*1 simplifies with custom-registry dimensionless units", () => {
     const reg = new UnitRegistry([]);
     reg.register(
-      makeUnit({ symbol: "myfrac", dimension: {}, toBaseFactor: 1, label: "my fraction" }),
+      makeUnit({
+        symbol: "myfrac",
+        dimension: {},
+        toBaseFactor: 1,
+        label: "my fraction",
+      }),
     );
     const x = Expression.variable("x");
-    const s = simplifyExpression(Expression.multiply(x, Expression.literal(1, "myfrac")), {
-      registry: reg,
-    });
+    const s = simplifyExpression(
+      Expression.multiply(x, Expression.literal(1, "myfrac")),
+      {
+        registry: reg,
+      },
+    );
     expect(s).toBe(x);
   });
 });
@@ -667,17 +862,29 @@ describe("Expression audit fixes", () => {
 describe("Expression audit fixes round 2", () => {
   it("define() rejects unknown literal units immediately", () => {
     const reg = new FormulaRegistry();
-    expect(() => reg.define("bad", [], Expression.literal(1, "not-a-unit-xyz"))).toThrow();
+    expect(() =>
+      reg.define("bad", [], Expression.literal(1, "not-a-unit-xyz")),
+    ).toThrow();
   });
 
   it("custom-registry formulas work end-to-end via stored registry", () => {
     const reg = new UnitRegistry([]);
-    reg.register(makeUnit({ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 2, label: "my" }));
+    reg.register(
+      makeUnit({
+        symbol: "myU",
+        dimension: Dim.Mass,
+        toBaseFactor: 2,
+        label: "my",
+      }),
+    );
     const formulas = new FormulaRegistry();
     formulas.define(
       "double",
       ["x"],
-      Expression.multiply(Expression.variable("x"), Expression.literal(2, "myU")),
+      Expression.multiply(
+        Expression.variable("x"),
+        Expression.literal(2, "myU"),
+      ),
       {
         registry: reg,
       },
@@ -686,7 +893,9 @@ describe("Expression audit fixes round 2", () => {
     // 3 myU (=6 base) × 2 myU (=4 base) = 24 in base units
     const q = formulas.run("double", { x: Quantity.of(3, "myU", reg) });
     expect(q.toBase().value).toBeCloseTo(24, 9);
-    expect(formulas.inferDimension("double", { x: "myU" }, { registry: reg })).toEqual({
+    expect(
+      formulas.inferDimension("double", { x: "myU" }, { registry: reg }),
+    ).toEqual({
       M: 2,
     });
   });
@@ -704,7 +913,12 @@ describe("Expression audit fixes round 2", () => {
     );
     expect(parseUnit("nm", reg).toBaseFactor).toBeCloseTo(1e-9, 18);
     reg.register(
-      makeUnit({ symbol: "nm", dimension: Dim.Length, toBaseFactor: 999, label: "custom" }),
+      makeUnit({
+        symbol: "nm",
+        dimension: Dim.Length,
+        toBaseFactor: 999,
+        label: "custom",
+      }),
     );
     // Must resolve the new atomic, not the stale prefix derivation
     expect(parseUnit("nm", reg).toBaseFactor).toBe(999);
@@ -721,14 +935,23 @@ describe("Expression audit fixes round 2", () => {
         metadata: { prefixable: true },
       }),
     );
-    const before = compileExpression(Expression.literal(1, "nm"), { registry: reg });
+    const before = compileExpression(Expression.literal(1, "nm"), {
+      registry: reg,
+    });
     // Folding preserves the literal's own unit (value 1 nm); base value reflects derivation
     expect(before.evaluate({}).value).toBe(1);
     expect(before.evaluate({}).toBase().value).toBeCloseTo(1e-9, 18);
     reg.register(
-      makeUnit({ symbol: "nm", dimension: Dim.Length, toBaseFactor: 999, label: "custom" }),
+      makeUnit({
+        symbol: "nm",
+        dimension: Dim.Length,
+        toBaseFactor: 999,
+        label: "custom",
+      }),
     );
-    const after = compileExpression(Expression.literal(1, "nm"), { registry: reg });
+    const after = compileExpression(Expression.literal(1, "nm"), {
+      registry: reg,
+    });
     expect(after.evaluate({}).toBase().value).toBe(999);
     expect(after).not.toBe(before);
   });

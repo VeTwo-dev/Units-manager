@@ -18,7 +18,9 @@ export class UnitEngineError extends Error {
 /** Thrown when two quantities of different dimensions are added/subtracted/compared. */
 export class UnitMismatchError extends UnitEngineError {
   constructor(a: string, b: string) {
-    super(`Unit mismatch: cannot combine "${a}" with "${b}" (different dimensions).`);
+    super(
+      `Unit mismatch: cannot combine "${a}" with "${b}" (different dimensions).`,
+    );
   }
 }
 
@@ -85,7 +87,8 @@ export class InvalidMeasurementError extends UnitEngineError {
 export class DivisionByZeroError extends UnitEngineError {
   constructor(message?: string) {
     super(
-      message ?? "Division by zero: cannot divide a quantity by zero or a zero-valued quantity.",
+      message ??
+        "Division by zero: cannot divide a quantity by zero or a zero-valued quantity.",
     );
   }
 }
@@ -125,7 +128,9 @@ export class InvalidAffineOperationError extends UnitEngineError {
 /** Thrown when a transformation is not supported (e.g. non-linear conversion not yet implemented). */
 export class UnsupportedTransformationError extends UnitEngineError {
   constructor(transformation: string, reason?: string) {
-    super(`Unsupported transformation "${transformation}"${reason ? `: ${reason}` : ""}.`);
+    super(
+      `Unsupported transformation "${transformation}"${reason ? `: ${reason}` : ""}.`,
+    );
   }
 }
 
@@ -154,7 +159,9 @@ export class ExpressionError extends UnitEngineError {
 export class UnknownVariableError extends UnitEngineError {
   readonly variable: string;
   constructor(variable: string) {
-    super(`Unknown variable "${variable}": no Quantity binding in the evaluation context.`);
+    super(
+      `Unknown variable "${variable}": no Quantity binding in the evaluation context.`,
+    );
     this.variable = variable;
   }
 }

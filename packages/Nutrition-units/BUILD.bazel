@@ -1,0 +1,21 @@
+# Bazel build for @vetwo/nutrition-units (internal link project).
+#
+# Minimal BUILD file to satisfy npm_link_all_packages() link target at root.
+
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+
+npm_link_all_packages()
+
+filegroup(
+    name = "package",
+    srcs = glob(["**"], exclude = ["node_modules/**", ".next/**", "dist/**", ".git/**"]),
+    visibility = ["//visibility:public"],
+)
+
+npm_package(
+    name = "pkg",
+    srcs = [":package"],
+    package = "@vetwo/nutrition-units",
+    visibility = ["//visibility:public"],
+)

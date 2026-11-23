@@ -41,7 +41,11 @@ import { linearScaleOf } from "./conversion-engine.js";
 import { createRegistry } from "./unit-system.js";
 import { SI_PACK } from "./packs/si.js";
 import { areKindsCompatible, type SemanticPolicy } from "./quantity-kind.js";
-import { ExpressionError, ExpressionLimitError, UnitEngineError } from "./errors/index.js";
+import {
+  ExpressionError,
+  ExpressionLimitError,
+  UnitEngineError,
+} from "./errors/index.js";
 
 // ---------------------------------------------------------------------------
 // AST (immutable, frozen at construction)
@@ -109,16 +113,21 @@ function resolveLimits(limits?: UnitAlgebraLimits): {
   maxDerivedExpansionDepth: number;
 } {
   const r = {
-    maxExpressionLength: limits?.maxExpressionLength ?? DEFAULT_UALGEBRA_LIMITS.maxExpressionLength,
+    maxExpressionLength:
+      limits?.maxExpressionLength ??
+      DEFAULT_UALGEBRA_LIMITS.maxExpressionLength,
     maxAstNodes: limits?.maxAstNodes ?? DEFAULT_UALGEBRA_LIMITS.maxAstNodes,
     maxDepth: limits?.maxDepth ?? DEFAULT_UALGEBRA_LIMITS.maxDepth,
     maxExponent: limits?.maxExponent ?? DEFAULT_UALGEBRA_LIMITS.maxExponent,
     maxDerivedExpansionDepth:
-      limits?.maxDerivedExpansionDepth ?? DEFAULT_UALGEBRA_LIMITS.maxDerivedExpansionDepth,
+      limits?.maxDerivedExpansionDepth ??
+      DEFAULT_UALGEBRA_LIMITS.maxDerivedExpansionDepth,
   };
   for (const [k, v] of Object.entries(r)) {
     if (!Number.isInteger(v) || v < 1) {
-      throw new ExpressionLimitError(`Unit algebra limit ${k} must be a positive integer.`);
+      throw new ExpressionLimitError(
+        `Unit algebra limit ${k} must be a positive integer.`,
+      );
     }
   }
   return r;
@@ -132,13 +141,26 @@ function freeze<T extends object>(node: T): T {
   return Object.freeze(node);
 }
 
-function assertUnitExpr(value: unknown, what = "unit expression"): asserts value is UnitExpr {
+function assertUnitExpr(
+  value: unknown,
+  what = "unit expression",
+): asserts value is UnitExpr {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new ExpressionError(`Invalid ${what}: expected a unit expression node.`);
+    throw new ExpressionError(
+      `Invalid ${what}: expected a unit expression node.`,
+    );
   }
   const kind = (value as Record<string, unknown>).kind;
-  if (kind !== "atom" && kind !== "one" && kind !== "mul" && kind !== "div" && kind !== "pow") {
-    throw new ExpressionError(`Invalid ${what}: unknown node kind "${String(kind)}".`);
+  if (
+    kind !== "atom" &&
+    kind !== "one" &&
+    kind !== "mul" &&
+    kind !== "div" &&
+    kind !== "pow"
+  ) {
+    throw new ExpressionError(
+      `Invalid ${what}: unknown node kind "${String(kind)}".`,
+    );
   }
 }
 
@@ -171,7 +193,9 @@ export function divideUnits(a: UnitExpr, b: UnitExpr): UnitExpr {
 export function powUnitExpr(base: UnitExpr, exponent: number): UnitExpr {
   assertUnitExpr(base, "power base");
   if (!Number.isInteger(exponent)) {
-    throw new ExpressionError(`Unit power exponent must be an integer, got ${String(exponent)}.`);
+    throw new ExpressionError(
+      `Unit power exponent must be an integer, got ${String(exponent)}.`,
+    );
   }
   return freeze({ kind: "pow", base, exponent } as PowNode);
 }
@@ -179,7 +203,11 @@ export function powUnitExpr(base: UnitExpr, exponent: number): UnitExpr {
 /** Reciprocal: 1/expr. */
 export function reciprocalUnitExpr(expr: UnitExpr): UnitExpr {
   assertUnitExpr(expr, "reciprocal operand");
-  return freeze({ kind: "div", numerator: one(), denominator: expr } as DivNode);
+  return freeze({
+    kind: "div",
+    numerator: one(),
+    denominator: expr,
+  } as DivNode);
 }
 
 /**
@@ -189,7 +217,9 @@ export function reciprocalUnitExpr(expr: UnitExpr): UnitExpr {
 export function rootUnitExpr(expr: UnitExpr, degree: number): UnitExpr {
   assertUnitExpr(expr, "root operand");
   if (!Number.isInteger(degree) || degree <= 0) {
-    throw new ExpressionError(`Root degree must be a positive integer, got ${String(degree)}.`);
+    throw new ExpressionError(
+      `Root degree must be a positive integer, got ${String(degree)}.`,
+    );
   }
   const norm = normalizeUnitExpr(expr);
   const factors = norm.factors.map((f) => {
@@ -207,17 +237,26 @@ export function rootUnitExpr(expr: UnitExpr, degree: number): UnitExpr {
 // Structural validation (iterative; counts nodes, checks depth/exponents)
 // ---------------------------------------------------------------------------
 
-function validateUnitExpr(root: UnitExpr, limits: ReturnType<typeof resolveLimits>): number {
+function validateUnitExpr(
+  root: UnitExpr,
+  limits: ReturnType<typeof resolveLimits>,
+): number {
   assertUnitExpr(root, "root unit expression");
   let count = 0;
-  const stack: Array<{ node: UnitExpr; depth: number }> = [{ node: root, depth: 1 }];
+  const stack: Array<{ node: UnitExpr; depth: number }> = [
+    { node: root, depth: 1 },
+  ];
   while (stack.length > 0) {
     const { node, depth } = stack.pop()!;
     if (depth > limits.maxDepth) {
-      throw new ExpressionLimitError(`Unit expression exceeds maxDepth ${limits.maxDepth}.`);
+      throw new ExpressionLimitError(
+        `Unit expression exceeds maxDepth ${limits.maxDepth}.`,
+      );
     }
     if (++count > limits.maxAstNodes) {
-      throw new ExpressionLimitError(`Unit expression exceeds maxAstNodes ${limits.maxAstNodes}.`);
+      throw new ExpressionLimitError(
+        `Unit expression exceeds maxAstNodes ${limits.maxAstNodes}.`,
+      );
     }
     assertUnitExpr(node, "unit expression node");
     switch (node.kind) {
@@ -278,12 +317,17 @@ function factorKey(unit: Unit): string {
  * preserved); their equivalence is answered by equivalentUnits(), not by
  * collapsing structure.
  */
-export function normalizeUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): NormalizedUnitExpr {
+export function normalizeUnitExpr(
+  expr: UnitExpr,
+  limits?: UnitAlgebraLimits,
+): NormalizedUnitExpr {
   const resolved = resolveLimits(limits);
   validateUnitExpr(expr, resolved);
   // Collect (unit, signedExponent) pairs iteratively.
   const collected: Array<{ unit: Unit; exponent: number }> = [];
-  const stack: Array<{ node: UnitExpr; sign: number }> = [{ node: expr, sign: 1 }];
+  const stack: Array<{ node: UnitExpr; sign: number }> = [
+    { node: expr, sign: 1 },
+  ];
   while (stack.length > 0) {
     const { node, sign } = stack.pop()!;
     switch (node.kind) {
@@ -317,14 +361,23 @@ export function normalizeUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): N
   const factors = [...merged.values()]
     .filter((f) => f.exponent !== 0)
     .sort((a, b) =>
-      factorKey(a.unit) < factorKey(b.unit) ? -1 : factorKey(a.unit) > factorKey(b.unit) ? 1 : 0,
+      factorKey(a.unit) < factorKey(b.unit)
+        ? -1
+        : factorKey(a.unit) > factorKey(b.unit)
+          ? 1
+          : 0,
     )
     .map((f) => Object.freeze({ unit: f.unit, exponent: f.exponent }));
   const key =
-    factors.length === 0 ? "1" : factors.map((f) => `${factorKey(f.unit)}^${f.exponent}`).join("·");
+    factors.length === 0
+      ? "1"
+      : factors.map((f) => `${factorKey(f.unit)}^${f.exponent}`).join("·");
   const cached = internCache.get(key);
   if (cached) return cached;
-  const normalized: NormalizedUnitExpr = Object.freeze({ factors: Object.freeze(factors), key });
+  const normalized: NormalizedUnitExpr = Object.freeze({
+    factors: Object.freeze(factors),
+    key,
+  });
   if (internCache.size >= MAX_INTERN) {
     const first = internCache.keys().next().value as string | undefined;
     if (first !== undefined) internCache.delete(first);
@@ -334,7 +387,9 @@ export function normalizeUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): N
 }
 
 /** Rebuild a (non-minimal but valid) UnitExpr from normalized factors. */
-function denormalize(factors: readonly { unit: Unit; exponent: number }[]): UnitExpr {
+function denormalize(
+  factors: readonly { unit: Unit; exponent: number }[],
+): UnitExpr {
   let out: UnitExpr = one();
   for (const f of factors) {
     out = multiplyUnits(out, powUnitExpr(atom(f.unit), f.exponent));
@@ -343,12 +398,18 @@ function denormalize(factors: readonly { unit: Unit; exponent: number }[]): Unit
 }
 
 /** Simplify = normalize then rebuild (cancellation applied, structure preserved). */
-export function simplifyUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): UnitExpr {
+export function simplifyUnitExpr(
+  expr: UnitExpr,
+  limits?: UnitAlgebraLimits,
+): UnitExpr {
   return denormalize(normalizeUnitExpr(expr, limits).factors);
 }
 
 /** Canonical key for equality, caching, memoization and registry lookup. */
-export function unitExprKey(expr: UnitExpr, limits?: UnitAlgebraLimits): string {
+export function unitExprKey(
+  expr: UnitExpr,
+  limits?: UnitAlgebraLimits,
+): string {
   return normalizeUnitExpr(expr, limits).key;
 }
 
@@ -367,7 +428,10 @@ function requireAlgebraicAtom(unit: Unit, what: string): void {
 }
 
 /** Combined dimension of an expression (integer-exponent algebra). */
-export function dimensionOfUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): DimensionVector {
+export function dimensionOfUnitExpr(
+  expr: UnitExpr,
+  limits?: UnitAlgebraLimits,
+): DimensionVector {
   const norm = normalizeUnitExpr(expr, limits);
   let dim: DimensionVector = {};
   for (const f of norm.factors) {
@@ -382,19 +446,26 @@ export function dimensionOfUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits):
  * Combined scale to canonical base units (product of scale^exponent).
  * Linear atoms only — affine/logarithmic/custom throw explicitly.
  */
-export function scaleOfUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): number {
+export function scaleOfUnitExpr(
+  expr: UnitExpr,
+  limits?: UnitAlgebraLimits,
+): number {
   const norm = normalizeUnitExpr(expr, limits);
   let scale = 1;
   for (const f of norm.factors) {
     requireAlgebraicAtom(f.unit, "scale");
     const s = Math.pow(linearScaleOf(f.unit), f.exponent);
     if (!Number.isFinite(s) || s === 0) {
-      throw new ExpressionError(`Unit algebra produced a non-finite scale for "${f.unit.symbol}".`);
+      throw new ExpressionError(
+        `Unit algebra produced a non-finite scale for "${f.unit.symbol}".`,
+      );
     }
     scale *= s;
   }
   if (!Number.isFinite(scale) || scale === 0) {
-    throw new ExpressionError("Unit algebra produced a non-finite combined scale.");
+    throw new ExpressionError(
+      "Unit algebra produced a non-finite combined scale.",
+    );
   }
   return scale;
 }
@@ -457,8 +528,12 @@ export function equivalentUnits(
   if (opts.ignoreKind === true) return true;
   // Semantic kinds: every factor pair compared positionally is overkill;
   // compare the SETS of claimed kinds for equality under the policy.
-  const kindsA = normA.factors.map((f) => f.unit.metadata?.kind).filter((k) => k !== undefined);
-  const kindsB = normB.factors.map((f) => f.unit.metadata?.kind).filter((k) => k !== undefined);
+  const kindsA = normA.factors
+    .map((f) => f.unit.metadata?.kind)
+    .filter((k) => k !== undefined);
+  const kindsB = normB.factors
+    .map((f) => f.unit.metadata?.kind)
+    .filter((k) => k !== undefined);
   if (kindsA.length === 0 && kindsB.length === 0) return true;
   if (kindsA.length !== kindsB.length) return false;
   const sortedA = [...kindsA].sort();
@@ -479,7 +554,12 @@ export function equivalentUnits(
 export function toUnit(expr: UnitExpr, limits?: UnitAlgebraLimits): Unit {
   const norm = normalizeUnitExpr(expr, limits);
   if (norm.factors.length === 0) {
-    return makeUnit({ symbol: "1", dimension: {}, toBaseFactor: 1, label: "dimensionless" });
+    return makeUnit({
+      symbol: "1",
+      dimension: {},
+      toBaseFactor: 1,
+      label: "dimensionless",
+    });
   }
   const dim = dimensionOfUnitExpr(expr, limits);
   const scale = scaleOfUnitExpr(expr, limits);
@@ -522,9 +602,15 @@ function renderExponent(exp: number, style: "unicode" | "ascii"): string {
     .join("");
 }
 
-function renderFactor(symbol: string, exp: number, style: "unicode" | "ascii"): string {
+function renderFactor(
+  symbol: string,
+  exp: number,
+  style: "unicode" | "ascii",
+): string {
   if (exp === 1) return symbol;
-  return style === "ascii" ? `${symbol}^${exp}` : `${symbol}${renderExponent(exp, style)}`;
+  return style === "ascii"
+    ? `${symbol}^${exp}`
+    : `${symbol}${renderExponent(exp, style)}`;
 }
 
 /**
@@ -532,16 +618,23 @@ function renderFactor(symbol: string, exp: number, style: "unicode" | "ascii"): 
  * (inherited from normalization). Negative exponents go to the denominator
  * with positive powers; dimensionless renders as "1".
  */
-export function formatUnitExpr(expr: UnitExpr, opts: FormatUnitExprOptions = {}): string {
+export function formatUnitExpr(
+  expr: UnitExpr,
+  opts: FormatUnitExprOptions = {},
+): string {
   const style = opts.style ?? "unicode";
   const norm = normalizeUnitExpr(expr, opts.limits);
   if (norm.factors.length === 0) return "1";
   const mul = style === "ascii" ? "*" : "·";
   const num = norm.factors.filter((f) => f.exponent > 0);
   const den = norm.factors.filter((f) => f.exponent < 0);
-  const numStr = num.map((f) => renderFactor(f.unit.symbol, f.exponent, style)).join(mul);
+  const numStr = num
+    .map((f) => renderFactor(f.unit.symbol, f.exponent, style))
+    .join(mul);
   if (den.length === 0) return numStr === "" ? "1" : numStr;
-  const denStr = den.map((f) => renderFactor(f.unit.symbol, -f.exponent, style)).join(mul);
+  const denStr = den
+    .map((f) => renderFactor(f.unit.symbol, -f.exponent, style))
+    .join(mul);
   const denWrapped = den.length > 1 ? `(${denStr})` : denStr;
   return numStr === "" ? `1/${denWrapped}` : `${numStr}/${denWrapped}`;
 }
@@ -571,7 +664,10 @@ const SUPERSCRIPT_VALUES: Record<string, string> = {
   "⁻": "-",
 };
 
-function tokenizeUnitExpr(input: string, limits: ReturnType<typeof resolveLimits>): Token[] {
+function tokenizeUnitExpr(
+  input: string,
+  limits: ReturnType<typeof resolveLimits>,
+): Token[] {
   if (input.length > limits.maxExpressionLength) {
     throw new ExpressionLimitError(
       `Unit expression exceeds maxExpressionLength ${limits.maxExpressionLength}.`,
@@ -631,10 +727,15 @@ function tokenizeUnitExpr(input: string, limits: ReturnType<typeof resolveLimits
       let j = i;
       if (input[j] === "-") j++;
       if (j >= input.length || input[j]! < "0" || input[j]! > "9") {
-        throw new ExpressionError(`Unexpected character "${ch}" in unit expression.`);
+        throw new ExpressionError(
+          `Unexpected character "${ch}" in unit expression.`,
+        );
       }
       while (j < input.length && input[j]! >= "0" && input[j]! <= "9") j++;
-      tokens.push({ kind: "int", value: Number.parseInt(input.slice(i, j), 10) });
+      tokens.push({
+        kind: "int",
+        value: Number.parseInt(input.slice(i, j), 10),
+      });
       i = j;
       continue;
     }
@@ -649,7 +750,9 @@ function tokenizeUnitExpr(input: string, limits: ReturnType<typeof resolveLimits
       j++;
     }
     if (j === i) {
-      throw new ExpressionError(`Unexpected character "${input[i]}" in unit expression.`);
+      throw new ExpressionError(
+        `Unexpected character "${input[i]}" in unit expression.`,
+      );
     }
     tokens.push({ kind: "unit", symbol: input.slice(i, j) });
     i = j;
@@ -672,7 +775,9 @@ class UnitExprParser {
     }
     const expr = this.parseMulDiv(1);
     if (this.pos < this.tokens.length) {
-      throw new ExpressionError("Unexpected trailing tokens in unit expression.");
+      throw new ExpressionError(
+        "Unexpected trailing tokens in unit expression.",
+      );
     }
     return expr;
   }
@@ -700,13 +805,19 @@ class UnitExprParser {
       left =
         op === "*"
           ? freeze({ kind: "mul", left, right } as MulNode)
-          : freeze({ kind: "div", numerator: left, denominator: right } as DivNode);
+          : freeze({
+              kind: "div",
+              numerator: left,
+              denominator: right,
+            } as DivNode);
     }
   }
 
   private checkDepth(depth: number): void {
     if (depth > this.limits.maxDepth) {
-      throw new ExpressionLimitError(`Unit expression exceeds maxDepth ${this.limits.maxDepth}.`);
+      throw new ExpressionLimitError(
+        `Unit expression exceeds maxDepth ${this.limits.maxDepth}.`,
+      );
     }
   }
 
@@ -791,7 +902,9 @@ export function parseUnitExpression(
   limits?: UnitAlgebraLimits,
 ): UnitExpr {
   if (typeof text !== "string" || text.trim().length === 0) {
-    throw new ExpressionError("Unit expression text must be a non-empty string.");
+    throw new ExpressionError(
+      "Unit expression text must be a non-empty string.",
+    );
   }
   const resolved = resolveLimits(limits);
   // Trailing basis tag ("kg DM", mirroring the core parser). Basis is
@@ -865,19 +978,32 @@ export class DerivedUnitRegistry {
 
   define(def: DerivedUnitDefinition): void {
     if (!def || typeof def !== "object" || Array.isArray(def)) {
-      throw new UnitEngineError("Derived unit definition must be a plain object.");
+      throw new UnitEngineError(
+        "Derived unit definition must be a plain object.",
+      );
     }
     if (typeof def.name !== "string" || def.name.trim().length === 0) {
-      throw new UnitEngineError("Derived unit definition needs a non-empty name.");
+      throw new UnitEngineError(
+        "Derived unit definition needs a non-empty name.",
+      );
     }
     if (this.defs.has(def.name)) {
-      throw new UnitEngineError(`Derived unit "${def.name}" is already defined.`);
+      throw new UnitEngineError(
+        `Derived unit "${def.name}" is already defined.`,
+      );
     }
-    if (typeof def.definition !== "string" || def.definition.trim().length === 0) {
-      throw new UnitEngineError(`Derived unit "${def.name}" needs a non-empty definition.`);
+    if (
+      typeof def.definition !== "string" ||
+      def.definition.trim().length === 0
+    ) {
+      throw new UnitEngineError(
+        `Derived unit "${def.name}" needs a non-empty definition.`,
+      );
     }
     if (typeof def.description !== "string" && def.description !== undefined) {
-      throw new UnitEngineError(`Derived unit "${def.name}" description must be a string.`);
+      throw new UnitEngineError(
+        `Derived unit "${def.name}" description must be a string.`,
+      );
     }
     // Validate parseability now (fail fast on typos) against an SI-backed
     // registry, since seeds legitimately name pack units (N, Pa, …).
@@ -934,7 +1060,10 @@ export class DerivedUnitRegistry {
       const nested = this.defs.get(f.unit.symbol);
       const base: UnitExpr =
         nested !== undefined
-          ? powUnitExpr(this.expandText(nested.definition, registry, limits, depth + 1), f.exponent)
+          ? powUnitExpr(
+              this.expandText(nested.definition, registry, limits, depth + 1),
+              f.exponent,
+            )
           : powUnitExpr(atom(f.unit), f.exponent);
       out = multiplyUnits(out, base);
     }
@@ -954,7 +1083,8 @@ export class DerivedUnitRegistry {
     for (const name of this.list()) {
       try {
         const expanded = this.expand(name, registry, limits);
-        if (equivalentUnits(expr, expanded, { limits, ignoreKind: true })) return name;
+        if (equivalentUnits(expr, expanded, { limits, ignoreKind: true }))
+          return name;
       } catch {
         continue;
       }
@@ -976,7 +1106,11 @@ function defaultDerivedUnits(): readonly DerivedUnitDefinition[] {
     { name: "Hz", definition: "1/s", description: "hertz" },
     { name: "C", definition: "A*s", description: "coulomb" },
     { name: "V", definition: "W/A", description: "volt" },
-    { name: "ohm", definition: "V/A", description: "ohm (ASCII name; symbol Ω)" },
+    {
+      name: "ohm",
+      definition: "V/A",
+      description: "ohm (ASCII name; symbol Ω)",
+    },
   ];
 }
 
@@ -990,7 +1124,10 @@ export interface SerializedUnitExpr {
   readonly version: 1;
   readonly type: "unit-expr";
   /** Normalized factors: deterministic order, integer exponents. */
-  readonly factors: readonly { readonly unit: string; readonly exponent: number }[];
+  readonly factors: readonly {
+    readonly unit: string;
+    readonly exponent: number;
+  }[];
 }
 
 function serializeNormalized(norm: NormalizedUnitExpr): SerializedUnitExpr {
@@ -998,13 +1135,18 @@ function serializeNormalized(norm: NormalizedUnitExpr): SerializedUnitExpr {
     version: 1 as const,
     type: "unit-expr" as const,
     factors: Object.freeze(
-      norm.factors.map((f) => Object.freeze({ unit: f.unit.symbol, exponent: f.exponent })),
+      norm.factors.map((f) =>
+        Object.freeze({ unit: f.unit.symbol, exponent: f.exponent }),
+      ),
     ),
   });
 }
 
 /** Serialize any expression (normalized first — output is canonical). */
-export function serializeUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): SerializedUnitExpr {
+export function serializeUnitExpr(
+  expr: UnitExpr,
+  limits?: UnitAlgebraLimits,
+): SerializedUnitExpr {
   return serializeNormalized(normalizeUnitExpr(expr, limits));
 }
 
@@ -1028,11 +1170,15 @@ export function deserializeUnitExpr(
 ): UnitExpr {
   const resolved = resolveLimits(limits);
   if (data === null || typeof data !== "object" || Array.isArray(data)) {
-    throw new ExpressionError("Malformed serialized unit expression: expected an object.");
+    throw new ExpressionError(
+      "Malformed serialized unit expression: expected an object.",
+    );
   }
   const obj = data as Record<string, unknown>;
   if (hasPollutionKey(obj)) {
-    throw new ExpressionError("Malformed serialized unit expression: forbidden prototype keys.");
+    throw new ExpressionError(
+      "Malformed serialized unit expression: forbidden prototype keys.",
+    );
   }
   if (obj.version !== 1) {
     if (obj.version === undefined)
@@ -1042,22 +1188,32 @@ export function deserializeUnitExpr(
     );
   }
   if (obj.type !== "unit-expr") {
-    throw new ExpressionError(`Serialized unit expression has wrong type "${String(obj.type)}".`);
+    throw new ExpressionError(
+      `Serialized unit expression has wrong type "${String(obj.type)}".`,
+    );
   }
   if (!Array.isArray(obj.factors)) {
-    throw new ExpressionError("Malformed serialized unit expression: factors must be an array.");
+    throw new ExpressionError(
+      "Malformed serialized unit expression: factors must be an array.",
+    );
   }
   if (obj.factors.length > resolved.maxAstNodes) {
-    throw new ExpressionLimitError("Serialized unit expression exceeds maxAstNodes.");
+    throw new ExpressionLimitError(
+      "Serialized unit expression exceeds maxAstNodes.",
+    );
   }
   let out: UnitExpr = one();
   for (const entry of obj.factors) {
     if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
-      throw new ExpressionError("Malformed serialized unit expression: factor must be an object.");
+      throw new ExpressionError(
+        "Malformed serialized unit expression: factor must be an object.",
+      );
     }
     const factor = entry as Record<string, unknown>;
     if (hasPollutionKey(factor)) {
-      throw new ExpressionError("Malformed serialized unit expression: forbidden prototype keys.");
+      throw new ExpressionError(
+        "Malformed serialized unit expression: forbidden prototype keys.",
+      );
     }
     if (typeof factor.unit !== "string" || factor.unit.trim().length === 0) {
       throw new ExpressionError(
@@ -1071,7 +1227,9 @@ export function deserializeUnitExpr(
     }
     const exponent = factor.exponent as number;
     if (Math.abs(exponent) > resolved.maxExponent) {
-      throw new ExpressionLimitError("Serialized unit expression exponent exceeds maxExponent.");
+      throw new ExpressionLimitError(
+        "Serialized unit expression exponent exceeds maxExponent.",
+      );
     }
     let unit: Unit;
     try {
@@ -1099,7 +1257,11 @@ export function deserializeUnitExpr(
 export function analyzeUnitExpr(
   expr: UnitExpr,
   limits?: UnitAlgebraLimits,
-): { dimension?: DimensionVector; valid: boolean; diagnostics: readonly string[] } {
+): {
+  dimension?: DimensionVector;
+  valid: boolean;
+  diagnostics: readonly string[];
+} {
   const diagnostics: string[] = [];
   try {
     const dimension = dimensionOfUnitExpr(expr, limits);
@@ -1107,11 +1269,18 @@ export function analyzeUnitExpr(
   } catch (error) {
     if (error instanceof ExpressionLimitError) throw error;
     diagnostics.push((error as Error).message);
-    return { dimension: undefined, valid: false, diagnostics: Object.freeze(diagnostics) };
+    return {
+      dimension: undefined,
+      valid: false,
+      diagnostics: Object.freeze(diagnostics),
+    };
   }
 }
 
 /** Infer unknown factor exponents? Not applicable — exponents are structural. */
-export function checkUnitExpr(expr: UnitExpr, limits?: UnitAlgebraLimits): boolean {
+export function checkUnitExpr(
+  expr: UnitExpr,
+  limits?: UnitAlgebraLimits,
+): boolean {
   return analyzeUnitExpr(expr, limits).valid;
 }

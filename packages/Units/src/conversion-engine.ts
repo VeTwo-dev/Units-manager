@@ -27,7 +27,10 @@
  */
 import { dimensionKey, dimensionsEqual } from "./dimension.js";
 import type { ConversionDef, Unit } from "./unit.js";
-import { ImpossibleConversionError, UnsupportedTransformationError } from "./errors/index.js";
+import {
+  ImpossibleConversionError,
+  UnsupportedTransformationError,
+} from "./errors/index.js";
 
 /**
  * Reject conversions the numeric engine cannot execute (Phase 21.29).
@@ -68,7 +71,8 @@ const planCache = new Map<string, ConversionPlan>();
 function planKey(from: Unit, to: Unit, registryVersion?: number): string {
   requireExecutableConversion(from);
   requireExecutableConversion(to);
-  const fromOffset = from.conversion.kind === "affine" ? from.conversion.offset : 0;
+  const fromOffset =
+    from.conversion.kind === "affine" ? from.conversion.offset : 0;
   const toOffset = to.conversion.kind === "affine" ? to.conversion.offset : 0;
   return [
     `v${registryVersion ?? "*"}`,
@@ -129,7 +133,11 @@ export function linearScaleOf(unit: Unit): number {
  * Pass `registryVersion` (see `UnitRegistry.version`) when the units come
  * from a mutable registry to scope cached plans to a generation.
  */
-export function getConversionPlan(from: Unit, to: Unit, registryVersion?: number): ConversionPlan {
+export function getConversionPlan(
+  from: Unit,
+  to: Unit,
+  registryVersion?: number,
+): ConversionPlan {
   if (isSameUnit(from, to)) {
     return {
       sameUnit: true,
@@ -166,8 +174,12 @@ export function getConversionPlan(from: Unit, to: Unit, registryVersion?: number
 export function convertWithPlan(value: number, plan: ConversionPlan): number {
   if (plan.sameUnit) return value;
   const base =
-    plan.fromKind === "linear" ? value * plan.fromScale : value * plan.fromScale + plan.fromOffset;
-  return plan.toKind === "linear" ? base / plan.toScale : (base - plan.toOffset) / plan.toScale;
+    plan.fromKind === "linear"
+      ? value * plan.fromScale
+      : value * plan.fromScale + plan.fromOffset;
+  return plan.toKind === "linear"
+    ? base / plan.toScale
+    : (base - plan.toOffset) / plan.toScale;
 }
 
 // ---------------------------------------------------------------------------

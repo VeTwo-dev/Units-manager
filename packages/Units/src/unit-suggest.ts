@@ -89,7 +89,8 @@ export function suggestUnit(
 ): readonly string[] {
   if (typeof input !== "string") return [];
   const trimmed = input.normalize("NFC").trim();
-  if (trimmed.length === 0 || trimmed.length > MAX_SUGGEST_INPUT_LENGTH) return [];
+  if (trimmed.length === 0 || trimmed.length > MAX_SUGGEST_INPUT_LENGTH)
+    return [];
   const maxSuggestions = opts.maxSuggestions ?? DEFAULT_MAX_SUGGESTIONS;
   const maxDistance = opts.maxDistance ?? DEFAULT_MAX_DISTANCE;
   if (
@@ -131,8 +132,12 @@ export function parseWithDiagnostics(
     const unit = parseUnit(input, registry, { strict: opts.strict });
     return { ok: true, unit, suggestions: [] };
   } catch (e) {
-    if (e instanceof InvalidUnitExpressionError || e instanceof UnsupportedUnitError) {
-      const suggestions = typeof input === "string" ? suggestUnit(input, registry, opts) : [];
+    if (
+      e instanceof InvalidUnitExpressionError ||
+      e instanceof UnsupportedUnitError
+    ) {
+      const suggestions =
+        typeof input === "string" ? suggestUnit(input, registry, opts) : [];
       return { ok: false, error: e, suggestions };
     }
     // Preserve unexpected error types untouched (still typed engine errors

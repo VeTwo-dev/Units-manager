@@ -46,16 +46,23 @@ export interface NutritionContext {
 
 function assertFiniteFraction(value: number, name: string): void {
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new NutritionContextError(`${name} must be a finite number, got ${String(value)}`);
+    throw new NutritionContextError(
+      `${name} must be a finite number, got ${String(value)}`,
+    );
   }
   if (value <= 0 || value > 1) {
-    throw new InvalidNutritionBasisError(name, `must satisfy 0 < ${name} ≤ 1, got ${value}`);
+    throw new InvalidNutritionBasisError(
+      name,
+      `must satisfy 0 < ${name} ≤ 1, got ${value}`,
+    );
   }
 }
 
 function validateContextInput(opts: NutritionContextOptions): void {
   if (!opts || typeof opts !== "object" || Array.isArray(opts)) {
-    throw new InvalidNutritionContextError("NutritionContext must be a plain object");
+    throw new InvalidNutritionContextError(
+      "NutritionContext must be a plain object",
+    );
   }
   const r = opts as Record<string, unknown>;
   if (
@@ -63,7 +70,9 @@ function validateContextInput(opts: NutritionContextOptions): void {
     Object.prototype.hasOwnProperty.call(r, "constructor") ||
     Object.prototype.hasOwnProperty.call(r, "prototype")
   ) {
-    throw new InvalidNutritionContextError("NutritionContext contains forbidden keys");
+    throw new InvalidNutritionContextError(
+      "NutritionContext contains forbidden keys",
+    );
   }
   if (opts.dryMatterFraction !== undefined)
     assertFiniteFraction(opts.dryMatterFraction, "dryMatterFraction");
@@ -72,12 +81,22 @@ function validateContextInput(opts: NutritionContextOptions): void {
   if (opts.dryMatterMeasurement !== undefined) {
     const m = opts.dryMatterMeasurement as unknown;
     const maybe = m as { value?: unknown; uncertainty?: unknown };
-    if (!maybe || typeof maybe !== "object" || !("value" in maybe) || !("uncertainty" in maybe)) {
-      throw new InvalidNutritionContextError("dryMatterMeasurement must be a Measurement");
+    if (
+      !maybe ||
+      typeof maybe !== "object" ||
+      !("value" in maybe) ||
+      !("uncertainty" in maybe)
+    ) {
+      throw new InvalidNutritionContextError(
+        "dryMatterMeasurement must be a Measurement",
+      );
     }
   }
   // Both supplied → must be consistent: DM + moisture ≈ 1
-  if (opts.dryMatterFraction !== undefined && opts.moistureFraction !== undefined) {
+  if (
+    opts.dryMatterFraction !== undefined &&
+    opts.moistureFraction !== undefined
+  ) {
     const sum = opts.dryMatterFraction + opts.moistureFraction;
     if (Math.abs(sum - 1) > 1e-6) {
       throw new InvalidNutritionContextError(
@@ -85,9 +104,13 @@ function validateContextInput(opts: NutritionContextOptions): void {
       );
     }
   }
-  if (opts.dryMatterMeasurement !== undefined && opts.dryMatterFraction !== undefined) {
-    const dmVal = (opts.dryMatterMeasurement as unknown as { value: { value: number } }).value
-      .value;
+  if (
+    opts.dryMatterMeasurement !== undefined &&
+    opts.dryMatterFraction !== undefined
+  ) {
+    const dmVal = (
+      opts.dryMatterMeasurement as unknown as { value: { value: number } }
+    ).value.value;
     if (Math.abs(dmVal - opts.dryMatterFraction) > 1e-6) {
       throw new InvalidNutritionContextError(
         `dryMatterMeasurement value ${dmVal} inconsistent with dryMatterFraction ${opts.dryMatterFraction}`,
@@ -97,14 +120,20 @@ function validateContextInput(opts: NutritionContextOptions): void {
   // If moisture supplied without DM, derive DM = 1 - moisture
   // If neither supplied but sampleState provided, that's okay — context may be minimal
   // But if absolutely no fraction supplied, caller must provide one for basis conversion
-  if (opts.dryMatterFraction === undefined && opts.moistureFraction === undefined) {
+  if (
+    opts.dryMatterFraction === undefined &&
+    opts.moistureFraction === undefined
+  ) {
     // Allow empty context for non-basis operations; basis conversion will throw missing
   }
   if (
     opts.sampleState !== undefined &&
-    (typeof opts.sampleState !== "string" || opts.sampleState.trim().length === 0)
+    (typeof opts.sampleState !== "string" ||
+      opts.sampleState.trim().length === 0)
   ) {
-    throw new InvalidNutritionContextError("sampleState must be a non-empty string if provided");
+    throw new InvalidNutritionContextError(
+      "sampleState must be a non-empty string if provided",
+    );
   }
   if (opts.metadata !== undefined) {
     if (
@@ -112,7 +141,9 @@ function validateContextInput(opts: NutritionContextOptions): void {
       opts.metadata === null ||
       Array.isArray(opts.metadata)
     ) {
-      throw new InvalidNutritionContextError("metadata must be a plain object if provided");
+      throw new InvalidNutritionContextError(
+        "metadata must be a plain object if provided",
+      );
     }
     const m = opts.metadata as Record<string, unknown>;
     if (
@@ -120,12 +151,16 @@ function validateContextInput(opts: NutritionContextOptions): void {
       Object.prototype.hasOwnProperty.call(m, "constructor") ||
       Object.prototype.hasOwnProperty.call(m, "prototype")
     ) {
-      throw new InvalidNutritionContextError("metadata contains forbidden keys");
+      throw new InvalidNutritionContextError(
+        "metadata contains forbidden keys",
+      );
     }
   }
 }
 
-export function createNutritionContext(opts: NutritionContextOptions = {}): NutritionContext {
+export function createNutritionContext(
+  opts: NutritionContextOptions = {},
+): NutritionContext {
   validateContextInput(opts);
   const dm = opts.dryMatterFraction;
   const moist = opts.moistureFraction;
@@ -152,11 +187,17 @@ export function createNutritionContext(opts: NutritionContextOptions = {}): Nutr
     ...(opts.sampleState ? { sampleState: opts.sampleState } : {}),
     ...(opts.source ? { source: opts.source } : {}),
     ...(opts.sampleId ? { sampleId: opts.sampleId } : {}),
-    ...(opts.analyticalMethod ? { analyticalMethod: opts.analyticalMethod } : {}),
+    ...(opts.analyticalMethod
+      ? { analyticalMethod: opts.analyticalMethod }
+      : {}),
     ...(opts.timestamp ? { timestamp: opts.timestamp } : {}),
     ...(opts.metadata ? { metadata: Object.freeze({ ...opts.metadata }) } : {}),
-    ...(resolvedDM !== undefined ? { resolvedDryMatterFraction: resolvedDM } : {}),
-    ...(resolvedMoist !== undefined ? { resolvedMoistureFraction: resolvedMoist } : {}),
+    ...(resolvedDM !== undefined
+      ? { resolvedDryMatterFraction: resolvedDM }
+      : {}),
+    ...(resolvedMoist !== undefined
+      ? { resolvedMoistureFraction: resolvedMoist }
+      : {}),
     ...(resolvedDmMeas ? { resolvedDryMatterMeasurement: resolvedDmMeas } : {}),
   };
   return Object.freeze(result);
@@ -215,7 +256,10 @@ export function resolveDryMatterFraction(
   const dm = context.resolvedDryMatterFraction ?? context.dryMatterFraction;
   if (dm === undefined) throw new MissingNutritionContextError("unknown");
   if (!Number.isFinite(dm) || dm <= 0 || dm > 1)
-    throw new InvalidNutritionBasisError("dryMatterFraction", `resolved invalid: ${dm}`);
+    throw new InvalidNutritionBasisError(
+      "dryMatterFraction",
+      `resolved invalid: ${dm}`,
+    );
   return dm;
 }
 

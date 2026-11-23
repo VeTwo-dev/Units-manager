@@ -123,7 +123,12 @@ export interface ConfidenceInterval {
   /** Confidence level as a fraction (e.g., 0.95 for 95%). */
   readonly confidenceLevel?: number;
   /** Distribution assumption ("normal", "t", "uniform", "rectangular", "triangular"). */
-  readonly distribution?: "normal" | "t" | "uniform" | "rectangular" | "triangular";
+  readonly distribution?:
+    | "normal"
+    | "t"
+    | "uniform"
+    | "rectangular"
+    | "triangular";
   /** Degrees of freedom for t-distribution. */
   readonly degreesOfFreedom?: number;
 }
@@ -159,10 +164,19 @@ export interface MeasurementMetadata {
 // Validation helpers (local, no shared mutable state)
 // ---------------------------------------------------------------------------
 
-function assertValidMetadata(metadata: MeasurementMetadata | undefined, what: string): void {
+function assertValidMetadata(
+  metadata: MeasurementMetadata | undefined,
+  what: string,
+): void {
   if (metadata === undefined) return;
-  if (metadata === null || typeof metadata !== "object" || Array.isArray(metadata)) {
-    throw new InvalidMeasurementError(`${what} metadata must be a plain object`);
+  if (
+    metadata === null ||
+    typeof metadata !== "object" ||
+    Array.isArray(metadata)
+  ) {
+    throw new InvalidMeasurementError(
+      `${what} metadata must be a plain object`,
+    );
   }
   const {
     confidenceLevel,
@@ -176,7 +190,10 @@ function assertValidMetadata(metadata: MeasurementMetadata | undefined, what: st
     autoSigFigs,
   } = metadata;
   if (confidenceLevel !== undefined) {
-    if (typeof confidenceLevel !== "number" || !(confidenceLevel > 0 && confidenceLevel < 1)) {
+    if (
+      typeof confidenceLevel !== "number" ||
+      !(confidenceLevel > 0 && confidenceLevel < 1)
+    ) {
       throw new InvalidMeasurementError(
         `${what} confidence level must be strictly between 0 and 1, got ${String(confidenceLevel)}`,
       );
@@ -205,7 +222,9 @@ function assertValidMetadata(metadata: MeasurementMetadata | undefined, what: st
     }
     if (
       significantFigures.notation !== undefined &&
-      !["standard", "scientific", "engineering"].includes(significantFigures.notation)
+      !["standard", "scientific", "engineering"].includes(
+        significantFigures.notation,
+      )
     ) {
       throw new InvalidMeasurementError(
         `${what} significantFigures.notation must be "standard", "scientific", or "engineering"`,
@@ -224,7 +243,10 @@ function assertValidMetadata(metadata: MeasurementMetadata | undefined, what: st
     if (
       confidenceInterval.confidenceLevel !== undefined &&
       (typeof confidenceInterval.confidenceLevel !== "number" ||
-        !(confidenceInterval.confidenceLevel > 0 && confidenceInterval.confidenceLevel < 1))
+        !(
+          confidenceInterval.confidenceLevel > 0 &&
+          confidenceInterval.confidenceLevel < 1
+        ))
     ) {
       throw new InvalidMeasurementError(
         `${what} confidenceInterval.confidenceLevel must be in (0, 1)`,
@@ -251,23 +273,37 @@ function assertValidMetadata(metadata: MeasurementMetadata | undefined, what: st
     }
   }
   if (provenance !== undefined) {
-    if (provenance.timestamp !== undefined && typeof provenance.timestamp !== "string") {
-      throw new InvalidMeasurementError(`${what} provenance.timestamp must be an ISO 8601 string`);
+    if (
+      provenance.timestamp !== undefined &&
+      typeof provenance.timestamp !== "string"
+    ) {
+      throw new InvalidMeasurementError(
+        `${what} provenance.timestamp must be an ISO 8601 string`,
+      );
     }
-    if (provenance.derivedFrom !== undefined && !Array.isArray(provenance.derivedFrom)) {
-      throw new InvalidMeasurementError(`${what} provenance.derivedFrom must be an array`);
+    if (
+      provenance.derivedFrom !== undefined &&
+      !Array.isArray(provenance.derivedFrom)
+    ) {
+      throw new InvalidMeasurementError(
+        `${what} provenance.derivedFrom must be an array`,
+      );
     }
   }
   if (correlation !== undefined) {
     if (!(correlation.with instanceof Measurement)) {
-      throw new InvalidMeasurementError(`${what} correlation.with must be a Measurement`);
+      throw new InvalidMeasurementError(
+        `${what} correlation.with must be a Measurement`,
+      );
     }
     if (
       typeof correlation.coefficient !== "number" ||
       correlation.coefficient < -1 ||
       correlation.coefficient > 1
     ) {
-      throw new InvalidMeasurementError(`${what} correlation.coefficient must be in [-1, 1]`);
+      throw new InvalidMeasurementError(
+        `${what} correlation.coefficient must be in [-1, 1]`,
+      );
     }
   }
   if (autoSigFigs !== undefined && typeof autoSigFigs !== "boolean") {
@@ -282,7 +318,10 @@ function assertLinearUncertaintyUnit(unit: Unit, what: string): void {
         `in kelvin (scale-only intervals), never in °C/°F`,
     );
   }
-  if (unit.conversion.kind === "logarithmic" || unit.conversion.kind === "custom") {
+  if (
+    unit.conversion.kind === "logarithmic" ||
+    unit.conversion.kind === "custom"
+  ) {
     throw new InvalidMeasurementError(
       `${what} uncertainty unit "${unit.symbol}" has a ${unit.conversion.kind} conversion: ` +
         `uncertainty propagation through nonlinear scales is not supported; ` +
@@ -298,7 +337,10 @@ function assertLinearUncertaintyUnit(unit: Unit, what: string): void {
  * instead of leaving a time bomb for later arithmetic.
  */
 function assertMeasurableValueUnit(unit: Unit, what: string): void {
-  if (unit.conversion.kind === "logarithmic" || unit.conversion.kind === "custom") {
+  if (
+    unit.conversion.kind === "logarithmic" ||
+    unit.conversion.kind === "custom"
+  ) {
     throw new InvalidMeasurementError(
       `${what} value unit "${unit.symbol}" has a ${unit.conversion.kind} conversion: ` +
         `measurements require linear or affine nominal units`,
@@ -328,7 +370,11 @@ export class Measurement {
   /** Whether significant figures are auto-calculated from uncertainty. */
   readonly autoSigFigs?: boolean;
 
-  private constructor(value: Quantity, uncertainty: Quantity, metadata?: MeasurementMetadata) {
+  private constructor(
+    value: Quantity,
+    uncertainty: Quantity,
+    metadata?: MeasurementMetadata,
+  ) {
     this.value = value;
     this.uncertainty = uncertainty;
     // Deep-copy-freeze known nested structure: a shallow freeze would leave
@@ -351,10 +397,18 @@ export class Measurement {
       this.metadata = Object.freeze({
         ...metadata,
         ...(metadata.significantFigures !== undefined
-          ? { significantFigures: Object.freeze({ ...metadata.significantFigures }) }
+          ? {
+              significantFigures: Object.freeze({
+                ...metadata.significantFigures,
+              }),
+            }
           : {}),
         ...(metadata.confidenceInterval !== undefined
-          ? { confidenceInterval: Object.freeze({ ...metadata.confidenceInterval }) }
+          ? {
+              confidenceInterval: Object.freeze({
+                ...metadata.confidenceInterval,
+              }),
+            }
           : {}),
         ...(provenance !== undefined ? { provenance } : {}),
         ...(metadata.correlation !== undefined
@@ -470,7 +524,10 @@ export class Measurement {
    * (delta factor), so affine offsets never corrupt intervals:
    * 10 ± 2 K → °C stays ±2, not ±275.15.
    */
-  to(targetUnitSymbol: string | Unit, registry: UnitRegistry = defaultUnitRegistry): Measurement {
+  to(
+    targetUnitSymbol: string | Unit,
+    registry: UnitRegistry = defaultUnitRegistry,
+  ): Measurement {
     const newValue = this.value.to(targetUnitSymbol, registry);
     const target = newValue.unit;
     const factor = Measurement.deltaScale(this.uncertainty.unit, target);
@@ -496,37 +553,58 @@ export class Measurement {
 
   private assertCompatible(other: Measurement, op: string): void {
     if (!dimensionsEqual(this.dimension, other.dimension)) {
-      throw new UnitMismatchError(this.value.unit.symbol, other.value.unit.symbol);
+      throw new UnitMismatchError(
+        this.value.unit.symbol,
+        other.value.unit.symbol,
+      );
     }
     void op;
   }
 
   /** Add nominal values; uncertainties combine in quadrature. Result keeps left unit. */
-  add(other: Measurement, opts: MeasurementArithmeticOptions = {}): Measurement {
+  add(
+    other: Measurement,
+    opts: MeasurementArithmeticOptions = {},
+  ): Measurement {
     this.assertCompatible(other, "add");
     const value = this.value.add(other.value, opts);
     const sThis = linearScaleOf(this.uncertainty.unit);
     const sOther = linearScaleOf(other.uncertainty.unit);
     const sResult = linearScaleOf(value.unit);
     const combined =
-      Math.sqrt((this.uncertainty.value * sThis) ** 2 + (other.uncertainty.value * sOther) ** 2) /
-      sResult;
+      Math.sqrt(
+        (this.uncertainty.value * sThis) ** 2 +
+          (other.uncertainty.value * sOther) ** 2,
+      ) / sResult;
     checkFiniteResult(combined, "Measurement.add uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /** Subtract nominal values; uncertainties combine in quadrature. */
-  subtract(other: Measurement, opts: MeasurementArithmeticOptions = {}): Measurement {
+  subtract(
+    other: Measurement,
+    opts: MeasurementArithmeticOptions = {},
+  ): Measurement {
     this.assertCompatible(other, "subtract");
     const value = this.value.subtract(other.value, opts);
     const sThis = linearScaleOf(this.uncertainty.unit);
     const sOther = linearScaleOf(other.uncertainty.unit);
     const sResult = linearScaleOf(value.unit);
     const combined =
-      Math.sqrt((this.uncertainty.value * sThis) ** 2 + (other.uncertainty.value * sOther) ** 2) /
-      sResult;
+      Math.sqrt(
+        (this.uncertainty.value * sThis) ** 2 +
+          (other.uncertainty.value * sOther) ** 2,
+      ) / sResult;
     checkFiniteResult(combined, "Measurement.subtract uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /**
@@ -539,7 +617,11 @@ export class Measurement {
     const r2 = Measurement.relativeOf(other);
     const combined = Math.abs(value.value) * Math.sqrt(r1 * r1 + r2 * r2);
     checkFiniteResult(combined, "Measurement.multiply uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /**
@@ -553,35 +635,55 @@ export class Measurement {
     const r2 = Measurement.relativeOf(other);
     const combined = Math.abs(value.value) * Math.sqrt(r1 * r1 + r2 * r2);
     checkFiniteResult(combined, "Measurement.divide uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /** Integer power; relative uncertainty scales by |n|. Delegates dimension math to Quantity.pow. */
   pow(power: number): Measurement {
     if (!Number.isInteger(power)) {
-      throw new NumericalError(`Measurement.pow() power must be an integer, got ${power}`);
+      throw new NumericalError(
+        `Measurement.pow() power must be an integer, got ${power}`,
+      );
     }
     const value = this.value.pow(power);
     const r = Measurement.relativeOf(this);
     const combined = Math.abs(value.value) * Math.abs(power) * r;
     checkFiniteResult(combined, "Measurement.pow uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /** Scale nominal and uncertainty by |factor|; unit preserved. */
   scale(factor: number): Measurement {
     if (typeof factor !== "number") {
-      throw new NumericalError(`Scale factor must be a number, got ${typeof factor}`);
+      throw new NumericalError(
+        `Scale factor must be a number, got ${typeof factor}`,
+      );
     }
     const value = this.value.scale(factor);
     const unc = Math.abs(factor) * this.uncertainty.value;
     checkFiniteResult(unc, "Measurement.scale uncertainty");
-    return new Measurement(value, Quantity.of(unc, this.uncertainty.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(unc, this.uncertainty.unit),
+      this.metadata,
+    );
   }
 
   /** Negate the nominal value; uncertainty unchanged (symmetric). */
   negate(): Measurement {
-    return new Measurement(this.value.negate(), this.uncertainty, this.metadata);
+    return new Measurement(
+      this.value.negate(),
+      this.uncertainty,
+      this.metadata,
+    );
   }
 
   /** Absolute nominal value; uncertainty unchanged (symmetric). */
@@ -625,7 +727,10 @@ export class Measurement {
     if (!dimensionsEqual(this.dimension, other.dimension)) return false;
     return (
       Object.is(this.value.toBase().value, other.value.toBase().value) &&
-      Object.is(this.uncertainty.toBase().value, other.uncertainty.toBase().value)
+      Object.is(
+        this.uncertainty.toBase().value,
+        other.uncertainty.toBase().value,
+      )
     );
   }
 
@@ -633,17 +738,32 @@ export class Measurement {
    * Approximate equality: nominal and uncertainty both within tolerance.
    * Metadata never affects identity.
    */
-  equals(other: Measurement, epsilon: number | ComparisonOptions = 1e-9): boolean {
+  equals(
+    other: Measurement,
+    epsilon: number | ComparisonOptions = 1e-9,
+  ): boolean {
     if (!dimensionsEqual(this.dimension, other.dimension)) return false;
-    const opts: ComparisonOptions = typeof epsilon === "number" ? { epsilon } : epsilon;
+    const opts: ComparisonOptions =
+      typeof epsilon === "number" ? { epsilon } : epsilon;
     return (
-      approxEqualNumeric(this.value.toBase().value, other.value.toBase().value, opts) &&
-      approxEqualNumeric(this.uncertainty.toBase().value, other.uncertainty.toBase().value, opts)
+      approxEqualNumeric(
+        this.value.toBase().value,
+        other.value.toBase().value,
+        opts,
+      ) &&
+      approxEqualNumeric(
+        this.uncertainty.toBase().value,
+        other.uncertainty.toBase().value,
+        opts,
+      )
     );
   }
 
   /** Explicit alias for equals with tolerance. */
-  approximatelyEquals(other: Measurement, epsilon: number | ComparisonOptions = 1e-9): boolean {
+  approximatelyEquals(
+    other: Measurement,
+    epsilon: number | ComparisonOptions = 1e-9,
+  ): boolean {
     return this.equals(other, epsilon);
   }
 
@@ -654,7 +774,10 @@ export class Measurement {
    */
   overlaps(other: Measurement): boolean {
     if (!dimensionsEqual(this.dimension, other.dimension)) {
-      throw new UnitMismatchError(this.value.unit.symbol, other.value.unit.symbol);
+      throw new UnitMismatchError(
+        this.value.unit.symbol,
+        other.value.unit.symbol,
+      );
     }
     const aBase = this.value.toBase().value;
     const aUnc = this.uncertainty.toBase().value;
@@ -685,9 +808,14 @@ export class Measurement {
   }
 
   /** Format value with effective significant figures. */
-  formatWithSigFigs(requestedNotation?: "standard" | "scientific" | "engineering"): string {
+  formatWithSigFigs(
+    requestedNotation?: "standard" | "scientific" | "engineering",
+  ): string {
     const sigFigs = this.getEffectiveSigFigs();
-    const notation = this.metadata?.significantFigures?.notation ?? requestedNotation ?? "standard";
+    const notation =
+      this.metadata?.significantFigures?.notation ??
+      requestedNotation ??
+      "standard";
     const value = this.value.value;
     switch (notation) {
       case "scientific":
@@ -700,7 +828,11 @@ export class Measurement {
   }
 
   /** Get the confidence interval for this measurement. */
-  getConfidenceInterval(): { lower: Quantity; upper: Quantity; coverageFactor: number } | null {
+  getConfidenceInterval(): {
+    lower: Quantity;
+    upper: Quantity;
+    coverageFactor: number;
+  } | null {
     if (!this.confidenceInterval) return null;
     const coverageFactor = this.confidenceInterval.coverageFactor;
     const uncBase = this.uncertainty.toBase().value;
@@ -710,11 +842,18 @@ export class Measurement {
     const upperBase = valueBase + margin;
     const lower = Quantity.of(lowerBase, this.value.unit).to(this.value.unit);
     const upper = Quantity.of(upperBase, this.value.unit).to(this.value.unit);
-    return { lower, upper, coverageFactor: this.confidenceInterval.coverageFactor };
+    return {
+      lower,
+      upper,
+      coverageFactor: this.confidenceInterval.coverageFactor,
+    };
   }
 
   /** Correlation-aware addition: σ = √(σ₁² + σ₂² + 2ρσ₁σ₂) */
-  addCorrelated(other: Measurement, correlation?: CorrelationSpec): Measurement {
+  addCorrelated(
+    other: Measurement,
+    correlation?: CorrelationSpec,
+  ): Measurement {
     const rho = correlation?.coefficient ?? other.correlation?.coefficient ?? 0;
     this.assertCompatible(other, "addCorrelated");
     const value = this.value.add(other.value);
@@ -725,11 +864,18 @@ export class Measurement {
     const u2 = (other.uncertainty.value * sOther) / sResult;
     const combined = Math.sqrt(u1 * u1 + u2 * u2 + 2 * rho * u1 * u2);
     checkFiniteResult(combined, "Measurement.addCorrelated uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /** Correlation-aware subtraction: σ = √(σ₁² + σ₂² - 2ρσ₁σ₂) */
-  subtractCorrelated(other: Measurement, correlation?: CorrelationSpec): Measurement {
+  subtractCorrelated(
+    other: Measurement,
+    correlation?: CorrelationSpec,
+  ): Measurement {
     const rho = correlation?.coefficient ?? other.correlation?.coefficient ?? 0;
     this.assertCompatible(other, "subtractCorrelated");
     const value = this.value.subtract(other.value);
@@ -740,11 +886,18 @@ export class Measurement {
     const u2 = (other.uncertainty.value * sOther) / sResult;
     const combined = Math.sqrt(u1 * u1 + u2 * u2 - 2 * rho * u1 * u2);
     checkFiniteResult(combined, "Measurement.subtractCorrelated uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /** Correlation-aware multiplication: relative σ = √(r₁² + r₂² + 2ρr₁r₂) */
-  multiplyCorrelated(other: Measurement, correlation?: CorrelationSpec): Measurement {
+  multiplyCorrelated(
+    other: Measurement,
+    correlation?: CorrelationSpec,
+  ): Measurement {
     const rho = correlation?.coefficient ?? other.correlation?.coefficient ?? 0;
     const value = this.value.multiply(other.value);
     const r1 = Measurement.relativeOf(this);
@@ -752,11 +905,18 @@ export class Measurement {
     const combinedRel = Math.sqrt(r1 * r1 + r2 * r2 + 2 * rho * r1 * r2);
     const combined = Math.abs(value.value) * combinedRel;
     checkFiniteResult(combined, "Measurement.multiplyCorrelated uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 
   /** Correlation-aware division: relative σ = √(r₁² + r₂² - 2ρr₁r₂) */
-  divideCorrelated(other: Measurement, correlation?: CorrelationSpec): Measurement {
+  divideCorrelated(
+    other: Measurement,
+    correlation?: CorrelationSpec,
+  ): Measurement {
     const rho = correlation?.coefficient ?? other.correlation?.coefficient ?? 0;
     const value = this.value.divide(other.value);
     const r1 = Measurement.relativeOf(this);
@@ -764,7 +924,11 @@ export class Measurement {
     const combinedRel = Math.sqrt(r1 * r1 + r2 * r2 - 2 * rho * r1 * r2);
     const combined = Math.abs(value.value) * combinedRel;
     checkFiniteResult(combined, "Measurement.divideCorrelated uncertainty");
-    return new Measurement(value, Quantity.of(combined, value.unit), this.metadata);
+    return new Measurement(
+      value,
+      Quantity.of(combined, value.unit),
+      this.metadata,
+    );
   }
 }
 
@@ -794,7 +958,9 @@ function evalMeasurementNode(
   depth: number,
 ): Measurement {
   if (depth > 64) {
-    throw new InvalidMeasurementError(`Measurement expression evaluation exceeded depth 64`);
+    throw new InvalidMeasurementError(
+      `Measurement expression evaluation exceeded depth 64`,
+    );
   }
   switch (expr.kind) {
     case "literal":
@@ -817,21 +983,35 @@ function evalMeasurementNode(
         evalMeasurementNode(expr.right, context, registry, depth + 1),
       );
     case "subtract":
-      return evalMeasurementNode(expr.left, context, registry, depth + 1).subtract(
-        evalMeasurementNode(expr.right, context, registry, depth + 1),
-      );
+      return evalMeasurementNode(
+        expr.left,
+        context,
+        registry,
+        depth + 1,
+      ).subtract(evalMeasurementNode(expr.right, context, registry, depth + 1));
     case "multiply":
-      return evalMeasurementNode(expr.left, context, registry, depth + 1).multiply(
-        evalMeasurementNode(expr.right, context, registry, depth + 1),
-      );
+      return evalMeasurementNode(
+        expr.left,
+        context,
+        registry,
+        depth + 1,
+      ).multiply(evalMeasurementNode(expr.right, context, registry, depth + 1));
     case "divide":
-      return evalMeasurementNode(expr.left, context, registry, depth + 1).divide(
-        evalMeasurementNode(expr.right, context, registry, depth + 1),
-      );
+      return evalMeasurementNode(
+        expr.left,
+        context,
+        registry,
+        depth + 1,
+      ).divide(evalMeasurementNode(expr.right, context, registry, depth + 1));
     case "power":
-      return evalMeasurementNode(expr.base, context, registry, depth + 1).pow(expr.exponent);
+      return evalMeasurementNode(expr.base, context, registry, depth + 1).pow(
+        expr.exponent,
+      );
     case "convert":
-      return evalMeasurementNode(expr.expr, context, registry, depth + 1).to(expr.unit, registry);
+      return evalMeasurementNode(expr.expr, context, registry, depth + 1).to(
+        expr.unit,
+        registry,
+      );
     case "call":
       return evalMeasurementNodeCall(expr, context, registry, depth + 1);
     default:
@@ -853,10 +1033,14 @@ function evalMeasurementNodeCall(
   depth: number,
 ): Measurement {
   if (depth > 64) {
-    throw new InvalidMeasurementError(`Measurement expression evaluation exceeded depth 64`);
+    throw new InvalidMeasurementError(
+      `Measurement expression evaluation exceeded depth 64`,
+    );
   }
   // Evaluate all arguments first
-  const argResults = expr.args.map((arg) => evalMeasurementNode(arg, context, registry, depth + 1));
+  const argResults = expr.args.map((arg) =>
+    evalMeasurementNode(arg, context, registry, depth + 1),
+  );
   const requireArg = (index: number): Measurement => {
     const arg = argResults[index];
     if (arg === undefined) {
@@ -880,15 +1064,25 @@ function evalMeasurementNodeCall(
       const arg = requireArg(0);
       const value = arg.value.sqrt();
       // σ_f = |1/(2√x)| σ_x
-      const combinedUnc = Math.abs(value.value) * (0.5 * arg.relativeUncertainty());
-      return Measurement.of(value, Quantity.of(combinedUnc, value.unit), arg.metadata);
+      const combinedUnc =
+        Math.abs(value.value) * (0.5 * arg.relativeUncertainty());
+      return Measurement.of(
+        value,
+        Quantity.of(combinedUnc, value.unit),
+        arg.metadata,
+      );
     }
     case "cbrt": {
       const arg = requireArg(0);
       const value = arg.value.cbrt();
       // σ_f = |1/(3∛x²)| σ_x
-      const combinedUnc = Math.abs(value.value) * ((1 / 3) * arg.relativeUncertainty());
-      return Measurement.of(value, Quantity.of(combinedUnc, value.unit), arg.metadata);
+      const combinedUnc =
+        Math.abs(value.value) * ((1 / 3) * arg.relativeUncertainty());
+      return Measurement.of(
+        value,
+        Quantity.of(combinedUnc, value.unit),
+        arg.metadata,
+      );
     }
     case "abs": {
       const arg = requireArg(0);
@@ -903,14 +1097,22 @@ function evalMeasurementNodeCall(
       const value = arg.value.reciprocal();
       const rel = arg.relativeUncertainty();
       const combined = Math.abs(value.value) * rel;
-      return Measurement.of(value, Quantity.of(combined, value.unit), arg.metadata);
+      return Measurement.of(
+        value,
+        Quantity.of(combined, value.unit),
+        arg.metadata,
+      );
     }
     case "exp": {
       const arg = requireArg(0);
       const value = arg.value.exp();
       // σ_f = f(x) σ_x (since f'(x) = f(x))
       const combinedUnc = value.value * arg.relativeUncertainty();
-      return Measurement.of(value, Quantity.of(combinedUnc, value.unit), arg.metadata);
+      return Measurement.of(
+        value,
+        Quantity.of(combinedUnc, value.unit),
+        arg.metadata,
+      );
     }
     case "ln": {
       const arg = requireArg(0);
@@ -927,23 +1129,37 @@ function evalMeasurementNodeCall(
       const value = arg.value.log10();
       // σ_f = |1/(x ln 10)| σ_x = r / ln(10)
       const combinedUnc = arg.relativeUncertainty() / Math.LN10;
-      return Measurement.of(value, Quantity.of(combinedUnc, value.unit), arg.metadata);
+      return Measurement.of(
+        value,
+        Quantity.of(combinedUnc, value.unit),
+        arg.metadata,
+      );
     }
     case "sin": {
       const arg = requireArg(0);
       const value = arg.value.sin();
       // σ_f = |cos(x)| σ_x
       const combinedUnc =
-        Math.abs(Math.cos(radianValue(arg.value))) * arg.uncertainty.toBase().value;
-      return Measurement.of(value, Quantity.of(combinedUnc, value.unit), arg.metadata);
+        Math.abs(Math.cos(radianValue(arg.value))) *
+        arg.uncertainty.toBase().value;
+      return Measurement.of(
+        value,
+        Quantity.of(combinedUnc, value.unit),
+        arg.metadata,
+      );
     }
     case "cos": {
       const arg = requireArg(0);
       const value = arg.value.cos();
       // σ_f = |sin(x)| σ_x
       const combinedUnc =
-        Math.abs(Math.sin(radianValue(arg.value))) * arg.uncertainty.toBase().value;
-      return Measurement.of(value, Quantity.of(combinedUnc, value.unit), arg.metadata);
+        Math.abs(Math.sin(radianValue(arg.value))) *
+        arg.uncertainty.toBase().value;
+      return Measurement.of(
+        value,
+        Quantity.of(combinedUnc, value.unit),
+        arg.metadata,
+      );
     }
     case "tan": {
       const arg = requireArg(0);
@@ -951,14 +1167,19 @@ function evalMeasurementNodeCall(
       // σ_f = |sec²(x)| σ_x
       const secVal = 1 / Math.cos(radianValue(arg.value));
       const combinedUnc = secVal * secVal * arg.uncertainty.toBase().value;
-      return Measurement.of(value, Quantity.of(combinedUnc, value.unit), arg.metadata);
+      return Measurement.of(
+        value,
+        Quantity.of(combinedUnc, value.unit),
+        arg.metadata,
+      );
     }
     case "min":
     case "max": {
       // For min/max, uncertainty is the uncertainty of the selected value
       const a = requireArg(0);
       const b = requireArg(1);
-      const value = expr.function === "min" ? a.value.min(b.value) : a.value.max(b.value);
+      const value =
+        expr.function === "min" ? a.value.min(b.value) : a.value.max(b.value);
       const selected = value === a.value ? a : b;
       return Measurement.of(value, selected.uncertainty, selected.metadata);
     }
@@ -989,14 +1210,22 @@ export interface SerializedMeasurement {
   version: 1;
   type: "measurement";
   value: { version: 1; type: "quantity"; value: number | string; unit: string };
-  uncertainty: { version: 1; type: "quantity"; value: number | string; unit: string };
+  uncertainty: {
+    version: 1;
+    type: "quantity";
+    value: number | string;
+    unit: string;
+  };
   method: "linearized";
   confidenceLevel?: number;
   source?: string;
   instrumentId?: string;
 
   // Phase 25 extensions
-  significantFigures?: { sigFigs: number; notation?: "standard" | "scientific" | "engineering" };
+  significantFigures?: {
+    sigFigs: number;
+    notation?: "standard" | "scientific" | "engineering";
+  };
   confidenceInterval?: {
     coverageFactor: number;
     confidenceLevel?: number;
@@ -1047,7 +1276,9 @@ function encodeMeasurementValue(v: number): number | string {
  */
 export function serializeMeasurement(m: Measurement): SerializedMeasurement {
   if (!(m instanceof Measurement)) {
-    throw new InvalidMeasurementError("Can only serialize Measurement instances");
+    throw new InvalidMeasurementError(
+      "Can only serialize Measurement instances",
+    );
   }
   const out: SerializedMeasurement = {
     version: 1,
@@ -1076,7 +1307,8 @@ export function serializeMeasurement(m: Measurement): SerializedMeasurement {
   if (m.metadata?.confidenceLevel !== undefined)
     withMeta.confidenceLevel = m.metadata.confidenceLevel;
   if (m.metadata?.source !== undefined) withMeta.source = m.metadata.source;
-  if (m.metadata?.instrumentId !== undefined) withMeta.instrumentId = m.metadata.instrumentId;
+  if (m.metadata?.instrumentId !== undefined)
+    withMeta.instrumentId = m.metadata.instrumentId;
 
   // Phase 25 extensions
   if (m.significantFigures !== undefined) {
@@ -1128,15 +1360,21 @@ export function deserializeMeasurement(
     );
   }
   if (hasPollutionKeys(data)) {
-    throw new InvalidMeasurementError("Serialized measurement contains forbidden prototype keys");
+    throw new InvalidMeasurementError(
+      "Serialized measurement contains forbidden prototype keys",
+    );
   }
   if (Array.isArray(data)) {
-    throw new InvalidMeasurementError("Serialized measurement must not be an array");
+    throw new InvalidMeasurementError(
+      "Serialized measurement must not be an array",
+    );
   }
   // Nested correlation/derivation chains recurse; bound the depth so
   // malicious or cyclic payloads terminate with a typed error.
   if (depth > 16) {
-    throw new InvalidMeasurementError("Serialized measurement nesting exceeds depth 16");
+    throw new InvalidMeasurementError(
+      "Serialized measurement nesting exceeds depth 16",
+    );
   }
   const d = data as Record<string, unknown>;
   const {
@@ -1156,13 +1394,17 @@ export function deserializeMeasurement(
   } = d;
   if (version !== 1) {
     if (version === undefined)
-      throw new InvalidMeasurementError("Serialized measurement missing version");
+      throw new InvalidMeasurementError(
+        "Serialized measurement missing version",
+      );
     throw new InvalidMeasurementError(
       `Unsupported serialized measurement version ${String(version)}`,
     );
   }
   if (type !== "measurement") {
-    throw new InvalidMeasurementError(`Serialized measurement has wrong type "${String(type)}"`);
+    throw new InvalidMeasurementError(
+      `Serialized measurement has wrong type "${String(type)}"`,
+    );
   }
   if (method !== undefined && method !== "linearized") {
     throw new InvalidMeasurementError(
@@ -1208,7 +1450,9 @@ export function deserializeMeasurement(
         source: prov.source,
         integrityHash: prov.integrityHash,
         derivedFrom: Array.isArray(rawDerived)
-          ? rawDerived.map((d) => deserializeMeasurement(d, registry, depth + 1))
+          ? rawDerived.map((d) =>
+              deserializeMeasurement(d, registry, depth + 1),
+            )
           : undefined,
       };
     }
@@ -1228,7 +1472,9 @@ export function deserializeMeasurement(
   return Measurement.of(
     valueQ,
     uncQ,
-    Object.keys(metadata).length > 0 ? (metadata as MeasurementMetadata) : undefined,
+    Object.keys(metadata).length > 0
+      ? (metadata as MeasurementMetadata)
+      : undefined,
   );
 }
 
@@ -1247,7 +1493,9 @@ export interface ParseMeasurementOptions {
 const NUM = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?`;
 const SEP = String.raw`(?:±|\+\/-)`;
 // Form A: "<value> ± <uncertainty> <unit>" (shared unit, e.g. "10 ± 0.5 kg").
-const MEASUREMENT_RE_A = new RegExp(`^\\s*(${NUM})\\s*${SEP}\\s*(${NUM})\\s+([^\\s].*?)\\s*$`);
+const MEASUREMENT_RE_A = new RegExp(
+  `^\\s*(${NUM})\\s*${SEP}\\s*(${NUM})\\s+([^\\s].*?)\\s*$`,
+);
 // Form B: "<value> <value-unit> ± <uncertainty> <unc-unit>" (e.g. "10 kg ± 200 g").
 const MEASUREMENT_RE_B = new RegExp(
   `^\\s*(${NUM})\\s+([^\\s].*?)\\s*${SEP}\\s*(${NUM})\\s+([^\\s].*?)\\s*$`,
@@ -1274,7 +1522,9 @@ export function parseMeasurement(
   }
   const maxLength = opts.maxLength ?? 256;
   if (!Number.isInteger(maxLength) || maxLength < 1) {
-    throw new InvalidMeasurementError("parseMeasurement maxLength must be a positive integer");
+    throw new InvalidMeasurementError(
+      "parseMeasurement maxLength must be a positive integer",
+    );
   }
   if (text.length > maxLength) {
     throw new InvalidMeasurementError(
@@ -1296,7 +1546,9 @@ export function parseMeasurement(
   const valueUnit = (a !== null ? m[3] : m[2])!.trim();
   const uncUnit = (a !== null ? m[3] : m[4])!.trim();
   if (!Number.isFinite(value) || !Number.isFinite(unc)) {
-    throw new InvalidMeasurementError("Measurement value and uncertainty must be finite numbers");
+    throw new InvalidMeasurementError(
+      "Measurement value and uncertainty must be finite numbers",
+    );
   }
   if (unc < 0) {
     throw new InvalidMeasurementError("Parsed uncertainty must be ≥ 0");
@@ -1314,9 +1566,15 @@ export function parseMeasurement(
   return Measurement.of(valueQ, uncQ, opts.metadata);
 }
 
-function decodeNestedQuantity(field: unknown, name: string, registry: UnitRegistry): Quantity {
+function decodeNestedQuantity(
+  field: unknown,
+  name: string,
+  registry: UnitRegistry,
+): Quantity {
   if (!isPlainObject(field)) {
-    throw new InvalidMeasurementError(`Serialized measurement ${name} must be a plain object`);
+    throw new InvalidMeasurementError(
+      `Serialized measurement ${name} must be a plain object`,
+    );
   }
   if (hasPollutionKeys(field)) {
     throw new InvalidMeasurementError(

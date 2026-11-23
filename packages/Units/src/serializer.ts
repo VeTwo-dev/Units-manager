@@ -79,7 +79,9 @@ function decodeValue(v: unknown): number {
       `Serialized value string must be one of "NaN"/"Infinity"/"-Infinity"/"-0", got "${v}"`,
     );
   }
-  throw new InvalidUnitError(`Serialized value must be number or string, got ${typeof v}`);
+  throw new InvalidUnitError(
+    `Serialized value must be number or string, got ${typeof v}`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -124,14 +126,19 @@ export function serializeUnit(unit: Unit): SerializedUnit {
  * Deserialize a Unit from its serialized form.
  * Validates shape, version, and that the expression can be resolved via registry.
  */
-export function deserializeUnit(data: unknown, registry: UnitRegistry = defaultUnitRegistry): Unit {
+export function deserializeUnit(
+  data: unknown,
+  registry: UnitRegistry = defaultUnitRegistry,
+): Unit {
   if (!isPlainObject(data)) {
     throw new InvalidUnitError(
       `Serialized unit must be a plain object, got ${data === null ? "null" : typeof data}`,
     );
   }
   if (hasPollutionKeys(data)) {
-    throw new InvalidUnitError("Serialized unit contains forbidden prototype keys");
+    throw new InvalidUnitError(
+      "Serialized unit contains forbidden prototype keys",
+    );
   }
   if (Array.isArray(data)) {
     throw new InvalidUnitError("Serialized unit must not be an array");
@@ -142,14 +149,21 @@ export function deserializeUnit(data: unknown, registry: UnitRegistry = defaultU
   const expression = (data as Record<string, unknown>).expression;
 
   if (version !== 1) {
-    if (version === undefined) throw new InvalidUnitError("Serialized unit missing version");
-    throw new InvalidUnitError(`Unsupported serialized unit version ${String(version)}`);
+    if (version === undefined)
+      throw new InvalidUnitError("Serialized unit missing version");
+    throw new InvalidUnitError(
+      `Unsupported serialized unit version ${String(version)}`,
+    );
   }
   if (type !== "unit") {
-    throw new InvalidUnitError(`Serialized unit has wrong type "${String(type)}"`);
+    throw new InvalidUnitError(
+      `Serialized unit has wrong type "${String(type)}"`,
+    );
   }
   if (typeof expression !== "string" || expression.trim().length === 0) {
-    throw new InvalidUnitError("Serialized unit expression must be a non-empty string");
+    throw new InvalidUnitError(
+      "Serialized unit expression must be a non-empty string",
+    );
   }
   // Use parseUnit to resolve (handles prefixes, aliases, composites)
   return parseUnit(expression, registry);
@@ -166,14 +180,17 @@ export function deserializeUnit(data: unknown, registry: UnitRegistry = defaultU
 export function serializeQuantity(q: Quantity): SerializedQuantity {
   // Explicit ordering: version, type, value, unit, kind?
   const encoded = encodeValue(q.value);
-  const unitStr = q.unit.basis ? `${q.unit.symbol} ${q.unit.basis}` : q.unit.symbol;
+  const unitStr = q.unit.basis
+    ? `${q.unit.symbol} ${q.unit.basis}`
+    : q.unit.symbol;
   const out: SerializedQuantity = {
     version: 1,
     type: "quantity",
     value: encoded,
     unit: unitStr,
   };
-  if (q.kind !== undefined) (out as unknown as Record<string, unknown>).kind = q.kind;
+  if (q.kind !== undefined)
+    (out as unknown as Record<string, unknown>).kind = q.kind;
   return out;
 }
 
@@ -200,7 +217,9 @@ export function deserializeQuantity(
     );
   }
   if (hasPollutionKeys(data as Record<string, unknown>)) {
-    throw new InvalidUnitError("Serialized quantity contains forbidden prototype keys");
+    throw new InvalidUnitError(
+      "Serialized quantity contains forbidden prototype keys",
+    );
   }
   if (Array.isArray(data)) {
     throw new InvalidUnitError("Serialized quantity must not be an array");
@@ -218,7 +237,9 @@ export function deserializeQuantity(
       );
     }
     if (typeof legacyUnit !== "string" || legacyUnit.trim().length === 0) {
-      throw new InvalidUnitError("Legacy serialized quantity unit must be non-empty string");
+      throw new InvalidUnitError(
+        "Legacy serialized quantity unit must be non-empty string",
+      );
     }
     if (!Number.isFinite(legacyValue) && !Number.isNaN(legacyValue)) {
       // Legacy allowed Infinity? It would be number Infinity in JSON? JSON can't have Infinity, but JS object could.
@@ -235,14 +256,21 @@ export function deserializeQuantity(
   const unitRaw = raw.unit;
 
   if (version !== 1) {
-    if (version === undefined) throw new InvalidUnitError("Serialized quantity missing version");
-    throw new InvalidUnitError(`Unsupported serialized quantity version ${String(version)}`);
+    if (version === undefined)
+      throw new InvalidUnitError("Serialized quantity missing version");
+    throw new InvalidUnitError(
+      `Unsupported serialized quantity version ${String(version)}`,
+    );
   }
   if (type !== "quantity") {
-    throw new InvalidUnitError(`Serialized quantity has wrong type "${String(type)}"`);
+    throw new InvalidUnitError(
+      `Serialized quantity has wrong type "${String(type)}"`,
+    );
   }
   if (typeof unitRaw !== "string" || unitRaw.trim().length === 0) {
-    throw new InvalidUnitError("Serialized quantity unit must be a non-empty string");
+    throw new InvalidUnitError(
+      "Serialized quantity unit must be a non-empty string",
+    );
   }
   // value can be number or special string
   if (typeof valueRaw !== "number" && typeof valueRaw !== "string") {
@@ -251,7 +279,10 @@ export function deserializeQuantity(
     );
   }
   // Validate string value is only allowed special encodings
-  if (typeof valueRaw === "string" && !["NaN", "Infinity", "-Infinity", "-0"].includes(valueRaw)) {
+  if (
+    typeof valueRaw === "string" &&
+    !["NaN", "Infinity", "-Infinity", "-0"].includes(valueRaw)
+  ) {
     throw new InvalidUnitError(
       `Serialized quantity value string must be NaN/Infinity/-Infinity/-0, got "${valueRaw}"`,
     );
@@ -269,7 +300,9 @@ export function deserializeQuantity(
   const kindRaw = raw.kind;
   if (kindRaw === undefined) return quantity;
   if (typeof kindRaw !== "string" || kindRaw.trim().length === 0) {
-    throw new InvalidUnitError("Serialized quantity kind must be a non-empty string");
+    throw new InvalidUnitError(
+      "Serialized quantity kind must be a non-empty string",
+    );
   }
   return quantity.withKind(kindRaw);
 }

@@ -82,7 +82,13 @@ export function resetNumericalPolicy(): void {
 // Validation
 // ---------------------------------------------------------------------------
 
-export type NumberKind = "finite" | "nan" | "infinity" | "neg-infinity" | "neg-zero" | "non-number";
+export type NumberKind =
+  | "finite"
+  | "nan"
+  | "infinity"
+  | "neg-infinity"
+  | "neg-zero"
+  | "non-number";
 
 export function classifyNumber(value: unknown): NumberKind {
   if (typeof value !== "number") return "non-number";
@@ -99,16 +105,25 @@ export function assertValidQuantityValue(
 ): void {
   const kind = classifyNumber(value);
   if (kind === "non-number")
-    throw new NumericalError(`Quantity value must be a number, got ${typeof value}`);
+    throw new NumericalError(
+      `Quantity value must be a number, got ${typeof value}`,
+    );
   if (kind === "nan" && !policy.allowNaN)
-    throw new NumericalError("NaN quantity values are not allowed by current numerical policy");
-  if ((kind === "infinity" || kind === "neg-infinity") && !policy.allowInfinity) {
+    throw new NumericalError(
+      "NaN quantity values are not allowed by current numerical policy",
+    );
+  if (
+    (kind === "infinity" || kind === "neg-infinity") &&
+    !policy.allowInfinity
+  ) {
     throw new NumericalError(
       `${kind === "infinity" ? "Infinity" : "-Infinity"} quantity values are not allowed by current numerical policy`,
     );
   }
   if (policy.requireFinite && kind !== "finite" && kind !== "neg-zero") {
-    throw new NumericalError(`Quantity value must be finite, got ${String(value)}`);
+    throw new NumericalError(
+      `Quantity value must be finite, got ${String(value)}`,
+    );
   }
 }
 
@@ -128,15 +143,22 @@ export function isValidQuantityValue(
 // Comparison (absolute + relative tolerance)
 // ---------------------------------------------------------------------------
 
-export function approxEqual(a: number, b: number, opts: ComparisonOptions = {}): boolean {
+export function approxEqual(
+  a: number,
+  b: number,
+  opts: ComparisonOptions = {},
+): boolean {
   // NaN never equals
   if (Number.isNaN(a) || Number.isNaN(b)) return false;
   // Infinity exact match only
   if (!Number.isFinite(a) || !Number.isFinite(b)) return a === b;
 
   const absTol =
-    opts.absoluteTolerance ?? opts.epsilon ?? defaultNumericalPolicy.defaultAbsoluteTolerance;
-  const relTol = opts.relativeTolerance ?? defaultNumericalPolicy.defaultRelativeTolerance;
+    opts.absoluteTolerance ??
+    opts.epsilon ??
+    defaultNumericalPolicy.defaultAbsoluteTolerance;
+  const relTol =
+    opts.relativeTolerance ?? defaultNumericalPolicy.defaultRelativeTolerance;
   const diff = Math.abs(a - b);
   if (diff <= absTol) return true;
   const maxAbs = Math.max(Math.abs(a), Math.abs(b));
@@ -159,7 +181,8 @@ export function checkFiniteResult(
 ): void {
   const kind = classifyNumber(value);
   if (kind === "finite" || kind === "neg-zero") return;
-  if ((kind === "infinity" || kind === "neg-infinity") && policy.allowInfinity) return;
+  if ((kind === "infinity" || kind === "neg-infinity") && policy.allowInfinity)
+    return;
   if (kind === "nan" && policy.allowNaN) return;
   throw new NumericalError(
     `${context} produced non-finite result ${String(value)}; overflow or invalid operation`,
@@ -176,7 +199,9 @@ export function roundValue(
   mode: RoundingMode = "half-up",
 ): number {
   if (!Number.isInteger(decimals) || decimals < 0) {
-    throw new NumericalError(`decimals must be a non-negative integer, got ${decimals}`);
+    throw new NumericalError(
+      `decimals must be a non-negative integer, got ${decimals}`,
+    );
   }
   const factor = 10 ** decimals;
   switch (mode) {

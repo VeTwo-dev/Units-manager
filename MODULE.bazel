@@ -1,0 +1,25 @@
+module(
+    name = "vetwo-units",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "aspect_rules_js", version = "3.6.1")
+bazel_dep(name = "aspect_rules_ts", version = "3.10.1")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_nodejs", version = "6.7.7")
+bazel_dep(name = "rules_shell", version = "0.8.0")
+
+# --- pnpm dependency integration ---
+# pnpm resolves and installs JavaScript dependencies from the authoritative
+# root pnpm-lock.yaml into the local pnpm store. Bazel consumes the already
+# installed packages via node_modules/ filegroups, not through npm_translate_lock.
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(node_version = "24.16.0")
+use_repo(node, "nodejs_toolchains")
+register_toolchains("@nodejs_toolchains//:all")
+
+typescript = use_extension("@aspect_rules_ts//ts:extensions.bzl", "typescript")
+typescript.deps(version = "5.9.3")
+use_repo(typescript, "npm_typescript")

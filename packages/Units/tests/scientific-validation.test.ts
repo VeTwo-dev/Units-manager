@@ -118,14 +118,18 @@ describe("prompt17 §2: dimensional algebra laws [seed 1701]", () => {
       const a = randomDimVector(rand);
       const b = randomDimVector(rand);
       const c = randomDimVector(rand);
-      expect(dimensionKey(multiplyDim(a, b))).toBe(dimensionKey(multiplyDim(b, a)));
+      expect(dimensionKey(multiplyDim(a, b))).toBe(
+        dimensionKey(multiplyDim(b, a)),
+      );
       expect(dimensionKey(multiplyDim(multiplyDim(a, b), c))).toBe(
         dimensionKey(multiplyDim(a, multiplyDim(b, c))),
       );
       expect(dimensionsEqual(multiplyDim(a, DIMENSIONLESS), a)).toBe(true);
       expect(dimensionsEqual(divideDim(a, DIMENSIONLESS), a)).toBe(true);
       expect(dimensionsEqual(divideDim(a, a), DIMENSIONLESS)).toBe(true);
-      expect(dimensionKey(divideDim(multiplyDim(a, b), b))).toBe(dimensionKey(a));
+      expect(dimensionKey(divideDim(multiplyDim(a, b), b))).toBe(
+        dimensionKey(a),
+      );
     }
   });
 
@@ -135,7 +139,9 @@ describe("prompt17 §2: dimensional algebra laws [seed 1701]", () => {
       const a = randomDimVector(rand);
       const x = randInt(rand, -2, 2);
       const y = randInt(rand, -2, 2);
-      expect(dimensionKey(powDim(powDim(a, x), y))).toBe(dimensionKey(powDim(a, x * y)));
+      expect(dimensionKey(powDim(powDim(a, x), y))).toBe(
+        dimensionKey(powDim(a, x * y)),
+      );
       expect(dimensionsEqual(powDim(a, 0), DIMENSIONLESS)).toBe(true);
       expect(dimensionsEqual(powDim(a, 1), a)).toBe(true);
       // Negative: A^-1 inverts every exponent.
@@ -161,7 +167,8 @@ describe("prompt17 §2: dimensional algebra laws [seed 1701]", () => {
       const forward: Record<string, number> = {};
       const backward: Record<string, number> = {};
       for (const [k, v] of entries) forward[k] = v;
-      for (let j = entries.length - 1; j >= 0; j--) backward[entries[j]![0]] = entries[j]![1];
+      for (let j = entries.length - 1; j >= 0; j--)
+        backward[entries[j]![0]] = entries[j]![1];
       expect(dimensionKey(forward as DimensionVector)).toBe(
         dimensionKey(backward as DimensionVector),
       );
@@ -214,19 +221,31 @@ describe("prompt17 §3: unit algebra [seed 1712]", () => {
       V: { E: 1, T: -1, I: -1 },
     };
     for (const [symbol, dim] of Object.entries(expected)) {
-      expect(dimensionsEqual(parseUnit(symbol, si).dimension, dim as DimensionVector), symbol).toBe(
-        true,
-      );
+      expect(
+        dimensionsEqual(
+          parseUnit(symbol, si).dimension,
+          dim as DimensionVector,
+        ),
+        symbol,
+      ).toBe(true);
     }
   });
 
   it("E/mechanics boundary is explicit: J ↔ N·m fails deterministically", () => {
     // Known model limitation (pinned, not silent): unifying E with M·L²·T⁻²
     // is future work; until then the boundary throws a typed error.
-    expect(() => Quantity.of(1, "J", si).to("N*m", si)).toThrow(ImpossibleConversionError);
-    expect(() => Quantity.of(1, "J", si).to("kg*m^2/s^2", si)).toThrow(ImpossibleConversionError);
-    expect(() => Quantity.of(1, "N*m", si).to("J", si)).toThrow(ImpossibleConversionError);
-    expect(() => Quantity.of(1, "W", si).to("N*m/s", si)).toThrow(ImpossibleConversionError);
+    expect(() => Quantity.of(1, "J", si).to("N*m", si)).toThrow(
+      ImpossibleConversionError,
+    );
+    expect(() => Quantity.of(1, "J", si).to("kg*m^2/s^2", si)).toThrow(
+      ImpossibleConversionError,
+    );
+    expect(() => Quantity.of(1, "N*m", si).to("J", si)).toThrow(
+      ImpossibleConversionError,
+    );
+    expect(() => Quantity.of(1, "W", si).to("N*m/s", si)).toThrow(
+      ImpossibleConversionError,
+    );
   });
 
   it("prefixes preserve dimension; um and µm resolve to the same scale", () => {
@@ -237,11 +256,17 @@ describe("prompt17 §3: unit algebra [seed 1712]", () => {
       ["ns", { T: 1 }],
       ["mA", { I: 1 }],
     ] as Array<[string, DimensionVector]>) {
-      expect(dimensionsEqual(parseUnit(prefixed, si).dimension, dim)).toBe(true);
+      expect(dimensionsEqual(parseUnit(prefixed, si).dimension, dim)).toBe(
+        true,
+      );
     }
     // "u" is a registered alias of micro: identical physics, own spelling.
-    expect(Quantity.of(1, "um").to("m").value).toBe(Quantity.of(1, "µm").to("m").value);
-    expect(relClose(Quantity.of(1, "um").to("m").value, 1e-6, 1e-12)).toBe(true);
+    expect(Quantity.of(1, "um").to("m").value).toBe(
+      Quantity.of(1, "µm").to("m").value,
+    );
+    expect(relClose(Quantity.of(1, "um").to("m").value, 1e-6, 1e-12)).toBe(
+      true,
+    );
   });
 
   it("parse output is deterministic: same text, same symbol and scale", () => {
@@ -292,8 +317,12 @@ describe("prompt17 §4: quantity arithmetic identities [seed 1724]", () => {
       const magnitude = 10 ** randInt(rand, -6, 6);
       const a = Quantity.of((rand() - 0.4) * 100 * magnitude, expr);
       const b = Quantity.of((rand() - 0.4) * 100 * magnitude, twin);
-      expect(relClose(a.add(b).subtract(b).to(expr).value, a.value, 1e-9)).toBe(true);
-      expect(relClose(a.subtract(b).add(b).to(expr).value, a.value, 1e-9)).toBe(true);
+      expect(relClose(a.add(b).subtract(b).to(expr).value, a.value, 1e-9)).toBe(
+        true,
+      );
+      expect(relClose(a.subtract(b).add(b).to(expr).value, a.value, 1e-9)).toBe(
+        true,
+      );
     }
   });
 
@@ -306,7 +335,9 @@ describe("prompt17 §4: quantity arithmetic identities [seed 1724]", () => {
       const b = Quantity.of((rand() + 0.1) * 50, exprB);
       expect(a.multiply(1).to(exprA).value).toBe(a.value);
       expect(a.divide(1).to(exprA).value).toBe(a.value);
-      expect(relClose(a.multiply(b).divide(b).to(exprA).value, a.value, 1e-9)).toBe(true);
+      expect(
+        relClose(a.multiply(b).divide(b).to(exprA).value, a.value, 1e-9),
+      ).toBe(true);
       const ratio = a.divide(a);
       expect(dimensionsEqual(ratio.dimension, DIMENSIONLESS)).toBe(true);
       expect(relClose(ratio.value, 1, 1e-12)).toBe(true);
@@ -373,7 +404,9 @@ describe("prompt17 §5: conversion round-trips [seed 1735]", () => {
     const rand = mulberry32(1736);
     for (let i = 0; i < 60; i++) {
       const value = (rand() - 0.5) * 10 ** randInt(rand, -9, 9);
-      const back = Quantity.of(value, "m", imp).to("ft", imp).to("m", imp).value;
+      const back = Quantity.of(value, "m", imp)
+        .to("ft", imp)
+        .to("m", imp).value;
       expect(relClose(back, value, 1e-9)).toBe(true);
     }
   });
@@ -419,15 +452,25 @@ describe("prompt17 §6: prefix algebra [seed 1746]", () => {
       expect(relClose(fwd * rev, 1, 1e-9)).toBe(true);
     }
     // kilo × milli = 1 through the engine: 1 km = 1e6 mm (float ratios).
-    expect(relClose(Quantity.of(1, "km", si).to("mm", si).value, 1e6, 1e-12)).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "km", si).to("mm", si).value, 1e6, 1e-12),
+    ).toBe(true);
   });
 
   it("prefix(unit)^n scales as factor^n (hand-derived)", () => {
     // (10^3)^2 = 10^6; (10^-3)^3 = 10^-9; (10^-2)^2 = 10^-4.
-    expect(relClose(Quantity.of(1, "km^2", si).to("m^2", si).value, 1e6, 1e-12)).toBe(true);
-    expect(relClose(Quantity.of(1, "mm^3", si).to("m^3", si).value, 1e-9, 1e-12)).toBe(true);
-    expect(relClose(Quantity.of(1, "cm^2", si).to("m^2", si).value, 1e-4, 1e-12)).toBe(true);
-    expect(relClose(Quantity.of(2.5, "km^2", si).to("m^2", si).value, 2.5e6, 1e-12)).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "km^2", si).to("m^2", si).value, 1e6, 1e-12),
+    ).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "mm^3", si).to("m^3", si).value, 1e-9, 1e-12),
+    ).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "cm^2", si).to("m^2", si).value, 1e-4, 1e-12),
+    ).toBe(true);
+    expect(
+      relClose(Quantity.of(2.5, "km^2", si).to("m^2", si).value, 2.5e6, 1e-12),
+    ).toBe(true);
   });
 
   it("invalid prefix combinations fail; bare 'm' is the meter, not milli", () => {
@@ -486,8 +529,12 @@ describe("prompt17 §7: compound unit fuzz [seed 1757]", () => {
     // Hz is dimensionally T⁻¹ but carries semantic kind "frequency", which is
     // part of canonical identity BY DESIGN — its key is stable with itself
     // while differing from bare s⁻¹. Both spellings still parse T⁻¹.
-    expect(canonicalizeUnitText("Hz", si).key).toBe(canonicalizeUnitText("Hz", si).key);
-    expect(dimensionsEqual(parseUnit("Hz", si).dimension, { T: -1 })).toBe(true);
+    expect(canonicalizeUnitText("Hz", si).key).toBe(
+      canonicalizeUnitText("Hz", si).key,
+    );
+    expect(dimensionsEqual(parseUnit("Hz", si).dimension, { T: -1 })).toBe(
+      true,
+    );
     for (const family of families) {
       const keys = family.map((t) => canonicalizeUnitText(t, si).key);
       for (const k of keys) expect(k).toBe(keys[0]);
@@ -545,7 +592,9 @@ describe("prompt17 §8: parser adversarial fuzz [seed 1768]", () => {
   it("pathological inputs: limits, nesting, confusables, punctuation", () => {
     // Huge / deeply nested inputs hit deterministic limits, never hang.
     expect(() => parseUnit("m".repeat(6000))).toThrow(UnitEngineError);
-    expect(() => parseUnit(`(${"(".repeat(400)}m${")".repeat(400)})`)).toThrow(UnitEngineError);
+    expect(() => parseUnit(`(${"(".repeat(400)}m${")".repeat(400)})`)).toThrow(
+      UnitEngineError,
+    );
     // Enormous exponents parse deterministically (dimension math is exact).
     const huge = parseUnit("m^999999999");
     expect(huge.dimension).toEqual({ L: 999999999 });
@@ -553,10 +602,24 @@ describe("prompt17 §8: parser adversarial fuzz [seed 1768]", () => {
     // Unicode confusables: fullwidth and Cyrillic look-alikes are NOT units.
     // Pure syntax violations carry the specific expression-error class.
     for (const bad of ["m//s", "(m", "m)", "()", "^m", "m^", "m^2.5", "m^^s"]) {
-      expect(() => parseUnit(bad), JSON.stringify(bad)).toThrow(InvalidUnitExpressionError);
+      expect(() => parseUnit(bad), JSON.stringify(bad)).toThrow(
+        InvalidUnitExpressionError,
+      );
     }
-    for (const bad of ["ｍ", "㎏", "а", "ρ", "m,s", "m;s", "m@s", "\x00m", "m\x07"]) {
-      expect(() => parseUnit(bad), JSON.stringify(bad)).toThrow(UnitEngineError);
+    for (const bad of [
+      "ｍ",
+      "㎏",
+      "а",
+      "ρ",
+      "m,s",
+      "m;s",
+      "m@s",
+      "\x00m",
+      "m\x07",
+    ]) {
+      expect(() => parseUnit(bad), JSON.stringify(bad)).toThrow(
+        UnitEngineError,
+      );
     }
     // Whitespace abuse around a valid unit is tolerated and deterministic.
     expect(parseUnit("  \t m \n ").symbol).toBe("m");
@@ -574,7 +637,9 @@ function outcomeOf(fn: () => unknown): string {
     fn();
     return "ok";
   } catch (error) {
-    return error instanceof UnitEngineError ? error.constructor.name : `FOREIGN:${typeof error}`;
+    return error instanceof UnitEngineError
+      ? error.constructor.name
+      : `FOREIGN:${typeof error}`;
   }
 }
 
@@ -590,20 +655,30 @@ describe("prompt17 §9: temperature absolute vs delta [seed 1779]", () => {
     for (let i = 0; i < 120; i++) {
       const c = -273 + rand() * 1500;
       // Independent references: K = C + 273.15; F = C·9/5 + 32.
-      expect(Math.abs(Quantity.of(c, "°C", si).to("K", si).value - (c + 273.15))).toBeLessThan(
-        1e-9,
-      );
       expect(
-        Math.abs(Quantity.of(c, "°C", si).to("°F", si).value - ((c * 9) / 5 + 32)),
+        Math.abs(Quantity.of(c, "°C", si).to("K", si).value - (c + 273.15)),
+      ).toBeLessThan(1e-9);
+      expect(
+        Math.abs(
+          Quantity.of(c, "°C", si).to("°F", si).value - ((c * 9) / 5 + 32),
+        ),
       ).toBeLessThan(1e-9);
       const backC = Quantity.of(c, "°C", si).to("°F", si).to("°C", si).value;
       expect(Math.abs(backC - c)).toBeLessThan(1e-9);
     }
     // Exact landmarks (hand-derived; affine paths use absolute tolerance).
-    expect(Math.abs(Quantity.of(0, "°C", si).to("K", si).value - 273.15)).toBeLessThan(1e-9);
-    expect(Math.abs(Quantity.of(32, "°F", si).to("°C", si).value - 0)).toBeLessThan(1e-9);
-    expect(Math.abs(Quantity.of(-40, "°F", si).to("°C", si).value - -40)).toBeLessThan(1e-9);
-    expect(Math.abs(Quantity.of(0, "K", si).to("°C", si).value - -273.15)).toBeLessThan(1e-9);
+    expect(
+      Math.abs(Quantity.of(0, "°C", si).to("K", si).value - 273.15),
+    ).toBeLessThan(1e-9);
+    expect(
+      Math.abs(Quantity.of(32, "°F", si).to("°C", si).value - 0),
+    ).toBeLessThan(1e-9);
+    expect(
+      Math.abs(Quantity.of(-40, "°F", si).to("°C", si).value - -40),
+    ).toBeLessThan(1e-9);
+    expect(
+      Math.abs(Quantity.of(0, "K", si).to("°C", si).value - -273.15),
+    ).toBeLessThan(1e-9);
   });
 
   it("absolute/interval algebra: abs±delta, abs−abs=delta, delta±delta", () => {
@@ -655,7 +730,10 @@ describe("prompt17 §9: temperature absolute vs delta [seed 1779]", () => {
   });
 
   it("below-absolute-zero inputs are converted, not silently clamped (documented)", () => {
-    expect(Quantity.of(-300, "°C", si).to("K", si).value).toBeCloseTo(-26.85, 9);
+    expect(Quantity.of(-300, "°C", si).to("K", si).value).toBeCloseTo(
+      -26.85,
+      9,
+    );
   });
 });
 
@@ -668,7 +746,9 @@ describe("prompt17 §10: nonlinear units [seed 1790]", () => {
     const registries = [
       new UnitRegistry(),
       createRegistry({ packs: [SI_PACK] }),
-      createRegistry({ packs: [SI_PACK, IMPERIAL_PACK, CGS_PACK, SCIENTIFIC_PACK] }),
+      createRegistry({
+        packs: [SI_PACK, IMPERIAL_PACK, CGS_PACK, SCIENTIFIC_PACK],
+      }),
     ];
     for (const reg of registries) {
       for (const u of reg.list()) {
@@ -684,13 +764,13 @@ describe("prompt17 §10: nonlinear units [seed 1790]", () => {
     const rand = mulberry32(1790);
     for (let i = 0; i < 80; i++) {
       const c = -273.14 + rand() * 5000;
-      expect(Math.abs(Quantity.of(c, "°C", si).to("K", si).to("°C", si).value - c)).toBeLessThan(
-        1e-9,
-      );
+      expect(
+        Math.abs(Quantity.of(c, "°C", si).to("K", si).to("°C", si).value - c),
+      ).toBeLessThan(1e-9);
       const f = (c * 9) / 5 + 32;
-      expect(Math.abs(Quantity.of(f, "°F", si).to("K", si).to("°F", si).value - f)).toBeLessThan(
-        1e-9,
-      );
+      expect(
+        Math.abs(Quantity.of(f, "°F", si).to("K", si).to("°F", si).value - f),
+      ).toBeLessThan(1e-9);
     }
   });
 
@@ -745,8 +825,15 @@ describe("prompt17 §11: formula engine [seed 1711]", () => {
     const left = defineFormula(
       {
         id: "distLeft",
-        expression: E.multiply(E.variable("a"), E.add(E.variable("b"), E.variable("c"))),
-        inputs: { a: { dimension: "m" }, b: { dimension: "m" }, c: { dimension: "m" } },
+        expression: E.multiply(
+          E.variable("a"),
+          E.add(E.variable("b"), E.variable("c")),
+        ),
+        inputs: {
+          a: { dimension: "m" },
+          b: { dimension: "m" },
+          c: { dimension: "m" },
+        },
       },
       O,
     );
@@ -757,7 +844,11 @@ describe("prompt17 §11: formula engine [seed 1711]", () => {
           E.multiply(E.variable("a"), E.variable("b")),
           E.multiply(E.variable("a"), E.variable("c")),
         ),
-        inputs: { a: { dimension: "m" }, b: { dimension: "m" }, c: { dimension: "m" } },
+        inputs: {
+          a: { dimension: "m" },
+          b: { dimension: "m" },
+          c: { dimension: "m" },
+        },
       },
       O,
     );
@@ -765,7 +856,11 @@ describe("prompt17 §11: formula engine [seed 1711]", () => {
       const a = (rand() - 0.5) * 40;
       const b = (rand() - 0.5) * 40;
       const c = (rand() - 0.5) * 40;
-      const bindings = { a: Quantity.of(a, "m"), b: Quantity.of(b, "m"), c: Quantity.of(c, "m") };
+      const bindings = {
+        a: Quantity.of(a, "m"),
+        b: Quantity.of(b, "m"),
+        c: Quantity.of(c, "m"),
+      };
       const l = evaluateFormula(left, bindings, O);
       const r = evaluateFormula(right, bindings, O);
       if (!(l instanceof Quantity) || !(r instanceof Quantity))
@@ -800,7 +895,9 @@ describe("prompt17 §11: formula engine [seed 1711]", () => {
       }
       expect(first.exactEquals(second)).toBe(true);
       // Mechanical energy reads in N·m (J lives in the decoupled E dimension).
-      expect(relClose(first.to("N*m", reg).value, kineticEnergy(m, v), 1e-9)).toBe(true);
+      expect(
+        relClose(first.to("N*m", reg).value, kineticEnergy(m, v), 1e-9),
+      ).toBe(true);
     }
   });
 
@@ -815,7 +912,11 @@ describe("prompt17 §11: formula engine [seed 1711]", () => {
       O,
     );
     expect(() =>
-      evaluateFormula(ke, { m: Quantity.of(1, "m"), v: Quantity.of(2, "m/s") }, O),
+      evaluateFormula(
+        ke,
+        { m: Quantity.of(1, "m"), v: Quantity.of(2, "m/s") },
+        O,
+      ),
     ).toThrow(FormulaError);
     // Unknown function: rejected with a typed error before any value escapes.
     expect(() => {
@@ -891,7 +992,12 @@ describe("prompt17 §12: dependency graph fuzz [seed 1722]", () => {
   const O = { registry: reg };
   const E = Expression;
 
-  function linearFormula(id: string, output: string, input: string, factor: number) {
+  function linearFormula(
+    id: string,
+    output: string,
+    input: string,
+    factor: number,
+  ) {
     return defineFormula(
       {
         id,
@@ -962,16 +1068,25 @@ describe("prompt17 §12: dependency graph fuzz [seed 1722]", () => {
       for (const leaf of prev) {
         const rootName = roots.find((rt) => leaf.startsWith(rt))!;
         expect(
-          relClose(out1.outputs[leaf]!.to("m").value, inputs[rootName]!.value * totalFactor, 1e-9),
+          relClose(
+            out1.outputs[leaf]!.to("m").value,
+            inputs[rootName]!.value * totalFactor,
+            1e-9,
+          ),
         ).toBe(true);
       }
       // Recomputation with doubled inputs doubles every output (no stale cache).
       const doubled: Record<string, Quantity> = {};
-      for (const root of roots) doubled[root] = Quantity.of(inputs[root]!.value * 2, "m");
+      for (const root of roots)
+        doubled[root] = Quantity.of(inputs[root]!.value * 2, "m");
       const out2 = g1.evaluate(doubled);
       for (const leaf of prev) {
         expect(
-          relClose(out2.outputs[leaf]!.to("m").value, out1.outputs[leaf]!.to("m").value * 2, 1e-9),
+          relClose(
+            out2.outputs[leaf]!.to("m").value,
+            out1.outputs[leaf]!.to("m").value * 2,
+            1e-9,
+          ),
         ).toBe(true);
       }
     }
@@ -979,14 +1094,26 @@ describe("prompt17 §12: dependency graph fuzz [seed 1722]", () => {
 
   it("cycles, self-cycles and missing inputs fail loudly", () => {
     const fa = defineFormula(
-      { id: "fa", expression: E.variable("b"), inputs: { b: { dimension: "m" } }, outputName: "a" },
+      {
+        id: "fa",
+        expression: E.variable("b"),
+        inputs: { b: { dimension: "m" } },
+        outputName: "a",
+      },
       O,
     );
     const fb = defineFormula(
-      { id: "fb", expression: E.variable("a"), inputs: { a: { dimension: "m" } }, outputName: "b" },
+      {
+        id: "fb",
+        expression: E.variable("a"),
+        inputs: { a: { dimension: "m" } },
+        outputName: "b",
+      },
       O,
     );
-    expect(() => createDependencyGraph([fa, fb])).toThrow(CyclicDependencyError);
+    expect(() => createDependencyGraph([fa, fb])).toThrow(
+      CyclicDependencyError,
+    );
     const self = defineFormula(
       {
         id: "self",
@@ -997,7 +1124,9 @@ describe("prompt17 §12: dependency graph fuzz [seed 1722]", () => {
       O,
     );
     expect(() => createDependencyGraph([self])).toThrow(UnitEngineError);
-    const solo = createDependencyGraph([linearFormula("only", "z", "missing", 2)]);
+    const solo = createDependencyGraph([
+      linearFormula("only", "z", "missing", 2),
+    ]);
     expect(() => solo.evaluate({})).toThrow(FormulaError);
   });
 });
@@ -1054,16 +1183,23 @@ describe("prompt17 §13: uncertainty propagation [seed 1733]", () => {
       const n = 2 + Math.floor(rand() * 2);
       const p = meas(x, sx).pow(n);
       expect(relClose(p.value.value, x ** n, 1e-9)).toBe(true);
-      expect(relClose(p.uncertainty.value, Math.abs(n) * x ** (n - 1) * sx, 1e-9)).toBe(true);
+      expect(
+        relClose(p.uncertainty.value, Math.abs(n) * x ** (n - 1) * sx, 1e-9),
+      ).toBe(true);
     }
     // Mixed representations combine in base units: 1 kg ± 200 g, hand-checked.
-    const mixed = Measurement.of(Quantity.of(1, "kg"), Quantity.of(200, "g")).add(
-      Measurement.of(Quantity.of(500, "g"), Quantity.of(100, "g")),
-    );
+    const mixed = Measurement.of(
+      Quantity.of(1, "kg"),
+      Quantity.of(200, "g"),
+    ).add(Measurement.of(Quantity.of(500, "g"), Quantity.of(100, "g")));
     expect(relClose(mixed.value.to("kg").value, 1.5, 1e-12)).toBe(true);
-    expect(relClose(mixed.uncertainty.to("kg").value, Math.sqrt(0.2 ** 2 + 0.1 ** 2), 1e-9)).toBe(
-      true,
-    );
+    expect(
+      relClose(
+        mixed.uncertainty.to("kg").value,
+        Math.sqrt(0.2 ** 2 + 0.1 ** 2),
+        1e-9,
+      ),
+    ).toBe(true);
   });
 
   it("relative-fraction constructor, conversion preserves relative uncertainty", () => {
@@ -1091,23 +1227,36 @@ describe("prompt17 §13: uncertainty propagation [seed 1733]", () => {
       const variance = xs.reduce((a, x) => a + (x - mean) ** 2, 0) / (n - 1);
       expect(relClose(series.mean().value.value, mean, 1e-9)).toBe(true);
       expect(relClose(series.variance().value, variance, 1e-9)).toBe(true);
-      expect(relClose(series.stddev().value, Math.sqrt(variance), 1e-9)).toBe(true);
-      expect(relClose(series.standardError().value, Math.sqrt(variance) / Math.sqrt(n), 1e-9)).toBe(
+      expect(relClose(series.stddev().value, Math.sqrt(variance), 1e-9)).toBe(
         true,
       );
+      expect(
+        relClose(
+          series.standardError().value,
+          Math.sqrt(variance) / Math.sqrt(n),
+          1e-9,
+        ),
+      ).toBe(true);
       // Expected units: variance → squared, stddev/SEM → original.
-      expect(dimensionsEqual(series.variance().dimension, multiplyDim({ L: 1 }, { L: 1 }))).toBe(
+      expect(
+        dimensionsEqual(
+          series.variance().dimension,
+          multiplyDim({ L: 1 }, { L: 1 }),
+        ),
+      ).toBe(true);
+      expect(dimensionsEqual(series.stddev().dimension, { L: 1 })).toBe(true);
+      expect(dimensionsEqual(series.standardError().dimension, { L: 1 })).toBe(
         true,
       );
-      expect(dimensionsEqual(series.stddev().dimension, { L: 1 })).toBe(true);
-      expect(dimensionsEqual(series.standardError().dimension, { L: 1 })).toBe(true);
       // Inverse-variance weighted mean: hand reference.
       const w = ss.map((s) => 1 / (s * s));
       const wSum = w.reduce((a, b) => a + b, 0);
       const wMean = xs.reduce((acc, x, j) => acc + w[j]! * x, 0) / wSum;
       const wm = series.weightedMean("inverse-variance");
       expect(relClose(wm.value.value, wMean, 1e-9)).toBe(true);
-      expect(relClose(wm.uncertainty.value, 1 / Math.sqrt(wSum), 1e-9)).toBe(true);
+      expect(relClose(wm.uncertainty.value, 1 / Math.sqrt(wSum), 1e-9)).toBe(
+        true,
+      );
     }
   });
 });
@@ -1138,7 +1287,9 @@ describe("prompt17 §14: correlation and covariance [seed 1744]", () => {
         { correlations: [{ idA: "a", idB: "b", coefficient: rho }] },
       );
       expect(relClose(combined.to("m").value, expected, 1e-9)).toBe(true);
-      expect(relClose(combined.to("m").value, rss(s1, s2, rho), 1e-12)).toBe(true);
+      expect(relClose(combined.to("m").value, rss(s1, s2, rho), 1e-12)).toBe(
+        true,
+      );
     }
   });
 
@@ -1148,13 +1299,20 @@ describe("prompt17 §14: correlation and covariance [seed 1744]", () => {
       { id: "b", standardUncertainty: Quantity.of(1, u) },
     ];
     expect(() =>
-      combineUncertainties(comps(), { correlations: [{ idA: "a", idB: "b", coefficient: 1.5 }] }),
+      combineUncertainties(comps(), {
+        correlations: [{ idA: "a", idB: "b", coefficient: 1.5 }],
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
-      combineUncertainties(comps(), { correlations: [{ idA: "a", idB: "zzz", coefficient: 0 }] }),
+      combineUncertainties(comps(), {
+        correlations: [{ idA: "a", idB: "zzz", coefficient: 0 }],
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
-      combineUncertainties([comps()[0]!, { id: "c", standardUncertainty: Quantity.of(1, "s") }]),
+      combineUncertainties([
+        comps()[0]!,
+        { id: "c", standardUncertainty: Quantity.of(1, "s") },
+      ]),
     ).toThrow(UnitEngineError);
     // All-ρ=−1 triangle is pairwise legal (|ρ| ≤ 1) but globally
     // inconsistent: u² = 3 + 2(−3) = −3 < 0 → rejected, never NaN.
@@ -1198,10 +1356,12 @@ describe("prompt17 §14: correlation and covariance [seed 1744]", () => {
         [3, 1],
       ]),
     ).toThrow(UnitEngineError);
-    expect(() => CovarianceMatrix.fromData(["x", "y"], "m^2", [[1, 0], [0]])).toThrow(
+    expect(() =>
+      CovarianceMatrix.fromData(["x", "y"], "m^2", [[1, 0], [0]]),
+    ).toThrow(UnitEngineError);
+    expect(() => CovarianceMatrix.fromData(["x"], "m^2", [[-1]])).toThrow(
       UnitEngineError,
     );
-    expect(() => CovarianceMatrix.fromData(["x"], "m^2", [[-1]])).toThrow(UnitEngineError);
     expect(() =>
       CovarianceMatrix.fromData(["x", "__proto__"], "m^2", [
         [1, 0],
@@ -1239,7 +1399,9 @@ describe("prompt17 §15: constants [seed 1755]", () => {
     for (const [id, ref] of Object.entries(expected)) {
       const entry = std.require(id);
       expect(entry.quantity.value).toBe(ref.value);
-      expect(dimensionsEqual(entry.quantity.dimension, ref.dim as DimensionVector)).toBe(true);
+      expect(
+        dimensionsEqual(entry.quantity.dimension, ref.dim as DimensionVector),
+      ).toBe(true);
       expect(entry.exact).toBe(true);
       expect(entry.measurement.uncertainty.value).toBe(0);
     }
@@ -1258,7 +1420,11 @@ describe("prompt17 §15: constants [seed 1755]", () => {
       },
       { registry: reg },
     );
-    const r = evaluateFormula(f, { mass: Quantity.of(1, "kg") }, { registry: reg });
+    const r = evaluateFormula(
+      f,
+      { mass: Quantity.of(1, "kg") },
+      { registry: reg },
+    );
     if (!(r instanceof Quantity)) throw new Error("expected Quantity");
     // Mechanical energy in N·m (J is the decoupled E dimension — see §3).
     expect(relClose(r.to("N*m", reg).value, 299792458 ** 2, 1e-9)).toBe(true);
@@ -1282,10 +1448,16 @@ describe("prompt17 §15: constants [seed 1755]", () => {
 describe("prompt17 §16: cross-system checks [seed 1766]", () => {
   it("SI ↔ CGS: hand-derived factors, dimension invariance", () => {
     const both = createRegistry({ packs: [SI_PACK, CGS_PACK] });
-    expect(relClose(Quantity.of(1, "m", both).to("cm", both).value, 100, 1e-12)).toBe(true);
-    expect(relClose(Quantity.of(1, "kg", both).to("g", both).value, 1000, 1e-12)).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "m", both).to("cm", both).value, 100, 1e-12),
+    ).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "kg", both).to("g", both).value, 1000, 1e-12),
+    ).toBe(true);
     // 1 N = 1 kg·m/s² = 1000 g × 100 cm/s² = 1e5 dyn (hand-derived).
-    expect(relClose(Quantity.of(1, "N", both).to("dyn", both).value, 1e5, 1e-9)).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "N", both).to("dyn", both).value, 1e5, 1e-9),
+    ).toBe(true);
     const rand = mulberry32(1766);
     for (let i = 0; i < 40; i++) {
       const v = (rand() - 0.5) * 1e6;
@@ -1299,37 +1471,63 @@ describe("prompt17 §16: cross-system checks [seed 1766]", () => {
   it("SI ↔ Imperial against independent legal definitions", () => {
     const imp = createRegistry({ packs: [SI_PACK, IMPERIAL_PACK] });
     // International yard/pound agreements (1959) — legal facts, not library code.
-    expect(relClose(Quantity.of(1, "m", imp).to("ft", imp).value, 1 / 0.3048, 1e-12)).toBe(true);
-    expect(relClose(Quantity.of(1, "kg", imp).to("lb", imp).value, 1 / 0.45359237, 1e-12)).toBe(
-      true,
-    );
-    expect(relClose(Quantity.of(1, "in", imp).to("cm", imp).value, 2.54, 1e-12)).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "m", imp).to("ft", imp).value, 1 / 0.3048, 1e-12),
+    ).toBe(true);
+    expect(
+      relClose(
+        Quantity.of(1, "kg", imp).to("lb", imp).value,
+        1 / 0.45359237,
+        1e-12,
+      ),
+    ).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "in", imp).to("cm", imp).value, 2.54, 1e-12),
+    ).toBe(true);
     // lbf = 0.45359237 kg × 9.80665 m/s² (hand-derived from the two definitions).
     const lbfInNewton = 0.45359237 * 9.80665;
-    expect(relClose(Quantity.of(1, "lbf", imp).to("N", imp).value, lbfInNewton, 1e-9)).toBe(true);
+    expect(
+      relClose(
+        Quantity.of(1, "lbf", imp).to("N", imp).value,
+        lbfInNewton,
+        1e-9,
+      ),
+    ).toBe(true);
     // psi = lbf/in² → Pa, derived from the same two literals.
     const psiInPascal = lbfInNewton / 0.00064516;
-    expect(relClose(Quantity.of(1, "psi", imp).to("Pa", imp).value, psiInPascal, 1e-9)).toBe(true);
+    expect(
+      relClose(
+        Quantity.of(1, "psi", imp).to("Pa", imp).value,
+        psiInPascal,
+        1e-9,
+      ),
+    ).toBe(true);
   });
 
   it("system normalization preserves physics; conflicting packs fail deterministically", () => {
     const both = createRegistry({ packs: [SI_PACK, CGS_PACK] });
-    const cm = normalizeToSystem(Quantity.of(1, "m", both), CGS_SYSTEM, { registry: both });
+    const cm = normalizeToSystem(Quantity.of(1, "m", both), CGS_SYSTEM, {
+      registry: both,
+    });
     expect(cm.unit.symbol).toBe("cm");
     expect(relClose(cm.value, 100, 1e-12)).toBe(true);
-    const g = normalizeToSystem(Quantity.of(1, "kg", both), CGS_SYSTEM, { registry: both });
+    const g = normalizeToSystem(Quantity.of(1, "kg", both), CGS_SYSTEM, {
+      registry: both,
+    });
     expect(g.unit.symbol).toBe("g");
     expect(relClose(g.value, 1000, 1e-12)).toBe(true);
     // No preferred CGS unit exists for force: deterministic typed error,
     // never a silently wrong mapping (dyn must be addressed explicitly).
     expect(() =>
-      normalizeToSystem(Quantity.of(1, "N", both), CGS_SYSTEM, { registry: both }),
+      normalizeToSystem(Quantity.of(1, "N", both), CGS_SYSTEM, {
+        registry: both,
+      }),
     ).toThrow(UnitEngineError);
     // Imperial and US-customary both claim "yd": combining them is a
     // deterministic registration error, never silent shadowing.
-    expect(() => createRegistry({ packs: [SI_PACK, IMPERIAL_PACK, US_CUSTOMARY_PACK] })).toThrow(
-      UnitEngineError,
-    );
+    expect(() =>
+      createRegistry({ packs: [SI_PACK, IMPERIAL_PACK, US_CUSTOMARY_PACK] }),
+    ).toThrow(UnitEngineError);
   });
 });
 
@@ -1358,7 +1556,11 @@ describe("prompt17 §17: metamorphic relations [seed 1777]", () => {
     for (let i = 0; i < 50; i++) {
       const m = 0.5 + rand() * 500;
       const v = 1 + rand() * 3000;
-      const inSI = evaluateFormula(ke, { m: Quantity.of(m, "kg"), v: Quantity.of(v, "m/s") }, O);
+      const inSI = evaluateFormula(
+        ke,
+        { m: Quantity.of(m, "kg"), v: Quantity.of(v, "m/s") },
+        O,
+      );
       const inCgsish = evaluateFormula(
         ke,
         { m: Quantity.of(m * 1000, "g"), v: Quantity.of(v * 100, "cm/s") },
@@ -1368,7 +1570,13 @@ describe("prompt17 §17: metamorphic relations [seed 1777]", () => {
         throw new Error("expected Quantity");
       }
       // Same physics after output normalization.
-      expect(relClose(inCgsish.to("N*m", reg).value, inSI.to("N*m", reg).value, 1e-9)).toBe(true);
+      expect(
+        relClose(
+          inCgsish.to("N*m", reg).value,
+          inSI.to("N*m", reg).value,
+          1e-9,
+        ),
+      ).toBe(true);
     }
   });
 
@@ -1378,7 +1586,9 @@ describe("prompt17 §17: metamorphic relations [seed 1777]", () => {
       const a = rand() * 1000;
       const b = rand() * 1000;
       const left = Quantity.of(a, "m").add(Quantity.of(b, "m")).to("km").value;
-      const right = Quantity.of(a / 1000, "km").add(Quantity.of(b / 1000, "km")).value;
+      const right = Quantity.of(a / 1000, "km").add(
+        Quantity.of(b / 1000, "km"),
+      ).value;
       expect(relClose(left, right, 1e-12)).toBe(true);
     }
   });
@@ -1398,8 +1608,12 @@ describe("prompt17 §18: numerical stability [seed 1788]", () => {
     expect(Quantity.of(1e308, "m").to("mm").value).toBe(Infinity);
     // Catastrophic cancellation is reported honestly: (1e16+1)−1e16 = 0 in
     // float64, and the library returns exactly that — no false precision.
-    expect(Quantity.of(1e16 + 1, "m").subtract(Quantity.of(1e16, "m")).value).toBe(1e16 + 1 - 1e16);
-    expect(Quantity.of(0.1, "m").add(Quantity.of(0.2, "m")).value).toBe(0.1 + 0.2);
+    expect(
+      Quantity.of(1e16 + 1, "m").subtract(Quantity.of(1e16, "m")).value,
+    ).toBe(1e16 + 1 - 1e16);
+    expect(Quantity.of(0.1, "m").add(Quantity.of(0.2, "m")).value).toBe(
+      0.1 + 0.2,
+    );
   });
 
   it("mixed magnitudes in one sum stay within float64 truth", () => {
@@ -1483,8 +1697,18 @@ describe("prompt17 §20: adversarial inputs [seed 1720]", () => {
     const poisonous = [
       { symbol: "m", dimension: { L: 1 }, toBaseFactor: 1, label: "duplicate" },
       { symbol: "", dimension: { L: 1 }, toBaseFactor: 1, label: "empty" },
-      { symbol: "ok_q2", dimension: { L: 1 }, toBaseFactor: Number.NaN, label: "nan-scale" },
-      { symbol: "ok_q3", dimension: { L: 1 }, toBaseFactor: 0, label: "zero-scale" },
+      {
+        symbol: "ok_q2",
+        dimension: { L: 1 },
+        toBaseFactor: Number.NaN,
+        label: "nan-scale",
+      },
+      {
+        symbol: "ok_q3",
+        dimension: { L: 1 },
+        toBaseFactor: 0,
+        label: "zero-scale",
+      },
     ];
     for (let i = 0; i < 40; i++) {
       const bad = pick(rand, poisonous);
@@ -1501,7 +1725,12 @@ describe("prompt17 §20: adversarial inputs [seed 1720]", () => {
     expect(units.version).toBe(versionBefore);
     // "__proto__" as a unit symbol is stored as DATA (Map-backed registry):
     // it must not alter Object.prototype and must round-trip as a symbol.
-    units.registerAtomic({ symbol: "__proto__", dimension: { L: 1 }, toBaseFactor: 1, label: "x" });
+    units.registerAtomic({
+      symbol: "__proto__",
+      dimension: { L: 1 },
+      toBaseFactor: 1,
+      label: "x",
+    });
     expect(Object.getPrototypeOf({})).toBe(Object.prototype);
     expect(({} as Record<string, unknown>)["label"]).toBeUndefined();
     expect(units.list().some((u) => u.symbol === "__proto__")).toBe(true);
@@ -1518,7 +1747,10 @@ describe("prompt17 §20: adversarial inputs [seed 1720]", () => {
         defineFormula(
           {
             id: `n${i}`,
-            expression: E.multiply(E.variable(i === 0 ? "x" : `o${i - 1}`), E.literal(1, "1")),
+            expression: E.multiply(
+              E.variable(i === 0 ? "x" : `o${i - 1}`),
+              E.literal(1, "1"),
+            ),
             inputs: { [i === 0 ? "x" : `o${i - 1}`]: { dimension: "m" } },
             outputName: `o${i}`,
           },
@@ -1556,21 +1788,39 @@ describe("prompt17 §21: differential references [seed 1721]", () => {
     const imp = createRegistry({ packs: [SI_PACK, IMPERIAL_PACK] });
     const sci = createRegistry({ packs: [SI_PACK, SCIENTIFIC_PACK] });
     // km/h → m/s is ÷3.6 by definition of the units involved.
-    expect(relClose(Quantity.of(36, "km/h").to("m/s").value, 10, 1e-9)).toBe(true);
-    expect(relClose(Quantity.of(1, "km/h").to("m/s").value, 1 / 3.6, 1e-12)).toBe(true);
+    expect(relClose(Quantity.of(36, "km/h").to("m/s").value, 10, 1e-9)).toBe(
+      true,
+    );
+    expect(
+      relClose(Quantity.of(1, "km/h").to("m/s").value, 1 / 3.6, 1e-12),
+    ).toBe(true);
     // °F → °C: (F−32)·5/9, computed here by hand.
     const si = createRegistry({ packs: [SI_PACK] });
     for (const f of [32, 212, -40, 98.6, 451]) {
       const hand = ((f - 32) * 5) / 9;
-      expect(Math.abs(Quantity.of(f, "°F", si).to("°C", si).value - hand)).toBeLessThan(1e-9);
+      expect(
+        Math.abs(Quantity.of(f, "°F", si).to("°C", si).value - hand),
+      ).toBeLessThan(1e-9);
     }
     // Thermochemical calorie is 4.184 J exactly; IT-BTU is 1055.05585262 J.
-    expect(relClose(Quantity.of(1, "cal", sci).to("J", sci).value, 4.184, 1e-12)).toBe(true);
-    expect(relClose(Quantity.of(1, "BTU", sci).to("J", sci).value, 1055.05585262, 1e-9)).toBe(true);
+    expect(
+      relClose(Quantity.of(1, "cal", sci).to("J", sci).value, 4.184, 1e-12),
+    ).toBe(true);
+    expect(
+      relClose(
+        Quantity.of(1, "BTU", sci).to("J", sci).value,
+        1055.05585262,
+        1e-9,
+      ),
+    ).toBe(true);
     // mph: 1 mile/hour = 1609.344 m / 3600 s (hand-derived from definitions).
-    expect(relClose(Quantity.of(1, "mph", imp).to("m/s", imp).value, 1609.344 / 3600, 1e-9)).toBe(
-      true,
-    );
+    expect(
+      relClose(
+        Quantity.of(1, "mph", imp).to("m/s", imp).value,
+        1609.344 / 3600,
+        1e-9,
+      ),
+    ).toBe(true);
   });
 });
 

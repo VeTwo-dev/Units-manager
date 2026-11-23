@@ -19,9 +19,17 @@ import {
 } from "../src/index.js";
 
 const caAsFed = (v = 100) =>
-  NutritionMeasurement.of(Measurement.exact(Quantity.of(v, "mg/kg")), "ca", "asFed");
+  NutritionMeasurement.of(
+    Measurement.exact(Quantity.of(v, "mg/kg")),
+    "ca",
+    "asFed",
+  );
 const cpAsFed = (v = 9) =>
-  NutritionMeasurement.of(Measurement.exact(Quantity.of(v, "%")), "cp", "asFed");
+  NutritionMeasurement.of(
+    Measurement.exact(Quantity.of(v, "%")),
+    "cp",
+    "asFed",
+  );
 
 describe("NutritionSampleOptions — sample construction contract", () => {
   it("id-only construction works", () => {
@@ -43,15 +51,22 @@ describe("NutritionSampleOptions — sample construction contract", () => {
   });
 
   it("invalid ids are rejected", () => {
-    expect(() => new NutritionSample({ id: "" })).toThrow(InvalidNutritionQuantityError);
-    expect(() => new NutritionSample({ id: "has space!" })).toThrow(InvalidNutritionQuantityError);
-    expect(() => new NutritionSample(null as never)).toThrow(InvalidNutritionQuantityError);
+    expect(() => new NutritionSample({ id: "" })).toThrow(
+      InvalidNutritionQuantityError,
+    );
+    expect(() => new NutritionSample({ id: "has space!" })).toThrow(
+      InvalidNutritionQuantityError,
+    );
+    expect(() => new NutritionSample(null as never)).toThrow(
+      InvalidNutritionQuantityError,
+    );
   });
 
   it("non-measurement entries are rejected", () => {
-    expect(() => new NutritionSample({ id: "s", measurements: [{ nope: 1 } as never] })).toThrow(
-      InvalidNutritionQuantityError,
-    );
+    expect(
+      () =>
+        new NutritionSample({ id: "s", measurements: [{ nope: 1 } as never] }),
+    ).toThrow(InvalidNutritionQuantityError);
   });
 
   it("samples are immutable and iterable", () => {
@@ -71,7 +86,9 @@ describe("NutritionSampleOptions — sample construction contract", () => {
 
   it("withMeasurement rejects non-measurements", () => {
     const s = new NutritionSample({ id: "s" });
-    expect(() => s.withMeasurement({ nope: 1 } as never)).toThrow(InvalidNutritionQuantityError);
+    expect(() => s.withMeasurement({ nope: 1 } as never)).toThrow(
+      InvalidNutritionQuantityError,
+    );
   });
 });
 
@@ -82,7 +99,9 @@ describe("NutritionSampleOptions — serialization round-trip", () => {
       context: createNutritionContext({ dryMatterFraction: 0.88 }),
       measurements: [caAsFed(120), cpAsFed(9.5)],
     });
-    const back = NutritionSample.fromJSON(JSON.parse(JSON.stringify(s.toJSON())));
+    const back = NutritionSample.fromJSON(
+      JSON.parse(JSON.stringify(s.toJSON())),
+    );
     expect(back.id).toBe("s-round");
     expect(back.measurements).toHaveLength(2);
     expect(back.context?.resolvedDryMatterFraction).toBeCloseTo(0.88, 12);

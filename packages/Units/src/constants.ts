@@ -67,14 +67,19 @@ function resolveLimits(limits?: ConstantRegistryLimits): {
 } {
   const r = {
     maxConstants: limits?.maxConstants ?? DEFAULT_LIMITS.maxConstants,
-    maxAliasesPerConstant: limits?.maxAliasesPerConstant ?? DEFAULT_LIMITS.maxAliasesPerConstant,
+    maxAliasesPerConstant:
+      limits?.maxAliasesPerConstant ?? DEFAULT_LIMITS.maxAliasesPerConstant,
     maxMetadataKeys: limits?.maxMetadataKeys ?? DEFAULT_LIMITS.maxMetadataKeys,
-    maxMetadataDepth: limits?.maxMetadataDepth ?? DEFAULT_LIMITS.maxMetadataDepth,
-    maxSerializedChars: limits?.maxSerializedChars ?? DEFAULT_LIMITS.maxSerializedChars,
+    maxMetadataDepth:
+      limits?.maxMetadataDepth ?? DEFAULT_LIMITS.maxMetadataDepth,
+    maxSerializedChars:
+      limits?.maxSerializedChars ?? DEFAULT_LIMITS.maxSerializedChars,
   };
   for (const [k, v] of Object.entries(r)) {
     if (!Number.isInteger(v) || v < 1) {
-      throw new UnitEngineError(`Constant registry limit ${k} must be a positive integer.`);
+      throw new UnitEngineError(
+        `Constant registry limit ${k} must be a positive integer.`,
+      );
     }
   }
   return r;
@@ -89,7 +94,9 @@ const NAMESPACE_RE = /^[a-z][a-z0-9_-]*$/;
 
 function assertValidId(id: string, what: string): void {
   if (typeof id !== "string" || !ID_RE.test(id)) {
-    throw new UnitEngineError(`${what} must match /^[A-Za-z][A-Za-z0-9_]*$/, got "${String(id)}"`);
+    throw new UnitEngineError(
+      `${what} must match /^[A-Za-z][A-Za-z0-9_]*$/, got "${String(id)}"`,
+    );
   }
 }
 
@@ -117,16 +124,21 @@ function assertDeclarativeMetadata(
   depth = 0,
 ): void {
   if (depth > maxDepth) {
-    throw new UnitEngineError(`${owner} metadata is nested too deeply (max ${maxDepth})`);
+    throw new UnitEngineError(
+      `${owner} metadata is nested too deeply (max ${maxDepth})`,
+    );
   }
   if (value === null || value === undefined) return;
   const t = typeof value;
   if (t === "function" || t === "symbol") {
-    throw new UnitEngineError(`${owner} metadata must not contain executable values`);
+    throw new UnitEngineError(
+      `${owner} metadata must not contain executable values`,
+    );
   }
   if (t !== "object") return;
   if (Array.isArray(value)) {
-    for (const item of value) assertDeclarativeMetadata(item, owner, maxKeys, maxDepth, depth + 1);
+    for (const item of value)
+      assertDeclarativeMetadata(item, owner, maxKeys, maxDepth, depth + 1);
     return;
   }
   const record = value as Record<string, unknown>;
@@ -135,7 +147,9 @@ function assertDeclarativeMetadata(
   }
   const keys = Object.keys(record);
   if (keys.length > maxKeys) {
-    throw new UnitEngineError(`${owner} metadata has too many keys (max ${maxKeys})`);
+    throw new UnitEngineError(
+      `${owner} metadata has too many keys (max ${maxKeys})`,
+    );
   }
   for (const v of Object.values(record)) {
     assertDeclarativeMetadata(v, owner, maxKeys, maxDepth, depth + 1);
@@ -144,7 +158,9 @@ function assertDeclarativeMetadata(
 
 function assertIsoDate(value: string, owner: string): void {
   if (typeof value !== "string" || Number.isNaN(Date.parse(value))) {
-    throw new UnitEngineError(`${owner} must be an ISO 8601 date string, got "${String(value)}"`);
+    throw new UnitEngineError(
+      `${owner} must be an ISO 8601 date string, got "${String(value)}"`,
+    );
   }
 }
 
@@ -249,19 +265,41 @@ export class ConstantRegistry {
   private readonly limits: ReturnType<typeof resolveLimits>;
 
   constructor(options: ConstantRegistryOptions = {}) {
-    if (options === null || typeof options !== "object" || Array.isArray(options)) {
-      throw new UnitEngineError("ConstantRegistry options must be a plain object");
+    if (
+      options === null ||
+      typeof options !== "object" ||
+      Array.isArray(options)
+    ) {
+      throw new UnitEngineError(
+        "ConstantRegistry options must be a plain object",
+      );
     }
-    const { name = "constants", namespace, datasetVersion = "1", parent, units, limits } = options;
+    const {
+      name = "constants",
+      namespace,
+      datasetVersion = "1",
+      parent,
+      units,
+      limits,
+    } = options;
     if (typeof name !== "string" || name.trim().length === 0) {
-      throw new UnitEngineError("ConstantRegistry name must be a non-empty string");
+      throw new UnitEngineError(
+        "ConstantRegistry name must be a non-empty string",
+      );
     }
     if (namespace !== undefined) assertValidNamespace(namespace);
-    if (typeof datasetVersion !== "string" || datasetVersion.trim().length === 0) {
-      throw new UnitEngineError("ConstantRegistry datasetVersion must be a non-empty string");
+    if (
+      typeof datasetVersion !== "string" ||
+      datasetVersion.trim().length === 0
+    ) {
+      throw new UnitEngineError(
+        "ConstantRegistry datasetVersion must be a non-empty string",
+      );
     }
     if (parent !== undefined && !(parent instanceof ConstantRegistry)) {
-      throw new UnitEngineError("ConstantRegistry parent must be a ConstantRegistry");
+      throw new UnitEngineError(
+        "ConstantRegistry parent must be a ConstantRegistry",
+      );
     }
     this.registryName = name;
     this.registryNamespace = namespace;
@@ -311,11 +349,15 @@ export class ConstantRegistry {
       );
     }
     if (typeof def.symbol !== "string" || def.symbol.trim().length === 0) {
-      throw new UnitEngineError(`Constant "${def.id}" needs a non-empty symbol`);
+      throw new UnitEngineError(
+        `Constant "${def.id}" needs a non-empty symbol`,
+      );
     }
     const aliases = def.aliases ?? [];
     if (!Array.isArray(aliases)) {
-      throw new UnitEngineError(`Constant "${def.id}" aliases must be an array`);
+      throw new UnitEngineError(
+        `Constant "${def.id}" aliases must be an array`,
+      );
     }
     if (aliases.length > this.limits.maxAliasesPerConstant) {
       throw new UnitEngineError(
@@ -334,7 +376,9 @@ export class ConstantRegistry {
       }
     }
     if (typeof def.value !== "number" || !Number.isFinite(def.value)) {
-      throw new UnitEngineError(`Constant "${def.id}" value must be a finite number`);
+      throw new UnitEngineError(
+        `Constant "${def.id}" value must be a finite number`,
+      );
     }
     if (typeof def.unit !== "string" || def.unit.trim().length === 0) {
       throw new UnitEngineError(`Constant "${def.id}" needs a non-empty unit`);
@@ -357,10 +401,14 @@ export class ConstantRegistry {
         !Number.isFinite(def.uncertainty) ||
         def.uncertainty < 0
       ) {
-        throw new UnitEngineError(`Constant "${def.id}" uncertainty must be a finite number ≥ 0`);
+        throw new UnitEngineError(
+          `Constant "${def.id}" uncertainty must be a finite number ≥ 0`,
+        );
       }
       if (def.exact) {
-        throw new UnitEngineError(`Constant "${def.id}" is exact but carries uncertainty`);
+        throw new UnitEngineError(
+          `Constant "${def.id}" is exact but carries uncertainty`,
+        );
       }
       try {
         measurement = Measurement.of(
@@ -381,16 +429,28 @@ export class ConstantRegistry {
       }
     }
     if (typeof def.source !== "string" || def.source.trim().length === 0) {
-      throw new UnitEngineError(`Constant "${def.id}" needs a non-empty source`);
+      throw new UnitEngineError(
+        `Constant "${def.id}" needs a non-empty source`,
+      );
     }
     const version = def.version ?? 1;
     if (!Number.isInteger(version) || version < 1) {
-      throw new UnitEngineError(`Constant "${def.id}" version must be a positive integer`);
+      throw new UnitEngineError(
+        `Constant "${def.id}" version must be a positive integer`,
+      );
     }
-    if (def.validFrom !== undefined) assertIsoDate(def.validFrom, `Constant "${def.id}" validFrom`);
-    if (def.validTo !== undefined) assertIsoDate(def.validTo, `Constant "${def.id}" validTo`);
-    if (def.validFrom !== undefined && def.validTo !== undefined && def.validFrom > def.validTo) {
-      throw new UnitEngineError(`Constant "${def.id}" validFrom must not exceed validTo`);
+    if (def.validFrom !== undefined)
+      assertIsoDate(def.validFrom, `Constant "${def.id}" validFrom`);
+    if (def.validTo !== undefined)
+      assertIsoDate(def.validTo, `Constant "${def.id}" validTo`);
+    if (
+      def.validFrom !== undefined &&
+      def.validTo !== undefined &&
+      def.validFrom > def.validTo
+    ) {
+      throw new UnitEngineError(
+        `Constant "${def.id}" validFrom must not exceed validTo`,
+      );
     }
     if (def.provenance !== undefined) {
       if (
@@ -398,10 +458,16 @@ export class ConstantRegistry {
         typeof def.provenance !== "object" ||
         Array.isArray(def.provenance)
       ) {
-        throw new UnitEngineError(`Constant "${def.id}" provenance must be a plain object`);
+        throw new UnitEngineError(
+          `Constant "${def.id}" provenance must be a plain object`,
+        );
       }
-      if (hasPollutionKeys(def.provenance as unknown as Record<string, unknown>)) {
-        throw new UnitEngineError(`Constant "${def.id}" provenance contains forbidden keys`);
+      if (
+        hasPollutionKeys(def.provenance as unknown as Record<string, unknown>)
+      ) {
+        throw new UnitEngineError(
+          `Constant "${def.id}" provenance contains forbidden keys`,
+        );
       }
     }
     assertDeclarativeMetadata(
@@ -424,7 +490,9 @@ export class ConstantRegistry {
       version,
       validFrom: def.validFrom,
       validTo: def.validTo,
-      provenance: def.provenance ? Object.freeze({ ...def.provenance }) : undefined,
+      provenance: def.provenance
+        ? Object.freeze({ ...def.provenance })
+        : undefined,
       metadata: def.metadata ? Object.freeze({ ...def.metadata }) : undefined,
       namespace: this.registryNamespace,
     });
@@ -469,19 +537,25 @@ export class ConstantRegistry {
       }
       const id = this.names.get(bare);
       if (id === undefined) {
-        throw new UnitEngineError(`Unknown constant "${name}" in registry "${this.registryName}"`);
+        throw new UnitEngineError(
+          `Unknown constant "${name}" in registry "${this.registryName}"`,
+        );
       }
       return this.entries.get(id)!;
     }
     const id = this.names.get(name);
     if (id !== undefined) return this.entries.get(id)!;
     if (this.parent !== undefined) return this.parent.require(name);
-    throw new UnitEngineError(`Unknown constant "${name}" in registry "${this.registryName}"`);
+    throw new UnitEngineError(
+      `Unknown constant "${name}" in registry "${this.registryName}"`,
+    );
   }
 
   /** Sorted constants (by id) for deterministic iteration/serialization. */
   list(): readonly ScientificConstant[] {
-    return [...this.entries.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    return [...this.entries.values()].sort((a, b) =>
+      a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+    );
   }
 
   /**
@@ -563,7 +637,9 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return proto === Object.prototype || proto === null;
 }
 
-export function serializeConstant(c: ScientificConstant): SerializedScientificConstant {
+export function serializeConstant(
+  c: ScientificConstant,
+): SerializedScientificConstant {
   if (c === null || typeof c !== "object" || Array.isArray(c)) {
     throw new UnitEngineError("Can only serialize ScientificConstant objects");
   }
@@ -575,7 +651,9 @@ export function serializeConstant(c: ScientificConstant): SerializedScientificCo
     aliases: Object.freeze([...c.aliases]),
     value: encodeConstantNumber(c.quantity.value),
     unit: c.quantity.unit.symbol,
-    uncertainty: c.exact ? undefined : encodeConstantNumber(c.measurement.uncertainty.value),
+    uncertainty: c.exact
+      ? undefined
+      : encodeConstantNumber(c.measurement.uncertainty.value),
     exact: c.exact,
     description: c.description,
     source: c.source,
@@ -590,7 +668,9 @@ export function serializeConstant(c: ScientificConstant): SerializedScientificCo
   });
 }
 
-export function serializeConstantRegistry(registry: ConstantRegistry): SerializedConstantRegistry {
+export function serializeConstantRegistry(
+  registry: ConstantRegistry,
+): SerializedConstantRegistry {
   if (!(registry instanceof ConstantRegistry)) {
     throw new UnitEngineError("Can only serialize ConstantRegistry instances");
   }
@@ -628,26 +708,38 @@ export function deserializeConstantRegistry(
     try {
       parsed = JSON.parse(data);
     } catch {
-      throw new UnitEngineError("Malformed serialized constant registry: invalid JSON");
+      throw new UnitEngineError(
+        "Malformed serialized constant registry: invalid JSON",
+      );
     }
     return deserializeConstantRegistry(parsed, opts);
   }
   if (!isPlainRecord(data)) {
-    throw new UnitEngineError("Serialized constant registry must be a plain object");
+    throw new UnitEngineError(
+      "Serialized constant registry must be a plain object",
+    );
   }
   if (hasPollutionKeys(data)) {
-    throw new UnitEngineError("Serialized constant registry contains forbidden keys");
+    throw new UnitEngineError(
+      "Serialized constant registry contains forbidden keys",
+    );
   }
   if (data.version !== 1) {
     if (data.version === undefined)
       throw new UnitEngineError("Serialized constant registry missing version");
-    throw new UnitEngineError(`Unsupported constant registry version ${String(data.version)}`);
+    throw new UnitEngineError(
+      `Unsupported constant registry version ${String(data.version)}`,
+    );
   }
   if (data.type !== "constant-registry") {
-    throw new UnitEngineError(`Serialized constant registry has wrong type "${String(data.type)}"`);
+    throw new UnitEngineError(
+      `Serialized constant registry has wrong type "${String(data.type)}"`,
+    );
   }
   if (!Array.isArray(data.constants)) {
-    throw new UnitEngineError("Serialized constant registry constants must be an array");
+    throw new UnitEngineError(
+      "Serialized constant registry constants must be an array",
+    );
   }
   const registry = new ConstantRegistry({
     name:
@@ -656,9 +748,12 @@ export function deserializeConstantRegistry(
         : typeof data.name === "string"
           ? data.name
           : "constants",
-    namespace: opts.namespace ?? (typeof data.namespace === "string" ? data.namespace : undefined),
+    namespace:
+      opts.namespace ??
+      (typeof data.namespace === "string" ? data.namespace : undefined),
     datasetVersion:
-      opts.datasetVersion ?? (typeof data.datasetVersion === "string" ? data.datasetVersion : "1"),
+      opts.datasetVersion ??
+      (typeof data.datasetVersion === "string" ? data.datasetVersion : "1"),
     units: opts.units,
     limits: opts.limits,
   });
@@ -670,23 +765,35 @@ export function deserializeConstantRegistry(
       throw new UnitEngineError("Serialized constant contains forbidden keys");
     }
     if (entry.version !== 1 || entry.type !== "scientific-constant") {
-      throw new UnitEngineError("Malformed serialized scientific constant (version/type)");
+      throw new UnitEngineError(
+        "Malformed serialized scientific constant (version/type)",
+      );
     }
     if (typeof entry.id !== "string" || typeof entry.symbol !== "string") {
-      throw new UnitEngineError("Serialized scientific constant needs id and symbol strings");
+      throw new UnitEngineError(
+        "Serialized scientific constant needs id and symbol strings",
+      );
     }
     if (typeof entry.unit !== "string") {
-      throw new UnitEngineError("Serialized scientific constant needs a unit string");
+      throw new UnitEngineError(
+        "Serialized scientific constant needs a unit string",
+      );
     }
     if (typeof entry.source !== "string") {
-      throw new UnitEngineError("Serialized scientific constant needs a source string");
+      throw new UnitEngineError(
+        "Serialized scientific constant needs a source string",
+      );
     }
     if (entry.exact !== true && entry.exact !== false) {
-      throw new UnitEngineError("Serialized scientific constant needs an exact boolean");
+      throw new UnitEngineError(
+        "Serialized scientific constant needs an exact boolean",
+      );
     }
     const aliases = entry.aliases ?? [];
     if (!Array.isArray(aliases) || aliases.some((a) => typeof a !== "string")) {
-      throw new UnitEngineError("Serialized scientific constant aliases must be strings");
+      throw new UnitEngineError(
+        "Serialized scientific constant aliases must be strings",
+      );
     }
     registry.register({
       id: entry.id,
@@ -697,13 +804,19 @@ export function deserializeConstantRegistry(
       uncertainty:
         entry.uncertainty === undefined
           ? undefined
-          : decodeConstantNumber(entry.uncertainty, `Constant "${entry.id}" uncertainty`),
+          : decodeConstantNumber(
+              entry.uncertainty,
+              `Constant "${entry.id}" uncertainty`,
+            ),
       exact: entry.exact,
-      description: typeof entry.description === "string" ? entry.description : undefined,
+      description:
+        typeof entry.description === "string" ? entry.description : undefined,
       source: entry.source,
-      reference: typeof entry.reference === "string" ? entry.reference : undefined,
+      reference:
+        typeof entry.reference === "string" ? entry.reference : undefined,
       version: typeof entry.constVersion === "number" ? entry.constVersion : 1,
-      validFrom: typeof entry.validFrom === "string" ? entry.validFrom : undefined,
+      validFrom:
+        typeof entry.validFrom === "string" ? entry.validFrom : undefined,
       validTo: typeof entry.validTo === "string" ? entry.validTo : undefined,
       provenance: isPlainRecord(entry.provenance)
         ? (entry.provenance as ConstantProvenance)
@@ -754,92 +867,93 @@ export function recordConstantUsage(
  * gravitation which carries its CODATA 2018 uncertainty to exercise the
  * uncertain-constant path. Sources are cited per constant.
  */
-export const SI_PHYSICS_CONSTANT_DEFS: readonly ScientificConstantDef[] = Object.freeze([
-  {
-    id: "speedOfLight",
-    symbol: "c",
-    aliases: ["lightspeed"],
-    value: 299792458,
-    unit: "m/s",
-    exact: true,
-    description: "Speed of light in vacuum",
-    source: "SI Brochure (BIPM), 9th edition",
-    reference: "SI defining constant (2019 redefinition)",
-    version: 1,
-  },
-  {
-    id: "planckConstant",
-    symbol: "h",
-    value: 6.62607015e-34,
-    unit: "J*s",
-    exact: true,
-    description: "Planck constant",
-    source: "SI Brochure (BIPM), 9th edition",
-    reference: "SI defining constant (2019 redefinition)",
-    version: 1,
-  },
-  {
-    id: "elementaryCharge",
-    symbol: "e",
-    value: 1.602176634e-19,
-    unit: "C",
-    exact: true,
-    description: "Elementary charge",
-    source: "SI Brochure (BIPM), 9th edition",
-    reference: "SI defining constant (2019 redefinition)",
-    version: 1,
-  },
-  {
-    id: "avogadroConstant",
-    symbol: "NA",
-    value: 6.02214076e23,
-    unit: "mol^-1",
-    exact: true,
-    description: "Avogadro constant",
-    source: "SI Brochure (BIPM), 9th edition",
-    reference: "SI defining constant (2019 redefinition)",
-    version: 1,
-  },
-  {
-    id: "boltzmannConstant",
-    symbol: "kB",
-    value: 1.380649e-23,
-    unit: "J/K",
-    exact: true,
-    description: "Boltzmann constant",
-    source: "SI Brochure (BIPM), 9th edition",
-    reference: "SI defining constant (2019 redefinition)",
-    version: 1,
-  },
-  {
-    id: "standardGravity",
-    symbol: "g0",
-    value: 9.80665,
-    unit: "m/s^2",
-    exact: true,
-    description: "Standard acceleration of gravity",
-    source: "CGPM, 3rd meeting (1901); conventional exact value",
-    reference: "Conventional exact value gn = 9.80665 m/s²",
-    version: 1,
-  },
-  {
-    id: "newtonianGravitation",
-    symbol: "G",
-    value: 6.6743e-11,
-    unit: "m^3/(kg*s^2)",
-    uncertainty: 0.00015e-11,
-    exact: false,
-    description: "Newtonian constant of gravitation",
-    source: "CODATA 2018 recommended values (Tiesinga et al., RMP 2021)",
-    reference: "CODATA 2018: 6.67430(15)e-11 m³·kg⁻¹·s⁻²",
-    version: 1,
-    provenance: {
-      organization: "CODATA Task Group",
-      publication: "RMP 93, 025010 (2021)",
-      revision: "2018",
+export const SI_PHYSICS_CONSTANT_DEFS: readonly ScientificConstantDef[] =
+  Object.freeze([
+    {
+      id: "speedOfLight",
+      symbol: "c",
+      aliases: ["lightspeed"],
+      value: 299792458,
+      unit: "m/s",
+      exact: true,
+      description: "Speed of light in vacuum",
+      source: "SI Brochure (BIPM), 9th edition",
+      reference: "SI defining constant (2019 redefinition)",
+      version: 1,
     },
-  },
-]);
+    {
+      id: "planckConstant",
+      symbol: "h",
+      value: 6.62607015e-34,
+      unit: "J*s",
+      exact: true,
+      description: "Planck constant",
+      source: "SI Brochure (BIPM), 9th edition",
+      reference: "SI defining constant (2019 redefinition)",
+      version: 1,
+    },
+    {
+      id: "elementaryCharge",
+      symbol: "e",
+      value: 1.602176634e-19,
+      unit: "C",
+      exact: true,
+      description: "Elementary charge",
+      source: "SI Brochure (BIPM), 9th edition",
+      reference: "SI defining constant (2019 redefinition)",
+      version: 1,
+    },
+    {
+      id: "avogadroConstant",
+      symbol: "NA",
+      value: 6.02214076e23,
+      unit: "mol^-1",
+      exact: true,
+      description: "Avogadro constant",
+      source: "SI Brochure (BIPM), 9th edition",
+      reference: "SI defining constant (2019 redefinition)",
+      version: 1,
+    },
+    {
+      id: "boltzmannConstant",
+      symbol: "kB",
+      value: 1.380649e-23,
+      unit: "J/K",
+      exact: true,
+      description: "Boltzmann constant",
+      source: "SI Brochure (BIPM), 9th edition",
+      reference: "SI defining constant (2019 redefinition)",
+      version: 1,
+    },
+    {
+      id: "standardGravity",
+      symbol: "g0",
+      value: 9.80665,
+      unit: "m/s^2",
+      exact: true,
+      description: "Standard acceleration of gravity",
+      source: "CGPM, 3rd meeting (1901); conventional exact value",
+      reference: "Conventional exact value gn = 9.80665 m/s²",
+      version: 1,
+    },
+    {
+      id: "newtonianGravitation",
+      symbol: "G",
+      value: 6.6743e-11,
+      unit: "m^3/(kg*s^2)",
+      uncertainty: 0.00015e-11,
+      exact: false,
+      description: "Newtonian constant of gravitation",
+      source: "CODATA 2018 recommended values (Tiesinga et al., RMP 2021)",
+      reference: "CODATA 2018: 6.67430(15)e-11 m³·kg⁻¹·s⁻²",
+      version: 1,
+      provenance: {
+        organization: "CODATA Task Group",
+        publication: "RMP 93, 025010 (2021)",
+        revision: "2018",
+      },
+    },
+  ]);
 
 export interface StandardConstantRegistryOptions {
   /** Unit registry for resolving constant units (defaults to SI-backed). */

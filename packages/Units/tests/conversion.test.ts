@@ -129,8 +129,12 @@ describe("Conversion: dimension validation", () => {
   });
 
   it("rejects incompatible Quantity.to", () => {
-    expect(() => Quantity.of(1, "kg").to("m")).toThrow(ImpossibleConversionError);
-    expect(() => Quantity.of(1, "Mcal").to("kg")).toThrow(ImpossibleConversionError);
+    expect(() => Quantity.of(1, "kg").to("m")).toThrow(
+      ImpossibleConversionError,
+    );
+    expect(() => Quantity.of(1, "Mcal").to("kg")).toThrow(
+      ImpossibleConversionError,
+    );
   });
 
   it("validates before computing (no meaningless conversion)", () => {
@@ -152,56 +156,86 @@ describe("Conversion: dimension validation", () => {
 
 describe("Conversion: affine (temperature)", () => {
   it("0 °C = 273.15 K", () => {
-    expect(close(convert(0, parseUnit("°C"), parseUnit("K")), 273.15)).toBe(true);
+    expect(close(convert(0, parseUnit("°C"), parseUnit("K")), 273.15)).toBe(
+      true,
+    );
   });
 
   it("100 °C = 373.15 K", () => {
-    expect(close(convert(100, parseUnit("°C"), parseUnit("K")), 373.15)).toBe(true);
+    expect(close(convert(100, parseUnit("°C"), parseUnit("K")), 373.15)).toBe(
+      true,
+    );
   });
 
   it("0 K = -273.15 °C", () => {
-    expect(close(convert(273.15, parseUnit("K"), parseUnit("°C")), 0)).toBe(true);
+    expect(close(convert(273.15, parseUnit("K"), parseUnit("°C")), 0)).toBe(
+      true,
+    );
   });
 
   it("373.15 K = 100 °C", () => {
-    expect(close(convert(373.15, parseUnit("K"), parseUnit("°C")), 100)).toBe(true);
+    expect(close(convert(373.15, parseUnit("K"), parseUnit("°C")), 100)).toBe(
+      true,
+    );
   });
 
   it("32 °F = 273.15 K", () => {
-    expect(close(convert(32, parseUnit("°F"), parseUnit("K")), 273.15, 1e-9)).toBe(true);
+    expect(
+      close(convert(32, parseUnit("°F"), parseUnit("K")), 273.15, 1e-9),
+    ).toBe(true);
   });
 
   it("212 °F = 373.15 K", () => {
-    expect(close(convert(212, parseUnit("°F"), parseUnit("K")), 373.15, 1e-9)).toBe(true);
+    expect(
+      close(convert(212, parseUnit("°F"), parseUnit("K")), 373.15, 1e-9),
+    ).toBe(true);
   });
 
   it("0 °F ≈ 255.372222 K", () => {
-    expect(close(convert(0, parseUnit("°F"), parseUnit("K")), 255.37222222222223, 1e-9)).toBe(true);
+    expect(
+      close(
+        convert(0, parseUnit("°F"), parseUnit("K")),
+        255.37222222222223,
+        1e-9,
+      ),
+    ).toBe(true);
   });
 
   it("273.15 K = 32 °F", () => {
-    expect(close(convert(273.15, parseUnit("K"), parseUnit("°F")), 32, 1e-9)).toBe(true);
+    expect(
+      close(convert(273.15, parseUnit("K"), parseUnit("°F")), 32, 1e-9),
+    ).toBe(true);
   });
 
   it("373.15 K = 212 °F", () => {
-    expect(close(convert(373.15, parseUnit("K"), parseUnit("°F")), 212, 1e-9)).toBe(true);
+    expect(
+      close(convert(373.15, parseUnit("K"), parseUnit("°F")), 212, 1e-9),
+    ).toBe(true);
   });
 
   it("0 °C = 32 °F", () => {
-    expect(close(convert(0, parseUnit("°C"), parseUnit("°F")), 32, 1e-9)).toBe(true);
+    expect(close(convert(0, parseUnit("°C"), parseUnit("°F")), 32, 1e-9)).toBe(
+      true,
+    );
   });
 
   it("100 °C = 212 °F", () => {
-    expect(close(convert(100, parseUnit("°C"), parseUnit("°F")), 212, 1e-9)).toBe(true);
+    expect(
+      close(convert(100, parseUnit("°C"), parseUnit("°F")), 212, 1e-9),
+    ).toBe(true);
   });
 
   it("-40 °C = -40 °F", () => {
-    expect(close(convert(-40, parseUnit("°C"), parseUnit("°F")), -40, 1e-9)).toBe(true);
+    expect(
+      close(convert(-40, parseUnit("°C"), parseUnit("°F")), -40, 1e-9),
+    ).toBe(true);
   });
 
   it("Quantity.to with temperature", () => {
     expect(close(Quantity.of(0, "°C").to("K").value, 273.15)).toBe(true);
-    expect(close(Quantity.of(212, "°F").to("K").value, 373.15, 1e-6)).toBe(true);
+    expect(close(Quantity.of(212, "°F").to("K").value, 373.15, 1e-6)).toBe(
+      true,
+    );
     expect(close(Quantity.of(100, "°C").to("°F").value, 212, 1e-6)).toBe(true);
   });
 
@@ -277,22 +311,36 @@ describe("Conversion: round-trip", () => {
 describe("Conversion: numerical safety", () => {
   it("zero converts deterministically", () => {
     expect(convert(0, parseUnit("kg"), parseUnit("g"))).toBe(0);
-    expect(close(convert(0, parseUnit("°C"), parseUnit("K")), 273.15)).toBe(true);
+    expect(close(convert(0, parseUnit("°C"), parseUnit("K")), 273.15)).toBe(
+      true,
+    );
   });
 
   it("negative values where mathematically valid (mass, length linear)", () => {
-    expect(close(convert(-1, parseUnit("kg"), parseUnit("g")), -1000)).toBe(true);
-    expect(close(convert(-1, parseUnit("m"), parseUnit("cm")), -100)).toBe(true);
+    expect(close(convert(-1, parseUnit("kg"), parseUnit("g")), -1000)).toBe(
+      true,
+    );
+    expect(close(convert(-1, parseUnit("m"), parseUnit("cm")), -100)).toBe(
+      true,
+    );
   });
 
   it("very small values", () => {
-    expect(close(convert(1e-12, parseUnit("kg"), parseUnit("g")), 1e-9, 1e-18)).toBe(true);
-    expect(close(convert(1e-9, parseUnit("m"), parseUnit("mm")), 1e-6, 1e-15)).toBe(true);
+    expect(
+      close(convert(1e-12, parseUnit("kg"), parseUnit("g")), 1e-9, 1e-18),
+    ).toBe(true);
+    expect(
+      close(convert(1e-9, parseUnit("m"), parseUnit("mm")), 1e-6, 1e-15),
+    ).toBe(true);
   });
 
   it("large values", () => {
-    expect(close(convert(1e9, parseUnit("g"), parseUnit("kg")), 1e6)).toBe(true);
-    expect(close(convert(1e6, parseUnit("m"), parseUnit("km")), 1000)).toBe(true);
+    expect(close(convert(1e9, parseUnit("g"), parseUnit("kg")), 1e6)).toBe(
+      true,
+    );
+    expect(close(convert(1e6, parseUnit("m"), parseUnit("km")), 1000)).toBe(
+      true,
+    );
   });
 
   it("NaN propagates through linear conversion", () => {
@@ -321,7 +369,9 @@ describe("Conversion: determinism", () => {
   it("same inputs always produce same outputs", () => {
     const kg = parseUnit("kg");
     const g = parseUnit("g");
-    const results = Array.from({ length: 10 }, () => convert(1.23456789, kg, g));
+    const results = Array.from({ length: 10 }, () =>
+      convert(1.23456789, kg, g),
+    );
     expect(new Set(results).size).toBe(1);
   });
 
@@ -334,11 +384,19 @@ describe("Conversion: determinism", () => {
 
   it("does not depend on registry insertion order", () => {
     const r1 = new UnitRegistry([]);
-    r1.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
-    r1.register(makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }));
+    r1.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
+    r1.register(
+      makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }),
+    );
     const r2 = new UnitRegistry([]);
-    r2.register(makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }));
-    r2.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    r2.register(
+      makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }),
+    );
+    r2.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     // Both registries produce same parsed units for linear derived units
     const kg1 = r1.resolve("kg");
     const g1 = r1.resolve("g");
@@ -358,7 +416,9 @@ describe("Conversion: errors", () => {
   });
 
   it("throws ImpossibleConversionError for incompatible dimensions", () => {
-    expect(() => convert(1, parseUnit("kg"), parseUnit("m"))).toThrow(ImpossibleConversionError);
+    expect(() => convert(1, parseUnit("kg"), parseUnit("m"))).toThrow(
+      ImpossibleConversionError,
+    );
   });
 
   it("error contains source and target symbols", () => {
@@ -373,15 +433,21 @@ describe("Conversion: errors", () => {
   });
 
   it("Quantity.to with incompatible dimensions throws ImpossibleConversionError", () => {
-    expect(() => Quantity.of(1, "kg").to("Mcal")).toThrow(ImpossibleConversionError);
+    expect(() => Quantity.of(1, "kg").to("Mcal")).toThrow(
+      ImpossibleConversionError,
+    );
   });
 
   it("Quantity with basis mismatch throws ConversionError", () => {
     // Only throws when BOTH have a basis and they differ; "% DM" → "%" (undefined) is allowed
     expect(() => Quantity.of(15, "% DM").to("%")).not.toThrow();
     // But "% DM" → "% asFed" should throw
-    expect(() => Quantity.of(15, "% DM").to("% asFed")).toThrow(ConversionError);
-    expect(() => Quantity.of(15, "% asFed").to("% DM")).toThrow(ConversionError);
+    expect(() => Quantity.of(15, "% DM").to("% asFed")).toThrow(
+      ConversionError,
+    );
+    expect(() => Quantity.of(15, "% asFed").to("% DM")).toThrow(
+      ConversionError,
+    );
   });
 
   it("does not leak internal details in error messages", () => {
@@ -514,8 +580,12 @@ describe("Conversion: property-based", () => {
 describe("Conversion: security", () => {
   it("does not use eval and does not mutate registry during conversion", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
-    registry.register(makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
+    registry.register(
+      makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }),
+    );
     const snapshot = registry.size;
     const kg = registry.resolve("kg");
     const g = registry.resolve("g");
@@ -555,8 +625,18 @@ describe("Conversion: security", () => {
 
 describe("Conversion: plan cache correctness", () => {
   it("same id but different scales still converts (no false identity)", () => {
-    const a = makeUnit({ id: "shared", symbol: "a", dimension: Dim.Mass, toBaseFactor: 1 });
-    const b = makeUnit({ id: "shared", symbol: "b", dimension: Dim.Mass, toBaseFactor: 1000 });
+    const a = makeUnit({
+      id: "shared",
+      symbol: "a",
+      dimension: Dim.Mass,
+      toBaseFactor: 1,
+    });
+    const b = makeUnit({
+      id: "shared",
+      symbol: "b",
+      dimension: Dim.Mass,
+      toBaseFactor: 1000,
+    });
     // Must NOT take the identity fast path: 1 a-unit = 0.001 b-units
     expect(convert(1, a, b)).toBeCloseTo(0.001, 12);
     const plan = getConversionPlan(a, b);

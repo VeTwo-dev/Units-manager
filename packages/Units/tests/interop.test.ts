@@ -114,7 +114,14 @@ describe("extension manifests", () => {
       {
         id: "other",
         version: "1.0.0",
-        units: [{ symbol: "smoot", dimension: { M: 1 }, toBaseFactor: 1.7018, label: "x" }],
+        units: [
+          {
+            symbol: "smoot",
+            dimension: { M: 1 },
+            toBaseFactor: 1.7018,
+            label: "x",
+          },
+        ],
       },
       t,
     );
@@ -125,7 +132,9 @@ describe("extension manifests", () => {
       {
         id: "other2",
         version: "1.0.0",
-        units: [{ symbol: "smoot", dimension: { L: 1 }, toBaseFactor: 2, label: "x" }],
+        units: [
+          { symbol: "smoot", dimension: { L: 1 }, toBaseFactor: 2, label: "x" },
+        ],
       },
       t,
     );
@@ -136,7 +145,14 @@ describe("extension manifests", () => {
         {
           id: "bad",
           version: "1.0.0",
-          units: [{ symbol: "smoot", dimension: { M: 1 }, toBaseFactor: 1, label: "x" }],
+          units: [
+            {
+              symbol: "smoot",
+              dimension: { M: 1 },
+              toBaseFactor: 1,
+              label: "x",
+            },
+          ],
         },
         t,
       ),
@@ -144,7 +160,11 @@ describe("extension manifests", () => {
     // Duplicate kind id → identifier conflict.
     expect(
       validateExtension(
-        { id: "k", version: "1.0.0", kinds: [{ id: "test-kind", name: "T", dimension: {} }] },
+        {
+          id: "k",
+          version: "1.0.0",
+          kinds: [{ id: "test-kind", name: "T", dimension: {} }],
+        },
         t,
       ),
     ).toHaveLength(1);
@@ -193,7 +213,9 @@ describe("extension manifests", () => {
       {
         id: "prefix-ext",
         version: "1.0.0",
-        prefixes: [{ symbol: "wk", name: "week-kilo", factor: 1000, aliases: [] }],
+        prefixes: [
+          { symbol: "wk", name: "week-kilo", factor: 1000, aliases: [] },
+        ],
       },
       { prefixes: t.prefixes },
     );
@@ -228,7 +250,12 @@ describe("extension manifests", () => {
           id: "partial",
           version: "1.0.0",
           units: [
-            { symbol: "goodunit", dimension: { L: 1 }, toBaseFactor: 1, label: "good" },
+            {
+              symbol: "goodunit",
+              dimension: { L: 1 },
+              toBaseFactor: 1,
+              label: "good",
+            },
             { symbol: "", dimension: { L: 1 }, toBaseFactor: 1, label: "bad" },
           ],
         },
@@ -248,14 +275,18 @@ describe("extension manifests", () => {
     expect(() => checkRequiresUnits("^2.0.0", "x")).toThrow(ExtensionError);
     expect(() => checkRequiresUnits("~1.1.0", "x")).toThrow(ExtensionError);
     expect(() => checkRequiresUnits("=0.0.2", "x")).toThrow(ExtensionError);
-    expect(() => checkRequiresUnits("sometime-later", "x")).toThrow(ExtensionError);
+    expect(() => checkRequiresUnits("sometime-later", "x")).toThrow(
+      ExtensionError,
+    );
     expect(() => checkRequiresUnits("", "x")).toThrow(ExtensionError);
   });
 
   it("ENGINE_VERSION tracks package.json (no silent drift)", async () => {
     const { readFile } = await import("node:fs/promises");
     const { ENGINE_VERSION: engineVersion } = await import("../src/index.js");
-    const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")) as {
+    const pkg = JSON.parse(
+      await readFile(new URL("../package.json", import.meta.url), "utf8"),
+    ) as {
       version?: unknown;
     };
     expect(engineVersion).toBe(pkg.version);
@@ -263,10 +294,17 @@ describe("extension manifests", () => {
 
   it("rejects malformed manifests", () => {
     const t = targets();
-    expect(() => validateExtension({ id: "bad id!", version: "1.0.0" }, t)).toThrow(ExtensionError);
-    expect(() => validateExtension({ id: "x", version: "", units: [] }, t)).toThrow(ExtensionError);
     expect(() =>
-      validateExtension({ id: "x", version: "1.0.0", units: "nope" as never }, t),
+      validateExtension({ id: "bad id!", version: "1.0.0" }, t),
+    ).toThrow(ExtensionError);
+    expect(() =>
+      validateExtension({ id: "x", version: "", units: [] }, t),
+    ).toThrow(ExtensionError);
+    expect(() =>
+      validateExtension(
+        { id: "x", version: "1.0.0", units: "nope" as never },
+        t,
+      ),
     ).toThrow(ExtensionError);
   });
 });
@@ -283,7 +321,14 @@ describe("scoped registries", () => {
       {
         id: "x",
         version: "1.0.0",
-        units: [{ symbol: "wibble", dimension: { L: 1 }, toBaseFactor: 3, label: "w" }],
+        units: [
+          {
+            symbol: "wibble",
+            dimension: { L: 1 },
+            toBaseFactor: 3,
+            label: "w",
+          },
+        ],
       },
       { units: a.units },
     );
@@ -295,7 +340,14 @@ describe("scoped registries", () => {
       {
         id: "y",
         version: "1.0.0",
-        units: [{ symbol: "wobble", dimension: { L: 1 }, toBaseFactor: 4, label: "w" }],
+        units: [
+          {
+            symbol: "wobble",
+            dimension: { L: 1 },
+            toBaseFactor: 4,
+            label: "w",
+          },
+        ],
       },
       { units: a.units },
     );
@@ -360,7 +412,9 @@ describe("registry snapshots and function aliases", () => {
     expect(functions.require("square_root").name).toBe("sqrt");
     expect(functions.has("square_root")).toBe(true);
     expect(functions.listAliases()).toEqual([["square_root", "sqrt"]]);
-    expect(functions.call("square_root", [Quantity.of(9, "m^2")]).to("m").value).toBeCloseTo(3, 9);
+    expect(
+      functions.call("square_root", [Quantity.of(9, "m^2")]).to("m").value,
+    ).toBeCloseTo(3, 9);
     // Alias collisions (with names or other aliases) throw.
     expect(() =>
       functions.register({
@@ -411,7 +465,12 @@ describe("namespaces and ambiguity", () => {
       label: "short ton",
     });
     const si = new UnitRegistry([]);
-    si.registerAtomic({ symbol: "tonne", dimension: { M: 1 }, toBaseFactor: 1000, label: "tonne" });
+    si.registerAtomic({
+      symbol: "tonne",
+      dimension: { M: 1 },
+      toBaseFactor: 1000,
+      label: "tonne",
+    });
     return [
       { namespace: "imperial", registry: imperial },
       { namespace: "us", registry: us },
@@ -420,8 +479,14 @@ describe("namespaces and ambiguity", () => {
   };
 
   it("parses namespace prefixes", () => {
-    expect(parseNamespacedSymbol("si:kg")).toEqual({ namespace: "si", symbol: "kg" });
-    expect(parseNamespacedSymbol("kg")).toEqual({ namespace: undefined, symbol: "kg" });
+    expect(parseNamespacedSymbol("si:kg")).toEqual({
+      namespace: "si",
+      symbol: "kg",
+    });
+    expect(parseNamespacedSymbol("kg")).toEqual({
+      namespace: undefined,
+      symbol: "kg",
+    });
     expect(() => parseNamespacedSymbol("")).toThrow(AmbiguousUnitError);
     expect(() => parseNamespacedSymbol("bad ns:x")).toThrow(ExtensionError);
   });
@@ -435,17 +500,27 @@ describe("namespaces and ambiguity", () => {
 
   it("strict rejects incompatible duplicates; standard accepts identical physics", () => {
     // ton differs across imperial/us → strict and standard both throw.
-    expect(() => resolveAmbiguous("ton", { sources: sources(), strategy: "strict" })).toThrow(
-      AmbiguousUnitError,
-    );
-    expect(() => resolveAmbiguous("ton", { sources: sources(), strategy: "standard" })).toThrow(
-      AmbiguousUnitError,
-    );
+    expect(() =>
+      resolveAmbiguous("ton", { sources: sources(), strategy: "strict" }),
+    ).toThrow(AmbiguousUnitError);
+    expect(() =>
+      resolveAmbiguous("ton", { sources: sources(), strategy: "standard" }),
+    ).toThrow(AmbiguousUnitError);
     // Same physics in two scopes → standard resolves deterministically.
     const a = new UnitRegistry([]);
-    a.registerAtomic({ symbol: "m", dimension: { L: 1 }, toBaseFactor: 1, label: "meter" });
+    a.registerAtomic({
+      symbol: "m",
+      dimension: { L: 1 },
+      toBaseFactor: 1,
+      label: "meter",
+    });
     const b = new UnitRegistry([]);
-    b.registerAtomic({ symbol: "m", dimension: { L: 1 }, toBaseFactor: 1, label: "meter" });
+    b.registerAtomic({
+      symbol: "m",
+      dimension: { L: 1 },
+      toBaseFactor: 1,
+      label: "meter",
+    });
     const report = resolveAmbiguous("m", {
       sources: [
         { namespace: "b-scope", registry: b },
@@ -456,17 +531,27 @@ describe("namespaces and ambiguity", () => {
     expect(report.resolution).toBe("unique");
     expect(report.resolved?.namespace).toBe("a-scope"); // sorted-first wins
     // Permissive guesses deterministically instead of throwing.
-    const guess = resolveAmbiguous("ton", { sources: sources(), strategy: "permissive" });
+    const guess = resolveAmbiguous("ton", {
+      sources: sources(),
+      strategy: "permissive",
+    });
     expect(guess.resolution).toBe("ambiguous");
     expect(guess.resolved?.namespace).toBe("imperial");
   });
 
   it("unknown symbols and bad strategies throw", () => {
-    expect(() => resolveAmbiguous("zzz-nope", { sources: sources() })).toThrow();
     expect(() =>
-      resolveAmbiguous("ton", { sources: sources(), strategy: "whatever" as never }),
+      resolveAmbiguous("zzz-nope", { sources: sources() }),
+    ).toThrow();
+    expect(() =>
+      resolveAmbiguous("ton", {
+        sources: sources(),
+        strategy: "whatever" as never,
+      }),
     ).toThrow(ExtensionError);
-    expect(() => resolveAmbiguous("ton", { sources: [] })).toThrow(ExtensionError);
+    expect(() => resolveAmbiguous("ton", { sources: [] })).toThrow(
+      ExtensionError,
+    );
   });
 });
 
@@ -476,9 +561,11 @@ describe("namespaces and ambiguity", () => {
 
 describe("external mappings", () => {
   it("maps external names through explicit validated mappings", () => {
-    const { unit } = mapExternalUnit("kg/m3", { "kg/m3": "kg/m^3", "lb/ft3": "lb/ft^3" }, [
-      { namespace: "app", registry: new UnitRegistry() },
-    ]);
+    const { unit } = mapExternalUnit(
+      "kg/m3",
+      { "kg/m3": "kg/m^3", "lb/ft3": "lb/ft^3" },
+      [{ namespace: "app", registry: new UnitRegistry() }],
+    );
     expect(unit.symbol).toBe("kg/m^3");
     expect(() =>
       mapExternalUnit("slug/ft3", { "kg/m3": "kg/m^3" }, [
@@ -486,7 +573,9 @@ describe("external mappings", () => {
       ]),
     ).toThrow(ExtensionError);
     expect(() =>
-      mapExternalUnit("x", { x: "nope_xyz" }, [{ namespace: "app", registry: new UnitRegistry() }]),
+      mapExternalUnit("x", { x: "nope_xyz" }, [
+        { namespace: "app", registry: new UnitRegistry() },
+      ]),
     ).toThrow(ExtensionError);
   });
 });
@@ -498,15 +587,21 @@ describe("external mappings", () => {
 describe("interchange formats", () => {
   it("round-trips quantity, measurement, series, dataset and reference data", () => {
     const q = Quantity.of(10, "kg");
-    expect(fromInterchange(JSON.parse(JSON.stringify(toInterchange(q))))).toEqual(q);
+    expect(
+      fromInterchange(JSON.parse(JSON.stringify(toInterchange(q)))),
+    ).toEqual(q);
     const m = Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.2, "kg"));
     const mBack = fromInterchange(JSON.parse(JSON.stringify(toInterchange(m))));
     expect(mBack).toBeInstanceOf(Measurement);
     const series = MeasurementSeries.of([m, m]);
-    const seriesBack = fromInterchange(JSON.parse(JSON.stringify(toInterchange(series))));
+    const seriesBack = fromInterchange(
+      JSON.parse(JSON.stringify(toInterchange(series))),
+    );
     expect(seriesBack).toBeInstanceOf(MeasurementSeries);
     const ds = MeasurementDataset.of({ mass: series });
-    const dsBack = fromInterchange(JSON.parse(JSON.stringify(toInterchange(ds))));
+    const dsBack = fromInterchange(
+      JSON.parse(JSON.stringify(toInterchange(ds))),
+    );
     expect(dsBack).toBeInstanceOf(MeasurementDataset);
     const ref = createStandardConstantRegistry();
     const siReg = createRegistry({ packs: [SI_PACK] });
@@ -531,20 +626,22 @@ describe("interchange formats", () => {
     };
     const back = fromInterchange(JSON.parse(JSON.stringify(env)));
     expect(back).toBeInstanceOf(Quantity);
-    expect(() => fromInterchange({ schemaVersion: 1, kind: "teleport", payload: {} })).toThrow(
-      ExtensionError,
-    );
-    expect(() => fromInterchange({ schemaVersion: 999, kind: "quantity", payload: {} })).toThrow(
-      ExtensionError,
-    );
+    expect(() =>
+      fromInterchange({ schemaVersion: 1, kind: "teleport", payload: {} }),
+    ).toThrow(ExtensionError);
+    expect(() =>
+      fromInterchange({ schemaVersion: 999, kind: "quantity", payload: {} }),
+    ).toThrow(ExtensionError);
     expect(() => fromInterchange("not json{[")).toThrow(ExtensionError);
     // Producer extensions travel on the envelope and validate as data.
     const withExt = toInterchange(q, { extensions: { lab: "a1" } });
     expect(withExt.extensions).toEqual({ lab: "a1" });
-    expect(fromInterchange(JSON.parse(JSON.stringify(withExt)))).toBeInstanceOf(Quantity);
-    expect(() => toInterchange(q, { extensions: { __proto__: {} } as never })).toThrow(
-      ExtensionError,
+    expect(fromInterchange(JSON.parse(JSON.stringify(withExt)))).toBeInstanceOf(
+      Quantity,
     );
+    expect(() =>
+      toInterchange(q, { extensions: { __proto__: {} } as never }),
+    ).toThrow(ExtensionError);
     // Unknown-field policies.
     const withExtra = {
       schemaVersion: 1,
@@ -552,8 +649,12 @@ describe("interchange formats", () => {
       payload: toInterchange(q).payload,
       future: 1,
     };
-    expect(() => fromInterchange(withExtra, { unknownFields: "reject" })).toThrow(ExtensionError);
-    expect(fromInterchange(withExtra, { unknownFields: "ignore" })).toBeInstanceOf(Quantity);
+    expect(() =>
+      fromInterchange(withExtra, { unknownFields: "reject" }),
+    ).toThrow(ExtensionError);
+    expect(
+      fromInterchange(withExtra, { unknownFields: "ignore" }),
+    ).toBeInstanceOf(Quantity);
     expect(INTERCHANGE_SCHEMA_VERSION).toBe(1);
   });
 });
@@ -587,7 +688,9 @@ describe("migration", () => {
     expect(out.version).toBe(2);
     expect(out.value).toBe(1);
     expect(() => migrateSerialized(v0, [], 1, "thing")).toThrow();
-    expect(() => migrateSerialized({ version: 5, type: "thing" }, [], 5)).not.toThrow();
+    expect(() =>
+      migrateSerialized({ version: 5, type: "thing" }, [], 5),
+    ).not.toThrow();
     expect(() => migrateSerialized(null, [], 1)).toThrow(MigrationError);
   });
 });
@@ -633,10 +736,18 @@ describe("comparison policies", () => {
     const b = Quantity.of(1.0 + 5e-10, "m");
     expect(quantitiesEqual(a, b)).toBe(false);
     expect(quantitiesApproximatelyEqual(a, b)).toBe(true);
-    expect(compareQuantities(a, b, "absolute", { absoluteTolerance: 1e-9 })).toBe(true);
-    expect(compareQuantities(a, b, "absolute", { absoluteTolerance: 1e-12 })).toBe(false);
-    expect(compareQuantities(a, b, "relative", { relativeTolerance: 1e-6 })).toBe(true);
-    expect(() => compareQuantities(a, Quantity.of(1, "s"), "combined")).toThrow();
+    expect(
+      compareQuantities(a, b, "absolute", { absoluteTolerance: 1e-9 }),
+    ).toBe(true);
+    expect(
+      compareQuantities(a, b, "absolute", { absoluteTolerance: 1e-12 }),
+    ).toBe(false);
+    expect(
+      compareQuantities(a, b, "relative", { relativeTolerance: 1e-6 }),
+    ).toBe(true);
+    expect(() =>
+      compareQuantities(a, Quantity.of(1, "s"), "combined"),
+    ).toThrow();
     void compareQuantities;
   });
 });
@@ -655,11 +766,17 @@ describe("diagnostics and strictness", () => {
     expect(same.warnings).toHaveLength(0);
     const f = defineFormula({
       id: "speed",
-      expression: Expression.divide(Expression.variable("d"), Expression.variable("t")),
+      expression: Expression.divide(
+        Expression.variable("d"),
+        Expression.variable("t"),
+      ),
       inputs: { d: { dimension: "m" }, t: { dimension: "s" } },
       outputName: "v",
     });
-    const explained = explainFormula(f, { d: Quantity.of(100, "m"), t: Quantity.of(10, "s") });
+    const explained = explainFormula(f, {
+      d: Quantity.of(100, "m"),
+      t: Quantity.of(10, "s"),
+    });
     // Prompt-18 correction: divide results read in the emitted composite
     // unit, so the explanation shows 10 (m)/(s) instead of 864000 m/day.
     expect(explained.output).toContain("10");
@@ -672,13 +789,23 @@ describe("diagnostics and strictness", () => {
 
   it("function metadata helpers and standard references validate", () => {
     expect(() => assertValidFunctionName("sqrt", "x")).not.toThrow();
-    expect(() => assertValidFunctionName("Bad Name", "x")).toThrow(ExtensionError);
+    expect(() => assertValidFunctionName("Bad Name", "x")).toThrow(
+      ExtensionError,
+    );
     expect(() =>
-      assertValidStandardReference({ identifier: "BIPM-SI", edition: "9th" }, "x"),
+      assertValidStandardReference(
+        { identifier: "BIPM-SI", edition: "9th" },
+        "x",
+      ),
     ).not.toThrow();
-    expect(() => assertValidStandardReference({ identifier: "" }, "x")).toThrow(ExtensionError);
+    expect(() => assertValidStandardReference({ identifier: "" }, "x")).toThrow(
+      ExtensionError,
+    );
     expect(() =>
-      assertValidStandardReference({ identifier: "x", effectiveDate: "not-a-date" }, "x"),
+      assertValidStandardReference(
+        { identifier: "x", effectiveDate: "not-a-date" },
+        "x",
+      ),
     ).toThrow(ExtensionError);
     const withRef = attachStandardRef({ a: 1 }, { identifier: "BIPM-SI" }, "x");
     expect(withRef.standardRef).toBeDefined();

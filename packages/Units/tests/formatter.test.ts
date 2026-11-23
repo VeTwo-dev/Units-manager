@@ -8,9 +8,12 @@ import { formatUnit, formatQuantity } from "../src/formatter.js";
 import { isDimensionless } from "../src/dimension.js";
 
 describe("formatUnit: atomic", () => {
-  it.each(["kg", "g", "m", "s", "K", "%", "ppm"] as const)("formats %s", (sym) => {
-    expect(formatUnit(parseUnit(sym))).toBeTruthy();
-  });
+  it.each(["kg", "g", "m", "s", "K", "%", "ppm"] as const)(
+    "formats %s",
+    (sym) => {
+      expect(formatUnit(parseUnit(sym))).toBeTruthy();
+    },
+  );
   it('formats kg as "kg"', () => {
     expect(formatUnit(parseUnit("kg"))).toBe("kg");
   });
@@ -61,10 +64,14 @@ describe("formatUnit: exponents", () => {
 
 describe("formatUnit: multiplication symbol", () => {
   it("default is middle dot", () => {
-    expect(formatUnit(parseUnit("kg*m"), { multiplicationSymbol: "·" })).toContain("·");
+    expect(
+      formatUnit(parseUnit("kg*m"), { multiplicationSymbol: "·" }),
+    ).toContain("·");
   });
   it("custom symbol", () => {
-    expect(formatUnit(parseUnit("kg*m"), { multiplicationSymbol: "*" })).toContain("*");
+    expect(
+      formatUnit(parseUnit("kg*m"), { multiplicationSymbol: "*" }),
+    ).toContain("*");
   });
 });
 
@@ -133,7 +140,15 @@ describe("formatUnit: canonical ordering deterministic", () => {
 });
 
 describe("parser/formatter round trip", () => {
-  const units = ["kg", "m/s", "kg·m/s²", "mg/kg", "m²", "cm²", "kg/m³"] as const;
+  const units = [
+    "kg",
+    "m/s",
+    "kg·m/s²",
+    "mg/kg",
+    "m²",
+    "cm²",
+    "kg/m³",
+  ] as const;
   for (const expr of units) {
     it(`parse(format(${expr})) ≈ original`, () => {
       const u = parseUnit(expr);
@@ -167,7 +182,9 @@ describe("formatter performance: caching", () => {
 
 describe("formatQuantity options", () => {
   it("decimals", () => {
-    expect(formatQuantity(Quantity.of(3.14159, "kg"), { decimals: 1 })).toContain("3.1");
+    expect(
+      formatQuantity(Quantity.of(3.14159, "kg"), { decimals: 1 }),
+    ).toContain("3.1");
   });
   it("ascii vs unicode", () => {
     // Use m² via parser

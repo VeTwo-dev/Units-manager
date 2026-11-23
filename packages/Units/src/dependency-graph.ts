@@ -36,7 +36,11 @@ import {
   type FormulaBindings,
 } from "./formula.js";
 import { collectVariables } from "./expression.js";
-import { CyclicDependencyError, ExpressionLimitError, FormulaError } from "./errors/index.js";
+import {
+  CyclicDependencyError,
+  ExpressionLimitError,
+  FormulaError,
+} from "./errors/index.js";
 
 export interface DependencyGraphLimits {
   /** Maximum formulas in one graph (default 256). */
@@ -66,15 +70,24 @@ function resolveGraphLimits(limits?: DependencyGraphLimits): {
     throw new ExpressionLimitError("maxGraphNodes must be a positive integer.");
   }
   if (!Number.isInteger(maxDependencies) || maxDependencies < 1) {
-    throw new ExpressionLimitError("maxDependencies must be a positive integer.");
+    throw new ExpressionLimitError(
+      "maxDependencies must be a positive integer.",
+    );
   }
   if (
     limits?.maxEvaluationSteps !== undefined &&
-    (!Number.isInteger(limits.maxEvaluationSteps) || limits.maxEvaluationSteps < 1)
+    (!Number.isInteger(limits.maxEvaluationSteps) ||
+      limits.maxEvaluationSteps < 1)
   ) {
-    throw new ExpressionLimitError("maxEvaluationSteps must be a positive integer.");
+    throw new ExpressionLimitError(
+      "maxEvaluationSteps must be a positive integer.",
+    );
   }
-  return { maxGraphNodes, maxDependencies, maxEvaluationSteps: limits?.maxEvaluationSteps };
+  return {
+    maxGraphNodes,
+    maxDependencies,
+    maxEvaluationSteps: limits?.maxEvaluationSteps,
+  };
 }
 
 export interface GraphRunResult {
@@ -163,7 +176,11 @@ export class DependencyGraph {
    * Dimensional/binding validation reuses the formula layer per node.
    */
   evaluate(inputs: FormulaBindings = {}): GraphRunResult {
-    if (inputs === null || typeof inputs !== "object" || Array.isArray(inputs)) {
+    if (
+      inputs === null ||
+      typeof inputs !== "object" ||
+      Array.isArray(inputs)
+    ) {
       throw new FormulaError("<graph>", "inputs must be an object");
     }
     const values = new Map<string, Quantity | Measurement>();
@@ -173,7 +190,10 @@ export class DependencyGraph {
     const provided = inputs as Record<string, Quantity | number | Measurement>;
 
     for (const id of this.order) {
-      if (this.maxEvaluationSteps !== undefined && ++steps > this.maxEvaluationSteps) {
+      if (
+        this.maxEvaluationSteps !== undefined &&
+        ++steps > this.maxEvaluationSteps
+      ) {
         throw new ExpressionLimitError(
           `Graph evaluation exceeds maxEvaluationSteps ${this.maxEvaluationSteps}.`,
         );
@@ -188,7 +208,8 @@ export class DependencyGraph {
         if (Object.prototype.hasOwnProperty.call(provided, name)) {
           bindings[name] = provided[name]!;
           consumed.add(name);
-          if (this.requiredInputs.includes(name)) roots.set(name, provided[name]!);
+          if (this.requiredInputs.includes(name))
+            roots.set(name, provided[name]!);
           continue;
         }
         const decl = compiled.definition.inputs[name];
@@ -196,11 +217,17 @@ export class DependencyGraph {
           bindings[name] = decl.default;
           continue;
         }
-        throw new FormulaError(id, `missing dependency "${name}" (no producer, input, or default)`);
+        throw new FormulaError(
+          id,
+          `missing dependency "${name}" (no producer, input, or default)`,
+        );
       }
       const result = compiled.evaluate(bindings, this.evaluateOptions);
       if (isTrace(result)) {
-        throw new FormulaError(id, "trace mode is not supported inside graph evaluation");
+        throw new FormulaError(
+          id,
+          "trace mode is not supported inside graph evaluation",
+        );
       }
       const outputName = compiled.definition.outputName ?? id;
       values.set(outputName, result);
@@ -214,9 +241,13 @@ export class DependencyGraph {
         );
       }
     }
-    const sorted = [...values.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    const sorted = [...values.entries()].sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    );
     const record = Object.freeze(Object.fromEntries(sorted));
-    const sortedRoots = [...roots.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    const sortedRoots = [...roots.entries()].sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    );
     return {
       outputs: record,
       intermediates: record,
@@ -240,9 +271,17 @@ export class DependencyGraph {
       "intermediates" in (previous as object)
         ? (previous as GraphRunResult).intermediates
         : (previous as Readonly<Record<string, Quantity | Measurement>>);
-    const priorRoots: Readonly<Record<string, Quantity | number | Measurement>> =
-      "roots" in (previous as object) ? ((previous as GraphRunResult).roots ?? {}) : {};
-    if (changed === null || typeof changed !== "object" || Array.isArray(changed)) {
+    const priorRoots: Readonly<
+      Record<string, Quantity | number | Measurement>
+    > =
+      "roots" in (previous as object)
+        ? ((previous as GraphRunResult).roots ?? {})
+        : {};
+    if (
+      changed === null ||
+      typeof changed !== "object" ||
+      Array.isArray(changed)
+    ) {
       throw new FormulaError("<graph>", "changed inputs must be an object");
     }
     // Dirty set: changed names + everything downstream of them. The
@@ -258,7 +297,10 @@ export class DependencyGraph {
     };
     for (const name of Object.keys(changed)) {
       if (!this.requiredInputs.includes(name) && !(name in prior)) {
-        throw new FormulaError("<graph>", `unknown recomputation input "${name}"`);
+        throw new FormulaError(
+          "<graph>",
+          `unknown recomputation input "${name}"`,
+        );
       }
       // A changed root dirties its consumer formulas; a changed output-name
       // is treated as an override root (must equal a produced output).
@@ -266,16 +308,24 @@ export class DependencyGraph {
       const producer = this.outputToFormula[name];
       if (producer !== undefined) dirty.add(producer);
     }
-    const values = new Map<string, Quantity | Measurement>(Object.entries(prior));
+    const values = new Map<string, Quantity | Measurement>(
+      Object.entries(prior),
+    );
     for (const name of Object.keys(changed)) {
       if (this.requiredInputs.includes(name)) continue; // consumed below via bindings
-      values.set(name, toResultValue(name, (changed as Record<string, unknown>)[name]));
+      values.set(
+        name,
+        toResultValue(name, (changed as Record<string, unknown>)[name]),
+      );
     }
     let steps = 0;
     const consumed = new Set<string>();
     for (const id of this.order) {
       if (!dirty.has(id)) continue;
-      if (this.maxEvaluationSteps !== undefined && ++steps > this.maxEvaluationSteps) {
+      if (
+        this.maxEvaluationSteps !== undefined &&
+        ++steps > this.maxEvaluationSteps
+      ) {
         throw new ExpressionLimitError(
           `Graph evaluation exceeds maxEvaluationSteps ${this.maxEvaluationSteps}.`,
         );
@@ -284,7 +334,9 @@ export class DependencyGraph {
       const bindings: Record<string, Quantity | number | Measurement> = {};
       for (const name of compiled.variables) {
         if (Object.prototype.hasOwnProperty.call(changed, name)) {
-          bindings[name] = (changed as Record<string, Quantity | number | Measurement>)[name]!;
+          bindings[name] = (
+            changed as Record<string, Quantity | number | Measurement>
+          )[name]!;
           consumed.add(name);
           continue;
         }
@@ -301,15 +353,23 @@ export class DependencyGraph {
           bindings[name] = decl.default;
           continue;
         }
-        throw new FormulaError(id, `missing dependency "${name}" during recomputation`);
+        throw new FormulaError(
+          id,
+          `missing dependency "${name}" during recomputation`,
+        );
       }
       const result = compiled.evaluate(bindings, this.evaluateOptions);
       if (isTrace(result)) {
-        throw new FormulaError(id, "trace mode is not supported inside graph evaluation");
+        throw new FormulaError(
+          id,
+          "trace mode is not supported inside graph evaluation",
+        );
       }
       values.set(compiled.definition.outputName ?? id, result);
     }
-    const sorted = [...values.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    const sorted = [...values.entries()].sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    );
     const record = Object.freeze(Object.fromEntries(sorted));
     // Carry roots forward (updated with any changed roots) for chained recomputation.
     const mergedRoots: Record<string, Quantity | number | Measurement> = {
@@ -317,7 +377,9 @@ export class DependencyGraph {
     };
     for (const name of Object.keys(changed)) {
       if (this.requiredInputs.includes(name)) {
-        mergedRoots[name] = (changed as Record<string, Quantity | number | Measurement>)[name]!;
+        mergedRoots[name] = (
+          changed as Record<string, Quantity | number | Measurement>
+        )[name]!;
       }
     }
     return {
@@ -345,7 +407,9 @@ export class DependencyGraph {
   }
 }
 
-function isTrace(value: unknown): value is { result: Quantity; steps: unknown } {
+function isTrace(
+  value: unknown,
+): value is { result: Quantity; steps: unknown } {
   return (
     value !== null &&
     typeof value === "object" &&
@@ -357,7 +421,10 @@ function isTrace(value: unknown): value is { result: Quantity; steps: unknown } 
 
 function toResultValue(name: string, value: unknown): Quantity | Measurement {
   if (value instanceof Quantity || value instanceof Measurement) return value;
-  throw new FormulaError("<graph>", `override "${name}" must be a Quantity or Measurement`);
+  throw new FormulaError(
+    "<graph>",
+    `override "${name}" must be a Quantity or Measurement`,
+  );
 }
 
 /**
@@ -371,11 +438,17 @@ export function createDependencyGraph(
   options: DependencyGraphOptions = {},
 ): DependencyGraph {
   if (!Array.isArray(formulas) || formulas.length === 0) {
-    throw new FormulaError("<graph>", "a dependency graph needs at least one formula");
+    throw new FormulaError(
+      "<graph>",
+      "a dependency graph needs at least one formula",
+    );
   }
-  const { maxGraphNodes, maxDependencies, maxEvaluationSteps } = resolveGraphLimits(options.limits);
+  const { maxGraphNodes, maxDependencies, maxEvaluationSteps } =
+    resolveGraphLimits(options.limits);
   if (formulas.length > maxGraphNodes) {
-    throw new ExpressionLimitError(`Dependency graph exceeds maxGraphNodes ${maxGraphNodes}.`);
+    throw new ExpressionLimitError(
+      `Dependency graph exceeds maxGraphNodes ${maxGraphNodes}.`,
+    );
   }
   const byId = new Map<string, Formula>();
   const outputToFormula = new Map<string, string>();
@@ -442,7 +515,9 @@ export function createDependencyGraph(
   return new DependencyGraph(
     Object.freeze(compiled) as Readonly<Record<string, CompiledFormula>>,
     Object.freeze(order),
-    Object.freeze(Object.fromEntries(outputToFormula)) as Readonly<Record<string, string>>,
+    Object.freeze(Object.fromEntries(outputToFormula)) as Readonly<
+      Record<string, string>
+    >,
     Object.freeze([...requiredInputs].sort()),
     Object.freeze(frozenConsumers),
     Object.freeze(formulaOutput),
@@ -521,19 +596,32 @@ export function deserializeDependencyGraph(
     throw new FormulaError("<graph>", "malformed serialized dependency graph");
   }
   const obj = data as Record<string, unknown>;
-  if (obj.version !== 1 || obj.type !== "dependency-graph" || !Array.isArray(obj.formulas)) {
+  if (
+    obj.version !== 1 ||
+    obj.type !== "dependency-graph" ||
+    !Array.isArray(obj.formulas)
+  ) {
     throw new FormulaError(
       "<graph>",
       "malformed serialized dependency graph (version/type/formulas)",
     );
   }
   if (obj.formulas.length === 0) {
-    throw new FormulaError("<graph>", "serialized dependency graph has no formulas");
+    throw new FormulaError(
+      "<graph>",
+      "serialized dependency graph has no formulas",
+    );
   }
-  if ((obj.formulas as unknown[]).length > (options.limits?.maxGraphNodes ?? 256)) {
-    throw new ExpressionLimitError("Serialized dependency graph exceeds maxGraphNodes.");
+  if (
+    (obj.formulas as unknown[]).length > (options.limits?.maxGraphNodes ?? 256)
+  ) {
+    throw new ExpressionLimitError(
+      "Serialized dependency graph exceeds maxGraphNodes.",
+    );
   }
-  const formulas = (obj.formulas as unknown[]).map((entry) => deserializeFormula(entry, options));
+  const formulas = (obj.formulas as unknown[]).map((entry) =>
+    deserializeFormula(entry, options),
+  );
   return createDependencyGraph(formulas, options);
 }
 
@@ -574,14 +662,20 @@ export function createPipeline(
       const output = outputOf.get(id)!;
       return { formula: id, output, value: result.outputs[output]! };
     });
-    return { ...result, stages: Object.freeze(stages), validation: graph.diagnostics() };
+    return {
+      ...result,
+      stages: Object.freeze(stages),
+      validation: graph.diagnostics(),
+    };
   };
   return {
     graph,
     stages: graph.evaluationOrder(),
     run: (inputs: FormulaBindings = {}) => wrap(graph.evaluate(inputs)),
     reevaluate: (
-      previous: Readonly<Record<string, Quantity | Measurement>> | GraphRunResult,
+      previous:
+        | Readonly<Record<string, Quantity | Measurement>>
+        | GraphRunResult,
       changed: FormulaBindings,
     ) => wrap(graph.reevaluate(previous, changed)),
   };

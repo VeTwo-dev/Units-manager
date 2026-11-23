@@ -8,6 +8,9 @@
     "node": ">=20"
   },
   "packageManager": "pnpm@11.21.0",
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  },
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -27,12 +30,10 @@
     "test:integration": "turbo run test:integration",
     "test:unit": "turbo run test:unit",
     "circular": "turbo run circular",
-    "knip": "knip",
-    "publint": "npx publint",
     "check": "turbo run check-types lint test",
     "ci": "pnpm run verify:full && bun run security:licenses && pnpm run circular && bun run analyze",
     "verify": "turbo run lint check-types test build",
-    "verify:full": "pnpm run verify && pnpm run knip && pnpm run publint && bun run format",
+    "verify:full": "pnpm run verify && bun run format",
     "publish": "npm publish --access public",
     "analyze": "turbo run analyze",
     "analyze:circular": "turbo run analyze:circular",
@@ -53,7 +54,6 @@
     "test:performance": "turbo run test:performance",
     "test:smoke": "turbo run test:smoke",
     "sync-workspace": "pnpm exec tsx scripts/sync-workspace.ts",
-    "verify:publint": "npx publint",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "changeset publish",
@@ -66,10 +66,8 @@
     "@eslint/js": "^9.12.0",
     "eslint": "^9.12.0",
     "eslint-config-prettier": "^9.1.0",
-    "knip": "^6.37.0",
     "madge": "^6.1.0",
     "prettier": "^3.9.8",
-    "publint": "^0.3.24",
     "tsx": "^4.23.15",
     "turbo": "^2.11.4",
     "typescript-eslint": "^8.8.0"

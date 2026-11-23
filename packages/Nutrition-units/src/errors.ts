@@ -24,7 +24,9 @@ export class InvalidNutrientKindError extends NutritionError {
 
 export class NutrientSemanticMismatchError extends NutritionError {
   constructor(a: string, b: string, detail?: string) {
-    super(`Nutrient semantic mismatch: "${a}" vs "${b}"${detail ? ` — ${detail}` : ""}`);
+    super(
+      `Nutrient semantic mismatch: "${a}" vs "${b}"${detail ? ` — ${detail}` : ""}`,
+    );
   }
 }
 
@@ -48,7 +50,9 @@ export class AmbiguousNutrientError extends NutritionError {
 
 export class UnsupportedSemanticConversionError extends NutritionError {
   constructor(from: string, to: string, detail?: string) {
-    super(`Unsupported semantic conversion "${from}" → "${to}"${detail ? `: ${detail}` : ""}`);
+    super(
+      `Unsupported semantic conversion "${from}" → "${to}"${detail ? `: ${detail}` : ""}`,
+    );
   }
 }
 
@@ -78,7 +82,9 @@ export class InvalidNutritionContextError extends NutritionContextError {
 
 export class UnsupportedBasisConversionError extends NutritionError {
   constructor(from: string, to: string, detail?: string) {
-    super(`Unsupported basis conversion "${from}" → "${to}"${detail ? `: ${detail}` : ""}`);
+    super(
+      `Unsupported basis conversion "${from}" → "${to}"${detail ? `: ${detail}` : ""}`,
+    );
   }
 }
 
@@ -112,19 +118,25 @@ export class InvalidNutritionQuantityError extends NutritionError {
 
 export class DuplicateMeasurementError extends NutritionError {
   constructor(nutrientId: string, detail?: string) {
-    super(`Duplicate measurement for "${nutrientId}"${detail ? `: ${detail}` : ""}`);
+    super(
+      `Duplicate measurement for "${nutrientId}"${detail ? `: ${detail}` : ""}`,
+    );
   }
 }
 
 export class MeasurementNotFoundError extends NutritionError {
   constructor(nutrientId: string, detail?: string) {
-    super(`Measurement not found for "${nutrientId}"${detail ? `: ${detail}` : ""}`);
+    super(
+      `Measurement not found for "${nutrientId}"${detail ? `: ${detail}` : ""}`,
+    );
   }
 }
 
 export class AmbiguousMeasurementError extends NutritionError {
   constructor(nutrientId: string, detail?: string) {
-    super(`Ambiguous measurement for "${nutrientId}"${detail ? `: ${detail}` : ""}`);
+    super(
+      `Ambiguous measurement for "${nutrientId}"${detail ? `: ${detail}` : ""}`,
+    );
   }
 }
 
@@ -136,6 +148,8 @@ export class InvalidSeriesError extends NutritionError {
 
 export class CollectionConversionError extends NutritionError {
   constructor(nutrientId: string, detail?: string) {
-    super(`Collection conversion failed for "${nutrientId}"${detail ? `: ${detail}` : ""}`);
+    super(
+      `Collection conversion failed for "${nutrientId}"${detail ? `: ${detail}` : ""}`,
+    );
   }
 }

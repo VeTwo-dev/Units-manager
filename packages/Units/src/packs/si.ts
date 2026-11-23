@@ -33,7 +33,10 @@ import type { UnitPack } from "../unit-system.js";
 /** Look up an existing atomic factor so derived packs stay consistent by construction. */
 function atomicFactor(symbol: string): number {
   const def = ATOMIC_UNITS.find((d) => d.symbol === symbol);
-  if (!def) throw new Error(`SI pack: expected atomic unit "${symbol}" in ATOMIC_UNITS`);
+  if (!def)
+    throw new Error(
+      `SI pack: expected atomic unit "${symbol}" in ATOMIC_UNITS`,
+    );
   return def.toBaseFactor;
 }
 
@@ -57,14 +60,24 @@ export const SI_BASE_EXTRA_UNITS: readonly AtomicUnitDef[] = Object.freeze([
     dimension: Dim.Current,
     toBaseFactor: 1,
     label: "ampere",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "electric current" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "electric current",
+    },
   },
   {
     symbol: "mol",
     dimension: Dim.Substance,
     toBaseFactor: 1,
     label: "mole",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "amount of substance" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "amount of substance",
+    },
   },
   {
     symbol: "cd",
@@ -95,7 +108,12 @@ export const SI_BASE_EXTRA_UNITS: readonly AtomicUnitDef[] = Object.freeze([
     dimension: defineDimension({ J: 1, L: -2 }),
     toBaseFactor: 1, // 1 lx = 1 lm/m²; base length is m, so factor 1
     label: "lux",
-    metadata: { system: "SI", standard: "SI", category: "illuminance", kind: "illuminance" },
+    metadata: {
+      system: "SI",
+      standard: "SI",
+      category: "illuminance",
+      kind: "illuminance",
+    },
   },
 ]);
 
@@ -105,28 +123,48 @@ export const SI_DERIVED_UNITS: readonly AtomicUnitDef[] = Object.freeze([
     dimension: defineDimension({ M: 1, L: 1, T: -2 }),
     toBaseFactor: NEWTON_PER_BASE, // 7464960000, exact integer
     label: "newton",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "force" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "force",
+    },
   },
   {
     symbol: "Pa",
     dimension: defineDimension({ M: 1, L: -1, T: -2 }),
     toBaseFactor: NEWTON_PER_BASE, // 1 Pa = 1 N/m²; base length is m, so same factor
     label: "pascal",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "pressure" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "pressure",
+    },
   },
   {
     symbol: "J",
     dimension: Dim.Energy,
     toBaseFactor: JOULE_PER_MCAL,
     label: "joule",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "energy" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "energy",
+    },
   },
   {
     symbol: "Wh",
     dimension: Dim.Energy,
     toBaseFactor: WATTHOUR_PER_MCAL,
     label: "watt-hour",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "energy" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "energy",
+    },
   },
   // ---- Electric units -------------------------------------------------
   // With A as the I-base (factor 1); every factor below composes from
@@ -137,56 +175,96 @@ export const SI_DERIVED_UNITS: readonly AtomicUnitDef[] = Object.freeze([
     dimension: defineDimension({ E: 1, T: -1, I: -1 }),
     toBaseFactor: VOLT_PER_BASE, // 1 V = 1 W/A; A-base factor 1
     label: "volt",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "voltage" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "voltage",
+    },
   },
   {
     symbol: "Ω",
     dimension: defineDimension({ E: 1, T: -1, I: -2 }),
     toBaseFactor: VOLT_PER_BASE, // 1 Ω = 1 V/A; A-base factor 1
     label: "ohm",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "resistance" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "resistance",
+    },
   },
   {
     symbol: "C",
     dimension: defineDimension({ I: 1, T: 1 }),
     toBaseFactor: SECOND_PER_DAY, // 1 C = 1 A·s = 1/86400 A·day
     label: "coulomb",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "charge" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "charge",
+    },
   },
   {
     symbol: "F",
     dimension: defineDimension({ E: -1, T: 2, I: 2 }),
     toBaseFactor: SECOND_PER_DAY / VOLT_PER_BASE, // 1 F = 1 C/V
     label: "farad",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "capacitance" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "capacitance",
+    },
   },
   {
     symbol: "Wb",
     dimension: defineDimension({ E: 1, I: -1 }),
     toBaseFactor: VOLT_PER_BASE * SECOND_PER_DAY, // 1 Wb = 1 V·s
     label: "weber",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "magnetic flux" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "magnetic flux",
+    },
   },
   {
     symbol: "T",
     dimension: defineDimension({ E: 1, I: -1, L: -2 }),
     toBaseFactor: VOLT_PER_BASE * SECOND_PER_DAY, // 1 T = 1 Wb/m²; base length m
     label: "tesla",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "magnetic flux density" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "magnetic flux density",
+    },
   },
   {
     symbol: "H",
     dimension: defineDimension({ E: 1, I: -2 }),
     toBaseFactor: VOLT_PER_BASE * SECOND_PER_DAY, // 1 H = 1 Wb/A; A-base factor 1
     label: "henry",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "inductance" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "inductance",
+    },
   },
   {
     symbol: "S",
     dimension: defineDimension({ E: -1, T: 1, I: 2 }),
     toBaseFactor: 1 / VOLT_PER_BASE, // 1 S = 1 A/V; A-base factor 1
     label: "siemens",
-    metadata: { prefixable: true, system: "SI", standard: "SI", category: "conductance" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI",
+      category: "conductance",
+    },
   },
 ]);
 
@@ -203,7 +281,12 @@ export const SI_ACCEPTED_UNITS: readonly AtomicUnitDef[] = Object.freeze([
     dimension: defineDimension({ L: 3 }),
     toBaseFactor: 0.001, // exact: 1 L = 10^-3 m³
     label: "litre",
-    metadata: { prefixable: true, system: "SI", standard: "SI accepted", category: "volume" },
+    metadata: {
+      prefixable: true,
+      system: "SI",
+      standard: "SI accepted",
+      category: "volume",
+    },
   },
   {
     symbol: "nmi",
@@ -234,7 +317,11 @@ export const SI_PACK: UnitPack = Object.freeze({
     "(lm, lx, N, Pa, J, Wh, V, Ω, C, F, Wb, T, H, S) and BIPM-accepted units " +
     "(tonne, litre, nautical mile, hectare). " +
     "Apply explicitly via createRegistry({ packs: [SI_PACK] }).",
-  units: Object.freeze([...SI_BASE_EXTRA_UNITS, ...SI_DERIVED_UNITS, ...SI_ACCEPTED_UNITS]),
+  units: Object.freeze([
+    ...SI_BASE_EXTRA_UNITS,
+    ...SI_DERIVED_UNITS,
+    ...SI_ACCEPTED_UNITS,
+  ]),
   aliases: Object.freeze({
     ampere: "A",
     mole: "mol",
@@ -257,5 +344,8 @@ export const SI_PACK: UnitPack = Object.freeze({
     nauticalmile: "nmi",
     hectare: "ha",
   } as Record<string, string>),
-  metadata: Object.freeze({ standard: "SI", source: "SI Brochure (BIPM), 9th edition" }),
+  metadata: Object.freeze({
+    standard: "SI",
+    source: "SI Brochure (BIPM), 9th edition",
+  }),
 });

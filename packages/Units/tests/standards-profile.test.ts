@@ -58,13 +58,20 @@ function profiles(): ProfileRegistry {
 describe("ProfileRegistry", () => {
   it("registers the four standard profiles with versions", () => {
     const regs = profiles();
-    expect(regs.list().map((p) => p.id)).toEqual(["cgs", "imperial", "si", "us-customary"]);
+    expect(regs.list().map((p) => p.id)).toEqual([
+      "cgs",
+      "imperial",
+      "si",
+      "us-customary",
+    ]);
     expect(regs.get("si").version).toBe("1.0.0");
     expect(regs.version).toBe(4);
     // Exported profile constants match the registered entries.
     expect(regs.get("si").displayName).toBe(SI_PROFILE.displayName);
     expect(regs.get("cgs").unitSystem).toBe(CGS_PROFILE.unitSystem);
-    expect(regs.get("imperial").preferredUnits).toEqual(IMPERIAL_PROFILE.preferredUnits);
+    expect(regs.get("imperial").preferredUnits).toEqual(
+      IMPERIAL_PROFILE.preferredUnits,
+    );
     expect(regs.get("us-customary").version).toBe(US_CUSTOMARY_PROFILE.version);
     // Single-profile serialization round-trips through the registry path.
     const single = serializeProfile(regs.get("si"));
@@ -75,22 +82,32 @@ describe("ProfileRegistry", () => {
   it("rejects duplicates, bad ids, empty versions, unknown parents, self-extend", () => {
     const regs = profiles();
     expect(() => regs.register({ ...SI_PROFILE })).toThrow(UnitSystemError);
-    expect(() => regs.register({ id: "bad id", version: "1", unitSystem: "si" })).toThrow(
-      UnitSystemError,
-    );
-    expect(() => regs.register({ id: "x", version: "", unitSystem: "si" })).toThrow(
-      UnitSystemError,
-    );
     expect(() =>
-      regs.register({ id: "x", version: "1", unitSystem: "si", extends: "ghost" }),
+      regs.register({ id: "bad id", version: "1", unitSystem: "si" }),
     ).toThrow(UnitSystemError);
-    expect(() => regs.register({ id: "x", version: "1", unitSystem: "si", extends: "x" })).toThrow(
-      UnitSystemError,
-    );
+    expect(() =>
+      regs.register({ id: "x", version: "", unitSystem: "si" }),
+    ).toThrow(UnitSystemError);
+    expect(() =>
+      regs.register({
+        id: "x",
+        version: "1",
+        unitSystem: "si",
+        extends: "ghost",
+      }),
+    ).toThrow(UnitSystemError);
+    expect(() =>
+      regs.register({ id: "x", version: "1", unitSystem: "si", extends: "x" }),
+    ).toThrow(UnitSystemError);
     // A extends B, B extends A is impossible: whichever registers second
     // names an unknown parent (cycles structurally impossible).
     const r2 = new ProfileRegistry();
-    r2.register({ id: "a", version: "1", unitSystem: "si", extends: undefined });
+    r2.register({
+      id: "a",
+      version: "1",
+      unitSystem: "si",
+      extends: undefined,
+    });
     expect(() =>
       r2.register({ id: "b", version: "1", unitSystem: "si", extends: "a" }),
     ).not.toThrow();
@@ -124,8 +141,18 @@ describe("ProfileRegistry", () => {
 
   it("unregister never cascades (dependents keep flattened copies)", () => {
     const regs = new ProfileRegistry();
-    regs.register({ id: "base", version: "1", unitSystem: "si", preferredUnits: { "M^1": "kg" } });
-    regs.register({ id: "child", version: "1", unitSystem: "si", extends: "base" });
+    regs.register({
+      id: "base",
+      version: "1",
+      unitSystem: "si",
+      preferredUnits: { "M^1": "kg" },
+    });
+    regs.register({
+      id: "child",
+      version: "1",
+      unitSystem: "si",
+      extends: "base",
+    });
     regs.unregister("base");
     expect(regs.has("base")).toBe(false);
     expect(regs.get("child").preferredUnits?.["M^1"]).toBe("kg");
@@ -141,9 +168,13 @@ describe("preferred units and availability", () => {
     const regs = profiles();
     const reg = createRegistry({ packs: [SI_PACK, IMPERIAL_PACK, CGS_PACK] });
     for (const profile of regs.list()) {
-      for (const [key, symbol] of Object.entries(profile.preferredUnits ?? {})) {
+      for (const [key, symbol] of Object.entries(
+        profile.preferredUnits ?? {},
+      )) {
         const unit = parseUnit(symbol, reg);
-        expect(dimensionKey(unit.dimension), `${profile.id}:${symbol}`).toBe(key);
+        expect(dimensionKey(unit.dimension), `${profile.id}:${symbol}`).toBe(
+          key,
+        );
       }
     }
   });
@@ -151,9 +182,17 @@ describe("preferred units and availability", () => {
   it("preferredUnitForDimension falls back to system categories for base dims", () => {
     expect(preferredUnitForDimension({ M: 1 }, SI_SYSTEM)).toBe("kg");
     expect(preferredUnitForDimension({ M: 1 }, CGS_SYSTEM)).toBe("g");
-    expect(preferredUnitForDimension({ L: 1, T: -1 }, SI_SYSTEM)).toBeUndefined();
+    expect(
+      preferredUnitForDimension({ L: 1, T: -1 }, SI_SYSTEM),
+    ).toBeUndefined();
     const regs = profiles();
-    expect(preferredUnitForDimension({ M: 1, L: 1, T: -2 }, SI_SYSTEM, regs.get("si"))).toBe("N");
+    expect(
+      preferredUnitForDimension(
+        { M: 1, L: 1, T: -2 },
+        SI_SYSTEM,
+        regs.get("si"),
+      ),
+    ).toBe("N");
   });
 
   it("isAllowed/unitStatus separate policy from identity", () => {
@@ -172,7 +211,10 @@ describe("preferred units and availability", () => {
     expect(unitStatus("ft", custom)).toBe("deprecated");
     expect(unitStatus("m", custom)).toBe("accepted"); // no allow-list → unrestricted
     // Identity untouched: deprecated units still resolve and convert.
-    expect(Quantity.of(1, "ft", all).to("m", all).value).toBeCloseTo(0.3048, 12);
+    expect(Quantity.of(1, "ft", all).to("m", all).value).toBeCloseTo(
+      0.3048,
+      12,
+    );
   });
 });
 
@@ -185,32 +227,37 @@ describe("cross-system conversion", () => {
     const regs = profiles();
     const cgs = { profile: regs.get("cgs"), ...O };
     const imp = { profile: regs.get("imperial"), ...O };
-    expect(convertBetweenSystems(Quantity.of(1, "N", all), "cgs", cgs).value).toBeCloseTo(
-      100000,
-      6,
-    );
+    expect(
+      convertBetweenSystems(Quantity.of(1, "N", all), "cgs", cgs).value,
+    ).toBeCloseTo(100000, 6);
     expect(
       convertBetweenSystems(Quantity.of(100, "km/h", all), "imperial", {
         profile: {
           ...regs.get("imperial"),
-          preferredUnits: { ...regs.get("imperial").preferredUnits, "L^1·T^-1": "mph" },
+          preferredUnits: {
+            ...regs.get("imperial").preferredUnits,
+            "L^1·T^-1": "mph",
+          },
         },
         ...O,
       }).value,
     ).toBeCloseTo(62.1371, 4);
     // Composites without a mapping fail explicitly — never guessed.
-    expect(() => convertBetweenSystems(Quantity.of(100, "km/h", all), "imperial", imp)).toThrow(
-      UnitSystemError,
-    );
-    expect(() => convertBetweenSystems(Quantity.of(1, "kg", all), "nope", O)).toThrow(
-      UnitSystemError,
-    );
+    expect(() =>
+      convertBetweenSystems(Quantity.of(100, "km/h", all), "imperial", imp),
+    ).toThrow(UnitSystemError);
+    expect(() =>
+      convertBetweenSystems(Quantity.of(1, "kg", all), "nope", O),
+    ).toThrow(UnitSystemError);
   });
 
   it("normalizeToSystem keeps display intent out of storage", () => {
     const regs = profiles();
     const q = Quantity.of(1000, "g", all);
-    const normalized = normalizeToSystem(q, SI_SYSTEM, { profile: regs.get("si"), ...O });
+    const normalized = normalizeToSystem(q, SI_SYSTEM, {
+      profile: regs.get("si"),
+      ...O,
+    });
     expect(normalized.unit.symbol).toBe("kg");
     expect(normalized.value).toBeCloseTo(1, 12);
     expect(q.unit.symbol).toBe("g"); // original untouched
@@ -220,12 +267,15 @@ describe("cross-system conversion", () => {
   it("temperature deltas land on kelvin; affine policy respected", () => {
     const regs = profiles();
     const delta = Quantity.of(5, "K", all).withKind("temperature-difference");
-    expect(normalizeToSystem(delta, SI_SYSTEM, { profile: regs.get("si"), ...O }).unit.symbol).toBe(
-      "K",
-    );
     expect(
-      normalizeToSystem(Quantity.of(32, "°F", all), SI_SYSTEM, { profile: regs.get("si"), ...O })
+      normalizeToSystem(delta, SI_SYSTEM, { profile: regs.get("si"), ...O })
         .unit.symbol,
+    ).toBe("K");
+    expect(
+      normalizeToSystem(Quantity.of(32, "°F", all), SI_SYSTEM, {
+        profile: regs.get("si"),
+        ...O,
+      }).unit.symbol,
     ).toBe("K");
     const noAffine = regs.register({
       id: "no-affine",
@@ -234,16 +284,25 @@ describe("cross-system conversion", () => {
       conversionPolicy: { allowAffine: false },
     });
     expect(() =>
-      normalizeToSystem(Quantity.of(20, "°C", all), SI_SYSTEM, { profile: noAffine, ...O }),
+      normalizeToSystem(Quantity.of(20, "°C", all), SI_SYSTEM, {
+        profile: noAffine,
+        ...O,
+      }),
     ).toThrow(UnsupportedTransformationError);
   });
 
   it("measurements convert value and uncertainty together", () => {
     const regs = profiles();
-    const m = Measurement.of(Quantity.of(100, "km/h", all), Quantity.of(2, "km/h", all));
+    const m = Measurement.of(
+      Quantity.of(100, "km/h", all),
+      Quantity.of(2, "km/h", all),
+    );
     const mphProfile = {
       ...regs.get("imperial"),
-      preferredUnits: { ...regs.get("imperial").preferredUnits, "L^1·T^-1": "mph" },
+      preferredUnits: {
+        ...regs.get("imperial").preferredUnits,
+        "L^1·T^-1": "mph",
+      },
     };
     const converted = normalizeMeasurementToSystem(m, IMPERIAL_SYSTEM, {
       profile: mphProfile,
@@ -263,10 +322,18 @@ describe("cross-system conversion", () => {
 
 describe("selectUnitForMagnitude", () => {
   it("picks engineering prefixes deterministically", () => {
-    expect(selectUnitForMagnitude(Quantity.of(0.001, "m", all), O).unit.symbol).toBe("mm");
-    expect(selectUnitForMagnitude(Quantity.of(1500, "m", all), O).unit.symbol).toBe("km");
-    expect(selectUnitForMagnitude(Quantity.of(5, "m", all), O).unit.symbol).toBe("m");
-    expect(selectUnitForMagnitude(Quantity.of(2.5e9, "Hz", all), O).unit.symbol).toBe("GHz");
+    expect(
+      selectUnitForMagnitude(Quantity.of(0.001, "m", all), O).unit.symbol,
+    ).toBe("mm");
+    expect(
+      selectUnitForMagnitude(Quantity.of(1500, "m", all), O).unit.symbol,
+    ).toBe("km");
+    expect(
+      selectUnitForMagnitude(Quantity.of(5, "m", all), O).unit.symbol,
+    ).toBe("m");
+    expect(
+      selectUnitForMagnitude(Quantity.of(2.5e9, "Hz", all), O).unit.symbol,
+    ).toBe("GHz");
   });
 
   it("never alters the quantity; skips unparseable collisions", () => {
@@ -278,7 +345,9 @@ describe("selectUnitForMagnitude", () => {
     const inch = Quantity.of(5000, "in", all);
     const sel = selectUnitForMagnitude(inch, O);
     expect(sel.dimension).toEqual(inch.dimension);
-    expect(selectUnitForMagnitude(Quantity.of(0, "m", all), O).unit.symbol).toBe("m");
+    expect(
+      selectUnitForMagnitude(Quantity.of(0, "m", all), O).unit.symbol,
+    ).toBe("m");
   });
 });
 
@@ -296,7 +365,9 @@ describe("ScientificContext", () => {
       referenceData: { codata: "2018" },
     });
     expect(ctx.system?.name).toBe("cgs");
-    expect(() => resolveContext({ unitSystem: "nope" })).toThrow(UnitSystemError);
+    expect(() => resolveContext({ unitSystem: "nope" })).toThrow(
+      UnitSystemError,
+    );
     expect(() => resolveContext({ profile: "si" })).toThrow(UnitSystemError);
   });
 
@@ -316,7 +387,10 @@ describe("ScientificContext", () => {
     const regs = profiles();
     const force = defineFormula({
       id: "force",
-      expression: Expression.multiply(Expression.variable("mass"), Expression.variable("accel")),
+      expression: Expression.multiply(
+        Expression.variable("mass"),
+        Expression.variable("accel"),
+      ),
       inputs: { mass: { dimension: "kg" }, accel: { dimension: "m/s^2" } },
       outputName: "force",
     });
@@ -335,9 +409,15 @@ describe("ScientificContext", () => {
     const regs = profiles();
     const mphProfile = {
       ...regs.get("imperial"),
-      preferredUnits: { ...regs.get("imperial").preferredUnits, "L^1·T^-1": "mph" },
+      preferredUnits: {
+        ...regs.get("imperial").preferredUnits,
+        "L^1·T^-1": "mph",
+      },
     };
-    const m = Measurement.of(Quantity.of(100, "km/h", all), Quantity.of(2, "km/h", all));
+    const m = Measurement.of(
+      Quantity.of(100, "km/h", all),
+      Quantity.of(2, "km/h", all),
+    );
     const text = displayMeasurement(
       m,
       { unitSystem: "imperial", profiles: regs, registry: all },
@@ -357,12 +437,21 @@ describe("import mapping", () => {
   it("maps explicit external names; rejects unknown and bad targets", () => {
     const mapping = { "kg/m3": "kg/m^3", "lb/ft^3": "lb/ft^3" } as const;
     expect(importUnitName("kg/m3", mapping, O).symbol).toBe("kg/m^3");
-    expect(() => importUnitName("slug/ft3", mapping, O)).toThrow(UnitSystemError);
-    expect(() => importUnitName("x", { x: "nope_xyz" }, O)).toThrow(UnitSystemError);
+    expect(() => importUnitName("slug/ft3", mapping, O)).toThrow(
+      UnitSystemError,
+    );
+    expect(() => importUnitName("x", { x: "nope_xyz" }, O)).toThrow(
+      UnitSystemError,
+    );
     expect(validateImportMapping(mapping, O)).toEqual(["kg/m3", "lb/ft^3"]);
-    expect(() => validateImportMapping({ x: "nope_xyz" }, O)).toThrow(UnitSystemError);
+    expect(() => validateImportMapping({ x: "nope_xyz" }, O)).toThrow(
+      UnitSystemError,
+    );
     expect(() =>
-      validateImportMapping({ a: "kg", b: "m" }, { ...O, limits: { maxMappings: 1 } }),
+      validateImportMapping(
+        { a: "kg", b: "m" },
+        { ...O, limits: { maxMappings: 1 } },
+      ),
     ).toThrow(UnitSystemError);
   });
 });
@@ -384,19 +473,25 @@ describe("profile serialization", () => {
     expect(JSON.stringify(back.serialize())).toBe(json);
     expect(back.get("lab").preferredUnits?.["M^1"]).toBe("g");
     expect(back.get("lab").preferredUnits?.["L^1"]).toBe("m"); // inherited
-    expect(() => ProfileRegistry.deserialize({ version: 2 })).toThrow(UnitSystemError);
-    expect(() => ProfileRegistry.deserialize("not json{[")).toThrow(UnitSystemError);
+    expect(() => ProfileRegistry.deserialize({ version: 2 })).toThrow(
+      UnitSystemError,
+    );
+    expect(() => ProfileRegistry.deserialize("not json{[")).toThrow(
+      UnitSystemError,
+    );
     expect(() =>
       ProfileRegistry.deserialize(
-        JSON.parse('{"version":1,"type":"profile-registry","profiles":[],"__proto__":{}}'),
+        JSON.parse(
+          '{"version":1,"type":"profile-registry","profiles":[],"__proto__":{}}',
+        ),
       ),
     ).toThrow(UnitSystemError);
   });
 
   it("rejects malformed profiles and oversized payloads", () => {
-    expect(() => deserializeProfile({ version: 1, type: "standards-profile" })).toThrow(
-      UnitSystemError,
-    );
+    expect(() =>
+      deserializeProfile({ version: 1, type: "standards-profile" }),
+    ).toThrow(UnitSystemError);
     expect(() =>
       deserializeProfile({
         version: 1,
@@ -408,13 +503,15 @@ describe("profile serialization", () => {
       }),
     ).toThrow(UnitSystemError);
     expect(() =>
-      ProfileRegistry.deserialize("x".repeat(100), { limits: { maxSerializedChars: 10 } }),
+      ProfileRegistry.deserialize("x".repeat(100), {
+        limits: { maxSerializedChars: 10 },
+      }),
     ).toThrow(UnitSystemError);
     const regs = new ProfileRegistry({ limits: { maxProfiles: 1 } });
     regs.register({ id: "a", version: "1", unitSystem: "si" });
-    expect(() => regs.register({ id: "b", version: "1", unitSystem: "si" })).toThrow(
-      UnitSystemError,
-    );
+    expect(() =>
+      regs.register({ id: "b", version: "1", unitSystem: "si" }),
+    ).toThrow(UnitSystemError);
   });
 });
 
@@ -435,9 +532,16 @@ describe("property: round-trip conversion", () => {
 
   it("preferred-unit normalization is idempotent and value-preserving", () => {
     const regs = profiles();
-    for (const profileId of ["si", "cgs", "imperial", "us-customary"] as const) {
+    for (const profileId of [
+      "si",
+      "cgs",
+      "imperial",
+      "us-customary",
+    ] as const) {
       const profile = regs.get(profileId);
-      for (const [key, symbol] of Object.entries(profile.preferredUnits ?? {})) {
+      for (const [key, symbol] of Object.entries(
+        profile.preferredUnits ?? {},
+      )) {
         // Skip symbols outside the test registry (e.g. gal needs US pack).
         let q: Quantity;
         try {

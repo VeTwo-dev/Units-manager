@@ -54,38 +54,52 @@ describe("phase3 — proximate / macro taxonomy", () => {
 
   it("aliases resolve deterministically (case-insensitive)", () => {
     expect(defaultNutrientKindRegistry.require("CP").id).toBe("cp");
-    expect(defaultNutrientKindRegistry.require("nutrient:crude-protein").id).toBe("cp");
+    expect(
+      defaultNutrientKindRegistry.require("nutrient:crude-protein").id,
+    ).toBe("cp");
     expect(defaultNutrientKindRegistry.require("EE").id).toBe("ee");
     expect(defaultNutrientKindRegistry.require("DM").id).toBe("drymatter");
     expect(defaultNutrientKindRegistry.require("ADL").id).toBe("lignin");
-    expect(defaultNutrientKindRegistry.require("CHO").id).toBe("totalcarbohydrates");
+    expect(defaultNutrientKindRegistry.require("CHO").id).toBe(
+      "totalcarbohydrates",
+    );
   });
 
   it("families group correctly without implying interchangeability", () => {
     expect(defaultNutrientKindRegistry.require("cp").family).toBe("protein");
-    expect(defaultNutrientKindRegistry.require("trueProtein").family).toBe("protein");
+    expect(defaultNutrientKindRegistry.require("trueProtein").family).toBe(
+      "protein",
+    );
     expect(defaultNutrientKindRegistry.require("ndf").family).toBe("fiber");
-    expect(defaultNutrientKindRegistry.require("starch").family).toBe("carbohydrate");
+    expect(defaultNutrientKindRegistry.require("starch").family).toBe(
+      "carbohydrate",
+    );
     // same family, different nutrient → still incompatible
     const a = NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed");
-    const b = NutritionQuantity.of(Quantity.of(10, "g/kg"), "trueProtein", "asFed");
+    const b = NutritionQuantity.of(
+      Quantity.of(10, "g/kg"),
+      "trueProtein",
+      "asFed",
+    );
     expect(a.nutrient.family).toBe(b.nutrient.family);
     expect(() => a.add(b)).toThrow(NutrientSemanticMismatchError);
   });
 
   it("unknown nutrient throws typed error", () => {
-    expect(() => defaultNutrientKindRegistry.require("unknown_xyz_123")).toThrow(
-      InvalidNutrientKindError,
-    );
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g"), "nope_xyz", "asFed")).toThrow(
-      InvalidNutrientKindError,
-    );
+    expect(() =>
+      defaultNutrientKindRegistry.require("unknown_xyz_123"),
+    ).toThrow(InvalidNutrientKindError);
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g"), "nope_xyz", "asFed"),
+    ).toThrow(InvalidNutrientKindError);
   });
 
   it("immutability — kinds and registry entries frozen", () => {
     const kind = defaultNutrientKindRegistry.require("cp");
     expect(Object.isFrozen(kind)).toBe(true);
-    expect(() => (kind as unknown as Record<string, unknown>).name).not.toThrow();
+    expect(
+      () => (kind as unknown as Record<string, unknown>).name,
+    ).not.toThrow();
     // attempt mutation should not change
     const before = kind.name;
     try {
@@ -137,7 +151,9 @@ describe("phase3 — minerals", () => {
 
   it("aliases for minerals resolve (Ca, nutrient:calcium)", () => {
     expect(defaultNutrientKindRegistry.require("Ca").id).toBe("ca");
-    expect(defaultNutrientKindRegistry.require("nutrient:calcium").id).toBe("ca");
+    expect(defaultNutrientKindRegistry.require("nutrient:calcium").id).toBe(
+      "ca",
+    );
     expect(defaultNutrientKindRegistry.require("chloride").id).toBe("cl");
   });
 
@@ -182,7 +198,9 @@ describe("phase3 — vitamins", () => {
     expect(defaultNutrientKindRegistry.require("biotin").id).toBe("vitb7");
     expect(defaultNutrientKindRegistry.require("folate").id).toBe("vitb9");
     expect(defaultNutrientKindRegistry.require("cobalamin").id).toBe("vitb12");
-    expect(defaultNutrientKindRegistry.require("nutrient:vitamin-a").id).toBe("vita");
+    expect(defaultNutrientKindRegistry.require("nutrient:vitamin-a").id).toBe(
+      "vita",
+    );
   });
 
   it("chemical forms extensible via chemicalMetadata", () => {
@@ -230,9 +248,14 @@ describe("phase3 — energy semantics", () => {
 
 describe("phase3 — nutrition measurement representation", () => {
   it("preserves value + unit + nutrient + basis + context", () => {
-    const nq = NutritionQuantity.of(Quantity.of(500, "mg/kg"), "ca", "dryMatter", {
-      metadata: { lab: "LabA" },
-    });
+    const nq = NutritionQuantity.of(
+      Quantity.of(500, "mg/kg"),
+      "ca",
+      "dryMatter",
+      {
+        metadata: { lab: "LabA" },
+      },
+    );
     expect(nq.quantity.value).toBe(500);
     expect(nq.quantity.unit.symbol).toBe("mg/kg");
     expect(nq.nutrient.id).toBe("ca");
@@ -241,25 +264,27 @@ describe("phase3 — nutrition measurement representation", () => {
   });
 
   it("validation rejects invalid states", () => {
-    expect(() => NutritionQuantity.of(Quantity.of(NaN, "g"), "cp", "asFed")).toThrow(
-      InvalidNutritionQuantityError,
-    );
-    expect(() => NutritionQuantity.of(Quantity.of(Infinity, "g"), "cp", "asFed")).toThrow(
-      InvalidNutritionQuantityError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(NaN, "g"), "cp", "asFed"),
+    ).toThrow(InvalidNutritionQuantityError);
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(Infinity, "g"), "cp", "asFed"),
+    ).toThrow(InvalidNutritionQuantityError);
     expect(() => NutritionQuantity.from(NaN, "g", "cp", "asFed")).toThrow();
     // missing nutrient
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g"), "" as never, "asFed")).toThrow(
-      InvalidNutrientKindError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g"), "" as never, "asFed"),
+    ).toThrow(InvalidNutrientKindError);
     // invalid basis
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g"), "cp", "unknownBasis_xyz")).toThrow(
-      InvalidNutritionBasisError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g"), "cp", "unknownBasis_xyz"),
+    ).toThrow(InvalidNutritionBasisError);
     // malformed metadata prototype pollution
     const evil = JSON.parse('{"__proto__":{"polluted":true}}');
     expect(() =>
-      NutritionQuantity.of(Quantity.of(10, "g"), "cp", "asFed", { metadata: evil }),
+      NutritionQuantity.of(Quantity.of(10, "g"), "cp", "asFed", {
+        metadata: evil,
+      }),
     ).toThrow(InvalidNutritionQuantityError);
   });
 
@@ -447,7 +472,9 @@ describe("phase4 — IU safety", () => {
     expect(a.to("IU/g").quantity.value).toBeCloseTo(0.1, 9);
     expect(a.to("IU/g").nutrient.id).toBe("vita");
     // No method to convert vitA IU to vitD IU
-    expect((a as unknown as Record<string, unknown>).convertToVitamin).toBeUndefined();
+    expect(
+      (a as unknown as Record<string, unknown>).convertToVitamin,
+    ).toBeUndefined();
   });
 });
 
@@ -479,9 +506,14 @@ describe("phase4 — same unit ≠ same measurement", () => {
 
 describe("phase4 — serialization", () => {
   it("round-trip preserves all fields", () => {
-    const nq = NutritionQuantity.of(Quantity.of(250, "g/kg"), "cp", "dryMatter", {
-      metadata: { lab: "A" },
-    });
+    const nq = NutritionQuantity.of(
+      Quantity.of(250, "g/kg"),
+      "cp",
+      "dryMatter",
+      {
+        metadata: { lab: "A" },
+      },
+    );
     const json = JSON.stringify(serializeNutritionQuantity(nq));
     const back = deserializeNutritionQuantity(JSON.parse(json));
     expect(back.equals(nq)).toBe(true);
@@ -567,13 +599,19 @@ describe("phase4 — property-based invariants", () => {
       if (kind.aliases && kind.aliases.length > 0) {
         const alias = kind.aliases[Math.floor(rand() * kind.aliases.length)]!;
         expect(defaultNutrientKindRegistry.require(alias).id).toBe(kind.id);
-        expect(defaultNutrientKindRegistry.require(alias.toUpperCase()).id).toBe(kind.id);
+        expect(
+          defaultNutrientKindRegistry.require(alias.toUpperCase()).id,
+        ).toBe(kind.id);
       }
     }
   });
 
   it("nutrient(convert(x,A,B)) == nutrient(x) and basis preserved", () => {
-    const orig = NutritionQuantity.of(Quantity.of(1, "g/kg"), "ca", "dryMatter");
+    const orig = NutritionQuantity.of(
+      Quantity.of(1, "g/kg"),
+      "ca",
+      "dryMatter",
+    );
     const conv = orig.to("mg/kg");
     expect(conv.nutrient.id).toBe(orig.nutrient.id);
     expect(conv.basis.id).toBe(orig.basis.id);
@@ -588,9 +626,9 @@ describe("phase4 — property-based invariants", () => {
 
 describe("phase4 — error handling", () => {
   it("invalid nutrient alias throws typed error", () => {
-    expect(() => defaultNutrientKindRegistry.require("unknownNutrient_xyz")).toThrow(
-      InvalidNutrientKindError,
-    );
+    expect(() =>
+      defaultNutrientKindRegistry.require("unknownNutrient_xyz"),
+    ).toThrow(InvalidNutrientKindError);
   });
 
   it("incompatible nutrient/unit — conservative rejection where certain", () => {
@@ -615,12 +653,16 @@ describe("phase4 — error handling", () => {
 describe("phase3+4 — regression — existing features", () => {
   it("basis converter still works (regression)", async () => {
     const { BasisConverter } = await import("../src/basis-converter.js");
-    const asFed = BasisConverter.toAsFed(Quantity.of(15, "% DM"), Quantity.of(88, "%"));
+    const asFed = BasisConverter.toAsFed(
+      Quantity.of(15, "% DM"),
+      Quantity.of(88, "%"),
+    );
     expect(asFed.value).toBeCloseTo(13.2, 9);
   });
 
   it("TargetUnitRegistry override still works", async () => {
-    const { TargetUnitRegistry } = await import("../src/target-unit-registry.js");
+    const { TargetUnitRegistry } =
+      await import("../src/target-unit-registry.js");
     const reg = new TargetUnitRegistry();
     reg.override("cp", "kg/day");
     expect(reg.getTargetUnit("cp")).toBe("kg/day");

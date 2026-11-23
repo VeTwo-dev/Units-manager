@@ -77,7 +77,8 @@ export interface NutritionMetadata {
 }
 
 const ID_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
-const ISO8601_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+const ISO8601_RE =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 function assertNoPollution(obj: unknown, owner: string): void {
   if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
@@ -92,19 +93,25 @@ function assertNoPollution(obj: unknown, owner: string): void {
   for (const v of Object.values(r)) {
     if (v && typeof v === "object") assertNoPollution(v, owner);
     if (typeof v === "function")
-      throw new NutritionContextError(`${owner} must not contain executable values`);
+      throw new NutritionContextError(
+        `${owner} must not contain executable values`,
+      );
   }
 }
 
 function validateId(value: string, field: string): void {
   if (!ID_PATTERN.test(value)) {
-    throw new NutritionContextError(`${field} must match ${ID_PATTERN}, got "${value}"`);
+    throw new NutritionContextError(
+      `${field} must match ${ID_PATTERN}, got "${value}"`,
+    );
   }
 }
 
 function validateIsoTimestamp(value: string, field: string): void {
   if (!ISO8601_RE.test(value) || Number.isNaN(Date.parse(value))) {
-    throw new NutritionContextError(`${field} must be ISO 8601, got "${value}"`);
+    throw new NutritionContextError(
+      `${field} must be ISO 8601, got "${value}"`,
+    );
   }
 }
 
@@ -122,13 +129,17 @@ function validateDetectionLimits(dl: DetectionLimits): void {
       typeof dl.limitOfDetection.value !== "number" ||
       !Number.isFinite(dl.limitOfDetection.value)
     ) {
-      throw new NutritionContextError("limitOfDetection.value must be finite number");
+      throw new NutritionContextError(
+        "limitOfDetection.value must be finite number",
+      );
     }
     if (
       typeof dl.limitOfDetection.unit !== "string" ||
       dl.limitOfDetection.unit.trim().length === 0
     ) {
-      throw new NutritionContextError("limitOfDetection.unit must be non-empty string");
+      throw new NutritionContextError(
+        "limitOfDetection.unit must be non-empty string",
+      );
     }
   }
   if (dl.limitOfQuantification) {
@@ -136,13 +147,17 @@ function validateDetectionLimits(dl: DetectionLimits): void {
       typeof dl.limitOfQuantification.value !== "number" ||
       !Number.isFinite(dl.limitOfQuantification.value)
     ) {
-      throw new NutritionContextError("limitOfQuantification.value must be finite number");
+      throw new NutritionContextError(
+        "limitOfQuantification.value must be finite number",
+      );
     }
     if (
       typeof dl.limitOfQuantification.unit !== "string" ||
       dl.limitOfQuantification.unit.trim().length === 0
     ) {
-      throw new NutritionContextError("limitOfQuantification.unit must be non-empty string");
+      throw new NutritionContextError(
+        "limitOfQuantification.unit must be non-empty string",
+      );
     }
   }
 }
@@ -156,7 +171,9 @@ function freezeDeep<T extends Record<string, unknown>>(obj: T): T {
   return Object.freeze(obj);
 }
 
-export function createNutritionMetadata(input: NutritionMetadata = {}): NutritionMetadata {
+export function createNutritionMetadata(
+  input: NutritionMetadata = {},
+): NutritionMetadata {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new NutritionContextError("NutritionMetadata must be a plain object");
   }
@@ -176,9 +193,13 @@ export function createNutritionMetadata(input: NutritionMetadata = {}): Nutritio
         throw new NutritionContextError("method.version must be string");
     }
     if (p.sample) {
-      if (p.sample.sampleId) validateId(p.sample.sampleId, "provenance.sample.sampleId");
+      if (p.sample.sampleId)
+        validateId(p.sample.sampleId, "provenance.sample.sampleId");
       if (p.sample.collectionTimestamp)
-        validateIsoTimestamp(p.sample.collectionTimestamp, "provenance.sample.collectionTimestamp");
+        validateIsoTimestamp(
+          p.sample.collectionTimestamp,
+          "provenance.sample.collectionTimestamp",
+        );
     }
     const frozenProvenance = freezeDeep({
       ...p,
@@ -190,10 +211,15 @@ export function createNutritionMetadata(input: NutritionMetadata = {}): Nutritio
   }
 
   if (input.sample) {
-    if (input.sample.sampleId) validateId(input.sample.sampleId, "sample.sampleId");
-    if (input.sample.replicateId) validateId(input.sample.replicateId, "sample.replicateId");
+    if (input.sample.sampleId)
+      validateId(input.sample.sampleId, "sample.sampleId");
+    if (input.sample.replicateId)
+      validateId(input.sample.replicateId, "sample.replicateId");
     if (input.sample.collectionTimestamp)
-      validateIsoTimestamp(input.sample.collectionTimestamp, "sample.collectionTimestamp");
+      validateIsoTimestamp(
+        input.sample.collectionTimestamp,
+        "sample.collectionTimestamp",
+      );
     result.sample = freezeDeep({ ...input.sample } as Record<string, unknown>);
   }
 
@@ -209,11 +235,17 @@ export function createNutritionMetadata(input: NutritionMetadata = {}): Nutritio
 
   if (input.detectionLimits) {
     validateDetectionLimits(input.detectionLimits);
-    result.detectionLimits = freezeDeep({ ...input.detectionLimits } as Record<string, unknown>);
+    result.detectionLimits = freezeDeep({ ...input.detectionLimits } as Record<
+      string,
+      unknown
+    >);
   }
 
   if (input.reference) {
-    if (typeof input.reference !== "string" || input.reference.trim().length === 0)
+    if (
+      typeof input.reference !== "string" ||
+      input.reference.trim().length === 0
+    )
       throw new NutritionContextError("reference must be non-empty string");
     result.reference = input.reference;
   }
@@ -240,7 +272,10 @@ export function mergeNutritionMetadata(
       provenance: {
         ...(a.provenance ?? {}),
         ...(b.provenance ?? {}),
-        parentIds: [...(a.provenance?.parentIds ?? []), ...(b.provenance?.parentIds ?? [])],
+        parentIds: [
+          ...(a.provenance?.parentIds ?? []),
+          ...(b.provenance?.parentIds ?? []),
+        ],
       },
       custom: {
         ...(a.custom ?? {}),
@@ -256,11 +291,17 @@ export function mergeNutritionMetadata(
       a.provenance || b.provenance
         ? { ...(a.provenance ?? {}), ...(b.provenance ?? {}) }
         : undefined,
-    sample: a.sample || b.sample ? { ...(a.sample ?? {}), ...(b.sample ?? {}) } : undefined,
+    sample:
+      a.sample || b.sample
+        ? { ...(a.sample ?? {}), ...(b.sample ?? {}) }
+        : undefined,
     detectionLimits:
       a.detectionLimits || b.detectionLimits
         ? { ...(a.detectionLimits ?? {}), ...(b.detectionLimits ?? {}) }
         : undefined,
-    custom: a.custom || b.custom ? { ...(a.custom ?? {}), ...(b.custom ?? {}) } : undefined,
+    custom:
+      a.custom || b.custom
+        ? { ...(a.custom ?? {}), ...(b.custom ?? {}) }
+        : undefined,
   } as NutritionMetadata);
 }

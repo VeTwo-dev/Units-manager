@@ -1,0 +1,41 @@
+# Bazel build for @vetwo/nutrition-units-example (Phase B, Batch 1).
+#
+# Example consumer of @vetwo/units and @vetwo/nutrition-units.
+# Uses tsc for typecheck.
+# Targets tagged manual due to path-with-space Bazel limitation and
+# tsconfig extending a base config outside the Bazel sandbox.
+
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//bazel/macros:typecheck.bzl", "vetwo_typecheck")
+
+npm_link_all_packages()
+
+vetwo_typecheck(
+    name = "types",
+    srcs = glob(["src/**/*.ts"]),
+    deps = [
+        ":node_modules/@types/node",
+        ":node_modules/typescript",
+        ":node_modules/@vetwo/units",
+        ":node_modules/@vetwo/nutrition-units",
+    ],
+    tsconfig_json = "tsconfig.json",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+
+filegroup(
+    name = "package",
+    srcs = glob(["src/**/*", "README.md"], allow_empty = True) + ["package.json"],
+    visibility = ["//visibility:public"],
+)
+
+npm_package(
+    name = "pkg",
+    srcs = [":package"],
+    package = "@vetwo/nutrition-units-example",
+    version = "0.0.1",
+    visibility = ["//visibility:public"],
+)

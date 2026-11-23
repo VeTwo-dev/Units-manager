@@ -68,7 +68,9 @@ describe("canonical unit algebra", () => {
   it("zero exponents vanish; reciprocal normalizes", () => {
     expect(formatUnitExpr(simplifyUnitExpr(parse("m^0*kg")))).toBe("kg");
     expect(formatUnitExpr(reciprocalUnitExpr(parse("m/s")))).not.toBe("1");
-    expect(unitExprKey(reciprocalUnitExpr(parse("m/s")))).toBe(unitExprKey(parse("s/m")));
+    expect(unitExprKey(reciprocalUnitExpr(parse("m/s")))).toBe(
+      unitExprKey(parse("s/m")),
+    );
   });
 
   it("builders compose structurally", () => {
@@ -87,10 +89,18 @@ describe("canonical unit algebra", () => {
 
 describe("dimension inference without numerics", () => {
   it("Force = M·L·T⁻², Energy = E (engine model)", () => {
-    expect(dimensionOfUnitExpr(parse("kg*m/s^2"))).toEqual({ M: 1, L: 1, T: -2 });
+    expect(dimensionOfUnitExpr(parse("kg*m/s^2"))).toEqual({
+      M: 1,
+      L: 1,
+      T: -2,
+    });
     expect(dimensionOfUnitExpr(parse("N", reg))).toEqual({ M: 1, L: 1, T: -2 });
     expect(dimensionOfUnitExpr(parse("J", reg))).toEqual(Dim.Energy);
-    expect(dimensionOfUnitExpr(parse("V", reg))).toEqual({ E: 1, T: -1, I: -1 });
+    expect(dimensionOfUnitExpr(parse("V", reg))).toEqual({
+      E: 1,
+      T: -1,
+      I: -1,
+    });
     expect(dimensionOfUnitExpr(parse("Hz", reg))).toEqual({ T: -1 });
   });
 
@@ -119,26 +129,48 @@ describe("derived units", () => {
   it("N → kg·m/s², Pa → N/m², J → N·m, W → J/s, Hz → 1/s, C/V/Ω expand", () => {
     const r = defaultDerivedUnitRegistry;
     // Expansion goes to primitives: compare against primitive spellings…
-    expect(unitExprKey(r.expand("N", reg))).toBe(unitExprKey(parse("kg*m/s^2", reg)));
-    expect(unitExprKey(r.expand("Pa", reg))).toBe(unitExprKey(parse("kg/(m*s^2)", reg)));
+    expect(unitExprKey(r.expand("N", reg))).toBe(
+      unitExprKey(parse("kg*m/s^2", reg)),
+    );
+    expect(unitExprKey(r.expand("Pa", reg))).toBe(
+      unitExprKey(parse("kg/(m*s^2)", reg)),
+    );
     // W expands transitively (W→J/s→N·m/s→kg·m²/s³):
-    expect(unitExprKey(r.expand("W", reg))).toBe(unitExprKey(parse("kg*m^2/s^3", reg)));
+    expect(unitExprKey(r.expand("W", reg))).toBe(
+      unitExprKey(parse("kg*m^2/s^3", reg)),
+    );
     // …but NOT equivalent to J/s: the engine E-model keeps J on the E base
     // dimension, so expansion (M·L²·T⁻³) and J/s (E·T⁻¹) differ by design.
     expect(equivalentUnits(r.expand("W", reg), parse("J/s", reg))).toBe(false);
-    expect(unitExprKey(r.expand("Hz", reg))).toBe(unitExprKey(parse("1/s", reg)));
-    expect(unitExprKey(r.expand("C", reg))).toBe(unitExprKey(parse("A*s", reg)));
+    expect(unitExprKey(r.expand("Hz", reg))).toBe(
+      unitExprKey(parse("1/s", reg)),
+    );
+    expect(unitExprKey(r.expand("C", reg))).toBe(
+      unitExprKey(parse("A*s", reg)),
+    );
     // V expands transitively through W and J to primitives:
-    expect(unitExprKey(r.expand("V", reg))).toBe(unitExprKey(parse("kg*m^2/s^3/A", reg)));
+    expect(unitExprKey(r.expand("V", reg))).toBe(
+      unitExprKey(parse("kg*m^2/s^3/A", reg)),
+    );
     // …while named forms stay equivalent without collapsing structure.
-    expect(equivalentUnits(r.expand("Pa", reg), parse("N/m^2", reg))).toBe(true);
-    expect(unitExprKey(r.expand("Pa", reg))).not.toBe(unitExprKey(parse("N/m^2", reg)));
+    expect(equivalentUnits(r.expand("Pa", reg), parse("N/m^2", reg))).toBe(
+      true,
+    );
+    expect(unitExprKey(r.expand("Pa", reg))).not.toBe(
+      unitExprKey(parse("N/m^2", reg)),
+    );
   });
 
   it("matchDerived recovers display intent from structure", () => {
-    expect(defaultDerivedUnitRegistry.matchDerived(parse("kg*m/s^2", reg), reg)).toBe("N");
-    expect(defaultDerivedUnitRegistry.matchDerived(parse("N/m^2", reg), reg)).toBe("Pa");
-    expect(defaultDerivedUnitRegistry.matchDerived(parse("m"), reg)).toBeUndefined();
+    expect(
+      defaultDerivedUnitRegistry.matchDerived(parse("kg*m/s^2", reg), reg),
+    ).toBe("N");
+    expect(
+      defaultDerivedUnitRegistry.matchDerived(parse("N/m^2", reg), reg),
+    ).toBe("Pa");
+    expect(
+      defaultDerivedUnitRegistry.matchDerived(parse("m"), reg),
+    ).toBeUndefined();
   });
 
   it("custom registries are isolated and validated", () => {
@@ -146,7 +178,9 @@ describe("derived units", () => {
     custom.define({ name: "smoot", definition: "m", description: "test-only" });
     expect(custom.expand("smoot", reg)).toBeDefined();
     expect(() => custom.define({ name: "smoot", definition: "m" })).toThrow();
-    expect(() => custom.define({ name: "bad", definition: "not_a_unit_xyz" })).toThrow();
+    expect(() =>
+      custom.define({ name: "bad", definition: "not_a_unit_xyz" }),
+    ).toThrow();
     expect(() => custom.require("missing")).toThrow();
   });
 });
@@ -162,7 +196,10 @@ describe("prefix algebra", () => {
     expect(scaleOfUnitExpr(parse("mg/mL", reg))).toBeCloseTo(1, 12); // both milli cancel
     expect(scaleOfUnitExpr(parse("mmol/L", reg))).toBeCloseTo(1, 12); // 1 mmol/L = 1 mol/m³
     // Absolute base scale (Mcal/kg per kJ/kg), not the kJ/J ratio:
-    expect(scaleOfUnitExpr(parse("kJ/kg", reg))).toBeCloseTo(0.239006 / 1000, 12);
+    expect(scaleOfUnitExpr(parse("kJ/kg", reg))).toBeCloseTo(
+      0.239006 / 1000,
+      12,
+    );
   });
 
   it("invalid prefix combos are rejected by the registry", () => {
@@ -190,7 +227,9 @@ describe("powers and exact roots", () => {
 
   it("non-integer power exponents are rejected", () => {
     expect(() => parse("m^2.5")).toThrow(ExpressionError);
-    expect(() => powUnitExpr(atom(parseUnit("m", reg)), 1.5)).toThrow(ExpressionError);
+    expect(() => powUnitExpr(atom(parseUnit("m", reg)), 1.5)).toThrow(
+      ExpressionError,
+    );
   });
 });
 
@@ -268,44 +307,61 @@ describe("parser, formatter, serialization", () => {
 
   it("formats ascii/unicode deterministically with named units preserved", () => {
     expect(formatUnitExpr(parse("kg*m/s^2"))).toBe("kg·m/s²");
-    expect(formatUnitExpr(parse("kg*m/s^2"), { style: "ascii" })).toBe("kg*m/s^2");
+    expect(formatUnitExpr(parse("kg*m/s^2"), { style: "ascii" })).toBe(
+      "kg*m/s^2",
+    );
     expect(formatUnitExpr(parse("1/s"))).toBe("1/s");
     expect(formatUnitExpr(parse("N", reg))).toBe("N"); // display intent kept
   });
 
   it("serialization round-trips; malformed input rejected", () => {
     const expr = parse("kg*m/s^2");
-    const restored = deserializeUnitExpr(JSON.parse(JSON.stringify(serializeUnitExpr(expr))), reg);
+    const restored = deserializeUnitExpr(
+      JSON.parse(JSON.stringify(serializeUnitExpr(expr))),
+      reg,
+    );
     expect(unitExprKey(restored)).toBe(unitExprKey(expr));
     expect(() => deserializeUnitExpr(null, reg)).toThrow(ExpressionError);
-    expect(() => deserializeUnitExpr({ version: 2, type: "unit-expr", factors: [] }, reg)).toThrow(
-      ExpressionError,
-    );
-    expect(() => deserializeUnitExpr({ version: 1, type: "nope", factors: [] }, reg)).toThrow(
-      ExpressionError,
-    );
+    expect(() =>
+      deserializeUnitExpr({ version: 2, type: "unit-expr", factors: [] }, reg),
+    ).toThrow(ExpressionError);
+    expect(() =>
+      deserializeUnitExpr({ version: 1, type: "nope", factors: [] }, reg),
+    ).toThrow(ExpressionError);
     expect(() =>
       deserializeUnitExpr(
-        { version: 1, type: "unit-expr", factors: [{ unit: "m", exponent: 1.5 }] },
+        {
+          version: 1,
+          type: "unit-expr",
+          factors: [{ unit: "m", exponent: 1.5 }],
+        },
         reg,
       ),
     ).toThrow(ExpressionError);
     expect(() =>
       deserializeUnitExpr(
-        { version: 1, type: "unit-expr", factors: [{ unit: "nope_xyz", exponent: 1 }] },
+        {
+          version: 1,
+          type: "unit-expr",
+          factors: [{ unit: "nope_xyz", exponent: 1 }],
+        },
         reg,
       ),
     ).toThrow(ExpressionError);
     expect(() =>
       deserializeUnitExpr(
-        JSON.parse('{"version":1,"type":"unit-expr","factors":[],"__proto__":{}}'),
+        JSON.parse(
+          '{"version":1,"type":"unit-expr","factors":[],"__proto__":{}}',
+        ),
         reg,
       ),
     ).toThrow(ExpressionError);
   });
 
   it("interning returns identical normalized objects for equal expressions", () => {
-    expect(normalizeUnitExpr(parse("m/s"))).toBe(normalizeUnitExpr(parse("m·s^-1")));
+    expect(normalizeUnitExpr(parse("m/s"))).toBe(
+      normalizeUnitExpr(parse("m·s^-1")),
+    );
   });
 
   it("materialized units convert correctly", () => {
@@ -320,22 +376,36 @@ describe("parser, formatter, serialization", () => {
 
 describe("algebra security limits", () => {
   it("rejects enormous input, deep nesting, huge exponents", () => {
-    expect(() => parseUnitExpression("m".padEnd(600, "*m"), reg)).toThrow(ExpressionLimitError);
+    expect(() => parseUnitExpression("m".padEnd(600, "*m"), reg)).toThrow(
+      ExpressionLimitError,
+    );
     let nested = "m";
     for (let i = 0; i < 40; i++) nested = `(${nested})`;
-    expect(() => parseUnitExpression(nested, reg)).toThrow(ExpressionLimitError);
-    expect(() => parseUnitExpression("m^1000000", reg)).toThrow(ExpressionLimitError);
+    expect(() => parseUnitExpression(nested, reg)).toThrow(
+      ExpressionLimitError,
+    );
+    expect(() => parseUnitExpression("m^1000000", reg)).toThrow(
+      ExpressionLimitError,
+    );
     expect(() =>
       deserializeUnitExpr(
-        { version: 1, type: "unit-expr", factors: new Array(600).fill({ unit: "m", exponent: 1 }) },
+        {
+          version: 1,
+          type: "unit-expr",
+          factors: new Array(600).fill({ unit: "m", exponent: 1 }),
+        },
         reg,
       ),
     ).toThrow(ExpressionLimitError);
   });
 
   it("custom limits are enforced", () => {
-    expect(() => parseUnitExpression("m*m", reg, { maxAstNodes: 1 })).toThrow(ExpressionLimitError);
-    expect(() => parseUnitExpression("m^5", reg, { maxExponent: 2 })).toThrow(ExpressionLimitError);
+    expect(() => parseUnitExpression("m*m", reg, { maxAstNodes: 1 })).toThrow(
+      ExpressionLimitError,
+    );
+    expect(() => parseUnitExpression("m^5", reg, { maxExponent: 2 })).toThrow(
+      ExpressionLimitError,
+    );
   });
 });
 
@@ -353,9 +423,14 @@ describe("algebraic identities (property)", () => {
       );
       void rebuilt;
       // Direct structural check instead: (a·s)/s normalizes to a.
-      const { multiplyUnits: mul, divideUnits: div } = { multiplyUnits, divideUnits };
+      const { multiplyUnits: mul, divideUnits: div } = {
+        multiplyUnits,
+        divideUnits,
+      };
       const s = atom(parseUnit("s", reg));
-      expect(unitExprKey(simplifyUnitExpr(div(mul(a, s), s)))).toBe(unitExprKey(a));
+      expect(unitExprKey(simplifyUnitExpr(div(mul(a, s), s)))).toBe(
+        unitExprKey(a),
+      );
     }
   });
 
@@ -364,12 +439,18 @@ describe("algebraic identities (property)", () => {
       const a = parse(text, reg);
       const b = parse("s", reg);
       const c = parse("kg", reg);
-      expect(unitExprKey(simplifyUnitExpr(multiplyUnits(a, one())))).toBe(unitExprKey(a));
+      expect(unitExprKey(simplifyUnitExpr(multiplyUnits(a, one())))).toBe(
+        unitExprKey(a),
+      );
       expect(unitExprKey(simplifyUnitExpr(divideUnits(a, a)))).toBe("1");
-      expect(unitExprKey(simplifyUnitExpr(multiplyUnits(multiplyUnits(a, b), c)))).toBe(
+      expect(
+        unitExprKey(simplifyUnitExpr(multiplyUnits(multiplyUnits(a, b), c))),
+      ).toBe(
         unitExprKey(simplifyUnitExpr(multiplyUnits(a, multiplyUnits(b, c)))),
       );
-      expect(unitExprKey(simplifyUnitExpr(multiplyUnits(a, divideUnits(b, c))))).toBe(
+      expect(
+        unitExprKey(simplifyUnitExpr(multiplyUnits(a, divideUnits(b, c)))),
+      ).toBe(
         unitExprKey(simplifyUnitExpr(divideUnits(multiplyUnits(a, b), c))),
       );
     }
@@ -402,7 +483,10 @@ describe("symbolic dimensional analysis", () => {
 
   it("inferUnknownDimensions propagates constraints", () => {
     // F = m·a, given output Force and m = Mass → a = L/T².
-    const expr = Expression.multiply(Expression.variable("m"), Expression.variable("a"));
+    const expr = Expression.multiply(
+      Expression.variable("m"),
+      Expression.variable("a"),
+    );
     const solved = inferUnknownDimensions(
       expr,
       { m: Dim.Mass },
@@ -410,7 +494,10 @@ describe("symbolic dimensional analysis", () => {
     );
     expect(solved["a"]).toEqual({ L: 1, T: -2 });
     // x = y/t, given output Velocity and t = Time → y = Length.
-    const expr2 = Expression.divide(Expression.variable("y"), Expression.variable("t"));
+    const expr2 = Expression.divide(
+      Expression.variable("y"),
+      Expression.variable("t"),
+    );
     const solved2 = inferUnknownDimensions(
       expr2,
       { t: { T: 1 } },
@@ -418,7 +505,10 @@ describe("symbolic dimensional analysis", () => {
     );
     expect(solved2["y"]).toEqual({ L: 1 });
     // add/sub unify siblings: e = m1 + m2 with m1 known → m2 = Mass.
-    const expr3 = Expression.add(Expression.variable("m1"), Expression.variable("m2"));
+    const expr3 = Expression.add(
+      Expression.variable("m1"),
+      Expression.variable("m2"),
+    );
     const solved3 = inferUnknownDimensions(expr3, { m1: Dim.Mass }, {});
     expect(solved3["m2"]).toEqual({ M: 1 });
   });

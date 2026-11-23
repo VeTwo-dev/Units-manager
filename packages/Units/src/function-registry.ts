@@ -70,7 +70,9 @@ export class FunctionRegistry {
   /** Monotonic version: caches scope entries to a generation (see compileExpression). */
   private generation = 0;
 
-  constructor(seed: readonly ScientificFunction[] = defaultScientificFunctions()) {
+  constructor(
+    seed: readonly ScientificFunction[] = defaultScientificFunctions(),
+  ) {
     for (const fn of seed) this.register(fn);
   }
 
@@ -93,21 +95,32 @@ export class FunctionRegistry {
       );
     }
     if (!Number.isInteger(fn.minArity) || fn.minArity < 0) {
-      throw new ExpressionError(`Function "${fn.name}" needs an integer minArity >= 0.`);
+      throw new ExpressionError(
+        `Function "${fn.name}" needs an integer minArity >= 0.`,
+      );
     }
     if (!Number.isInteger(fn.maxArity) || fn.maxArity < fn.minArity) {
-      throw new ExpressionError(`Function "${fn.name}" needs an integer maxArity >= minArity.`);
+      throw new ExpressionError(
+        `Function "${fn.name}" needs an integer maxArity >= minArity.`,
+      );
     }
-    if (typeof fn.evaluate !== "function" || typeof fn.inferDimension !== "function") {
+    if (
+      typeof fn.evaluate !== "function" ||
+      typeof fn.inferDimension !== "function"
+    ) {
       throw new ExpressionError(
         `Function "${fn.name}" needs evaluate and inferDimension implementations.`,
       );
     }
     if (fn.requiresKind !== undefined && typeof fn.requiresKind !== "string") {
-      throw new ExpressionError(`Function "${fn.name}" requiresKind must be a string.`);
+      throw new ExpressionError(
+        `Function "${fn.name}" requiresKind must be a string.`,
+      );
     }
     if (fn.outputKind !== undefined && typeof fn.outputKind !== "string") {
-      throw new ExpressionError(`Function "${fn.name}" outputKind must be a string.`);
+      throw new ExpressionError(
+        `Function "${fn.name}" outputKind must be a string.`,
+      );
     }
     const aliases = fn.aliases ?? [];
     if (
@@ -128,7 +141,10 @@ export class FunctionRegistry {
         );
       }
     }
-    this.functions.set(fn.name, Object.freeze({ ...fn, aliases: Object.freeze([...aliases]) }));
+    this.functions.set(
+      fn.name,
+      Object.freeze({ ...fn, aliases: Object.freeze([...aliases]) }),
+    );
     for (const alias of aliases) this.aliases.set(alias, fn.name);
     this.generation++;
   }
@@ -145,7 +161,8 @@ export class FunctionRegistry {
 
   require(name: string): ScientificFunction {
     const canonical = this.functions.has(name) ? name : this.aliases.get(name);
-    const fn = canonical === undefined ? undefined : this.functions.get(canonical);
+    const fn =
+      canonical === undefined ? undefined : this.functions.get(canonical);
     if (!fn) throw new ExpressionError(`Unknown function "${name}".`);
     return fn;
   }
@@ -159,7 +176,10 @@ export class FunctionRegistry {
     return Object.freeze(
       [...this.aliases.entries()]
         .sort(([a], [b]) => (a < b ? -1 : 1))
-        .map(([alias, target]) => Object.freeze([alias, target]) as readonly [string, string]),
+        .map(
+          ([alias, target]) =>
+            Object.freeze([alias, target]) as readonly [string, string],
+        ),
     );
   }
 
@@ -200,11 +220,17 @@ export class FunctionRegistry {
   }
 }
 
-function unary(name: string, description: string): { name: string; description: string } {
+function unary(
+  name: string,
+  description: string,
+): { name: string; description: string } {
   return { name, description };
 }
 
-function dimensionlessOf(fnName: string, argDims: readonly DimensionVector[]): DimensionVector {
+function dimensionlessOf(
+  fnName: string,
+  argDims: readonly DimensionVector[],
+): DimensionVector {
   if (argDims.length !== 1 || !isDimensionless(argDims[0]!)) {
     throw new ExpressionError(
       `Function "${fnName}" requires one dimensionless argument (radians convention for trig).`,
@@ -262,7 +288,9 @@ function defaultScientificFunctions(): readonly ScientificFunction[] {
       evaluate: (args) => args[0]!.min(args[1]!),
       inferDimension: (dims) => {
         if (!dimensionsEqual(dims[0]!, dims[1]!)) {
-          throw new ExpressionError('Function "min" requires dimensionally compatible arguments.');
+          throw new ExpressionError(
+            'Function "min" requires dimensionally compatible arguments.',
+          );
         }
         return dims[0]!;
       },
@@ -275,7 +303,9 @@ function defaultScientificFunctions(): readonly ScientificFunction[] {
       evaluate: (args) => args[0]!.max(args[1]!),
       inferDimension: (dims) => {
         if (!dimensionsEqual(dims[0]!, dims[1]!)) {
-          throw new ExpressionError('Function "max" requires dimensionally compatible arguments.');
+          throw new ExpressionError(
+            'Function "max" requires dimensionally compatible arguments.',
+          );
         }
         return dims[0]!;
       },
@@ -302,7 +332,10 @@ function defaultScientificFunctions(): readonly ScientificFunction[] {
       inferDimension: (dims) => dimensionlessOf("log10", dims),
     },
     {
-      ...unary("sin", "Sine (dimensionless radians; kind-gated to angle by the formula layer)."),
+      ...unary(
+        "sin",
+        "Sine (dimensionless radians; kind-gated to angle by the formula layer).",
+      ),
       minArity: 1,
       maxArity: 1,
       requiresKind: "angle",
@@ -310,7 +343,10 @@ function defaultScientificFunctions(): readonly ScientificFunction[] {
       inferDimension: (dims) => dimensionlessOf("sin", dims),
     },
     {
-      ...unary("cos", "Cosine (dimensionless radians; kind-gated to angle by the formula layer)."),
+      ...unary(
+        "cos",
+        "Cosine (dimensionless radians; kind-gated to angle by the formula layer).",
+      ),
       minArity: 1,
       maxArity: 1,
       requiresKind: "angle",
@@ -318,7 +354,10 @@ function defaultScientificFunctions(): readonly ScientificFunction[] {
       inferDimension: (dims) => dimensionlessOf("cos", dims),
     },
     {
-      ...unary("tan", "Tangent (dimensionless radians; kind-gated to angle by the formula layer)."),
+      ...unary(
+        "tan",
+        "Tangent (dimensionless radians; kind-gated to angle by the formula layer).",
+      ),
       minArity: 1,
       maxArity: 1,
       requiresKind: "angle",

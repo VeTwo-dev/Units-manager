@@ -56,8 +56,10 @@ export function runDemo(): DemoResult {
   const protein = NutritionMeasurement.from(9, "%", "cp", "asFed");
 
   // 5. Validate: range check on the physical value (dimension-safe).
-  const inRange = (v: number, lo: number, hi: number): boolean => v >= lo && v <= hi;
-  if (!inRange(calcium.value.value, 0, 1000)) throw new Error("calcium out of range");
+  const inRange = (v: number, lo: number, hi: number): boolean =>
+    v >= lo && v <= hi;
+  if (!inRange(calcium.value.value, 0, 1000))
+    throw new Error("calcium out of range");
 
   // 6. Safe unit conversion (mg/kg → g/kg) + basis conversion (asFed → DM).
   const calciumGPerKg = calcium.to("g/kg");
@@ -97,14 +99,22 @@ export function runDemo(): DemoResult {
     throw new Error("expected MissingNutritionContextError");
   } catch (e) {
     if (!(e instanceof MissingNutritionContextError)) throw e;
-    failures.push({ case: "basis-without-context", errorName: e.name, message: e.message });
+    failures.push({
+      case: "basis-without-context",
+      errorName: e.name,
+      message: e.message,
+    });
   }
   try {
     createNutritionContext({ dryMatterFraction: 0.9, moistureFraction: 0.2 });
     throw new Error("expected InvalidNutritionContextError");
   } catch (e) {
     if (!(e instanceof InvalidNutritionContextError)) throw e;
-    failures.push({ case: "inconsistent-context", errorName: e.name, message: e.message });
+    failures.push({
+      case: "inconsistent-context",
+      errorName: e.name,
+      message: e.message,
+    });
   }
 
   return {
@@ -119,9 +129,12 @@ export function runDemo(): DemoResult {
 }
 
 // Executable entrypoint (tsx src/index.ts).
-const isMain = process.argv[1]?.endsWith("apps/nutrition-units-example/src/index.ts");
+const isMain = process.argv[1]?.endsWith(
+  "apps/nutrition-units-example/src/index.ts",
+);
 if (isMain) {
   const result = runDemo();
   console.log(result.report);
-  for (const f of result.failures) console.log(`handled ${f.case}: ${f.errorName}`);
+  for (const f of result.failures)
+    console.log(`handled ${f.case}: ${f.errorName}`);
 }

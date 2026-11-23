@@ -150,9 +150,9 @@ describe("7.8 ratio conversion & round-trips", () => {
 
 describe("7.9 dimensionless multiplication preserves dimension", () => {
   it("2 (dimensionless) × 10 kg = 20 kg", () => {
-    expect(Quantity.of(2, "fraction").multiply(Quantity.of(10, "kg")).to("kg").value).toBeCloseTo(
-      20,
-    );
+    expect(
+      Quantity.of(2, "fraction").multiply(Quantity.of(10, "kg")).to("kg").value,
+    ).toBeCloseTo(20);
   });
   it("15% × 10 kg = 1.5 kg (generic algebra, no % special case)", () => {
     const pct = Quantity.of(15, "%"); // 0.15 base
@@ -162,7 +162,9 @@ describe("7.9 dimensionless multiplication preserves dimension", () => {
     expect(pct.multiply(mass).to("kg").value).toBeCloseTo(1.5);
   });
   it("dimensionless × m → m", () => {
-    expect(Quantity.of(2, "fraction").multiply(Quantity.of(5, "m")).dimension).toEqual(Dim.Length);
+    expect(
+      Quantity.of(2, "fraction").multiply(Quantity.of(5, "m")).dimension,
+    ).toEqual(Dim.Length);
   });
 });
 
@@ -172,9 +174,9 @@ describe("7.10 dimensionless division preserves dimension", () => {
     expect(Quantity.of(10, "kg").divide(2).dimension).toEqual(Dim.Mass);
   });
   it("10 kg / 0.5 fraction = 20 kg", () => {
-    expect(Quantity.of(10, "kg").divide(Quantity.of(0.5, "fraction")).to("kg").value).toBeCloseTo(
-      20,
-    );
+    expect(
+      Quantity.of(10, "kg").divide(Quantity.of(0.5, "fraction")).to("kg").value,
+    ).toBeCloseTo(20);
   });
 });
 
@@ -229,7 +231,9 @@ describe("7.13 dimensionless API", () => {
   it("quantity.isDimensionless", () => {
     expect(Quantity.of(5, "m/m").isDimensionless()).toBe(true);
     expect(Quantity.of(5, "kg").isDimensionless()).toBe(false);
-    expect(Quantity.of(10, "m").divide(Quantity.of(2, "m")).isDimensionless()).toBe(true);
+    expect(
+      Quantity.of(10, "m").divide(Quantity.of(2, "m")).isDimensionless(),
+    ).toBe(true);
   });
 });
 
@@ -238,18 +242,24 @@ describe("7.14 zero-division", () => {
     expect(() => Quantity.of(10, "kg").divide(0)).toThrow(DivisionByZeroError);
   });
   it("q.divide(zeroQuantity) throws", () => {
-    expect(() => Quantity.of(10, "kg").divide(Quantity.of(0, "kg"))).toThrow(DivisionByZeroError);
-  });
-  it("zero / zero throws (not silent Infinity)", () => {
-    expect(() => Quantity.of(0, "kg").divide(Quantity.of(0, "kg"))).toThrow(DivisionByZeroError);
-  });
-  it("0 (scalar) with zero dimensionless quantity still throws", () => {
-    expect(() => Quantity.of(10, "m").divide(Quantity.of(0, "fraction"))).toThrow(
+    expect(() => Quantity.of(10, "kg").divide(Quantity.of(0, "kg"))).toThrow(
       DivisionByZeroError,
     );
   });
+  it("zero / zero throws (not silent Infinity)", () => {
+    expect(() => Quantity.of(0, "kg").divide(Quantity.of(0, "kg"))).toThrow(
+      DivisionByZeroError,
+    );
+  });
+  it("0 (scalar) with zero dimensionless quantity still throws", () => {
+    expect(() =>
+      Quantity.of(10, "m").divide(Quantity.of(0, "fraction")),
+    ).toThrow(DivisionByZeroError);
+  });
   it("non-zero division does not throw", () => {
-    expect(() => Quantity.of(10, "kg").divide(Quantity.of(2, "kg"))).not.toThrow();
+    expect(() =>
+      Quantity.of(10, "kg").divide(Quantity.of(2, "kg")),
+    ).not.toThrow();
     expect(() => Quantity.of(10, "kg").divide(2)).not.toThrow();
   });
 });

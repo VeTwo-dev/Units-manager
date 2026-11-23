@@ -58,12 +58,21 @@ describe("mechanical derived identities", () => {
   });
 
   it("Pa = N/m², W = J/s dimensionally (J itself uses the engine E dimension)", () => {
-    expect(dimensionsEqual(q(1, "Pa").dimension, q(1, "N/m²").dimension)).toBe(true);
-    expect(dimensionsEqual(q(1, "W").dimension, q(1, "J/s").dimension)).toBe(true);
-    expect(q(1, "Pa").toBase().value).toBeCloseTo(q(1, "N/m²").toBase().value, 6);
+    expect(dimensionsEqual(q(1, "Pa").dimension, q(1, "N/m²").dimension)).toBe(
+      true,
+    );
+    expect(dimensionsEqual(q(1, "W").dimension, q(1, "J/s").dimension)).toBe(
+      true,
+    );
+    expect(q(1, "Pa").toBase().value).toBeCloseTo(
+      q(1, "N/m²").toBase().value,
+      6,
+    );
     // Documented engine model: energy J lives on the E base dimension for
     // backward compat, so J is NOT dimensionally N·m (M·L²·T⁻²) here.
-    expect(dimensionsEqual(q(1, "J").dimension, q(1, "N·m").dimension)).toBe(false);
+    expect(dimensionsEqual(q(1, "J").dimension, q(1, "N·m").dimension)).toBe(
+      false,
+    );
     expect(() => q(2, "J").to("N·m", reg)).toThrow();
   });
 
@@ -83,7 +92,10 @@ describe("density via dimension algebra", () => {
     expect(q(1000, "kg/m³").to("g/cm³", reg).value).toBeCloseTo(1, 9);
     expect(q(1, "g/cm³").to("kg/m³", reg).value).toBeCloseTo(1000, 9);
     // 1 lb/ft³ = 16.01846337396014 kg/m³ (exact derivation)
-    expect(q(1, "lb/ft³").to("kg/m³", reg).value).toBeCloseTo(16.01846337396014, 9);
+    expect(q(1, "lb/ft³").to("kg/m³", reg).value).toBeCloseTo(
+      16.01846337396014,
+      9,
+    );
     expect(q(1, "kg/m³").dimension).toEqual({ M: 1, L: -3 });
   });
 });
@@ -118,7 +130,10 @@ describe("pressure units", () => {
   it("atm = 101325 Pa exact; mmHg = 133.322387415 Pa; inHg = 25.4 × mmHg", () => {
     expect(q(1, "atm").to("Pa", reg).value).toBe(101325);
     expect(q(1, "mmHg").to("Pa", reg).value).toBeCloseTo(133.322387415, 9);
-    expect(q(1, "inHg").to("Pa", reg).value).toBeCloseTo(25.4 * 133.322387415, 6);
+    expect(q(1, "inHg").to("Pa", reg).value).toBeCloseTo(
+      25.4 * 133.322387415,
+      6,
+    );
     expect(q(1, "inHg").to("mmHg", reg).value).toBeCloseTo(25.4, 12);
   });
 
@@ -233,20 +248,32 @@ describe("angle and solid angle", () => {
 describe("temperature scales and affine safety", () => {
   it("Rankine: 0 °R = 0 K,  Rankine intervals equal kelvin intervals × 9/5", () => {
     expect(Quantity.of(0, "°R", reg).to("K", reg).value).toBe(0);
-    expect(Quantity.of(491.67, "°R", reg).to("°F", reg).value).toBeCloseTo(32, 9);
+    expect(Quantity.of(491.67, "°R", reg).to("°F", reg).value).toBeCloseTo(
+      32,
+      9,
+    );
     expect(Quantity.of(9, "°R", reg).to("K", reg).value).toBeCloseTo(5, 12);
   });
 
   it("absolute vs difference: Δ1 °C = Δ1 K but 1 °C ≠ 1 K", () => {
-    expect(Quantity.of(1, "°C", reg).to("K", reg).value).toBeCloseTo(274.15, 12);
-    const delta = Quantity.of(20, "°C", reg).subtract(Quantity.of(19, "°C", reg));
+    expect(Quantity.of(1, "°C", reg).to("K", reg).value).toBeCloseTo(
+      274.15,
+      12,
+    );
+    const delta = Quantity.of(20, "°C", reg).subtract(
+      Quantity.of(19, "°C", reg),
+    );
     expect(delta.value).toBeCloseTo(1, 12);
     expect(delta.kind).toBe("temperature-difference");
   });
 
   it("affine regression: absolute + absolute throws; absolute ± delta works", () => {
-    expect(() => Quantity.of(10, "°C", reg).add(Quantity.of(5, "°C", reg))).toThrow();
-    expect(Quantity.of(10, "°C", reg).add(Quantity.of(5, "K", reg)).value).toBeCloseTo(15, 12);
+    expect(() =>
+      Quantity.of(10, "°C", reg).add(Quantity.of(5, "°C", reg)),
+    ).toThrow();
+    expect(
+      Quantity.of(10, "°C", reg).add(Quantity.of(5, "K", reg)).value,
+    ).toBeCloseTo(15, 12);
   });
 });
 
@@ -269,9 +296,15 @@ describe("frequency", () => {
 
 describe("electrical units", () => {
   it("V = W/A, Ω = V/A, C = A·s dimensionally", () => {
-    expect(dimensionsEqual(q(1, "V").dimension, q(1, "W/A").dimension)).toBe(true);
-    expect(dimensionsEqual(q(1, "Ω").dimension, q(1, "V/A").dimension)).toBe(true);
-    expect(dimensionsEqual(q(1, "C").dimension, q(1, "A·s").dimension)).toBe(true);
+    expect(dimensionsEqual(q(1, "V").dimension, q(1, "W/A").dimension)).toBe(
+      true,
+    );
+    expect(dimensionsEqual(q(1, "Ω").dimension, q(1, "V/A").dimension)).toBe(
+      true,
+    );
+    expect(dimensionsEqual(q(1, "C").dimension, q(1, "A·s").dimension)).toBe(
+      true,
+    );
     // Prompt-18 note: ≤1 ulp composition dust → tolerance, not exact equality.
     expect(q(12, "V").to("mV", reg).value).toBeCloseTo(12000, 6);
   });
@@ -339,9 +372,15 @@ describe("logarithmic units (deferred, never faked)", () => {
     expect(Quantity.of(10, dB).to(dB).value).toBe(10);
     // Anything else fails explicitly — never silent NaN.
     expect(() => convert(10, dB, dBv)).toThrow(UnsupportedTransformationError);
-    expect(() => Quantity.of(10, dB).to(dBv)).toThrow(UnsupportedTransformationError);
-    expect(() => Quantity.of(10, "m", reg).multiply(Quantity.of(3, dB))).toThrow();
-    expect(() => Quantity.of(10, "m", reg).divide(Quantity.of(3, dB))).toThrow();
+    expect(() => Quantity.of(10, dB).to(dBv)).toThrow(
+      UnsupportedTransformationError,
+    );
+    expect(() =>
+      Quantity.of(10, "m", reg).multiply(Quantity.of(3, dB)),
+    ).toThrow();
+    expect(() =>
+      Quantity.of(10, "m", reg).divide(Quantity.of(3, dB)),
+    ).toThrow();
   });
 
   it("custom conversions are declarative but not executable", () => {
@@ -351,7 +390,9 @@ describe("logarithmic units (deferred, never faked)", () => {
       conversion: { kind: "custom", id: "host:length-calibration" },
       label: "custom",
     });
-    expect(() => Quantity.of(1, custom).to("m", reg)).toThrow(UnsupportedTransformationError);
+    expect(() => Quantity.of(1, custom).to("m", reg)).toThrow(
+      UnsupportedTransformationError,
+    );
   });
 });
 
@@ -375,7 +416,9 @@ describe("chemical quantities via algebra", () => {
 
 describe("material and fluid quantities via algebra", () => {
   it("stress/modulus share pressure dimension; strain is dimensionless", () => {
-    expect(dimensionsEqual(q(1, "Pa").dimension, q(1, "N/m²").dimension)).toBe(true);
+    expect(dimensionsEqual(q(1, "Pa").dimension, q(1, "N/m²").dimension)).toBe(
+      true,
+    );
     expect(q(1, "mm/mm").dimension).toEqual({});
   });
 

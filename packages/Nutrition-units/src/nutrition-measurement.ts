@@ -13,7 +13,11 @@ import {
   serializeMeasurement,
   deserializeMeasurement,
 } from "@vetwo/units";
-import { defaultBasisRegistry, type BasisRegistry, type BasisDefinition } from "./basis.js";
+import {
+  defaultBasisRegistry,
+  type BasisRegistry,
+  type BasisDefinition,
+} from "./basis.js";
 import {
   defaultNutrientKindRegistry,
   type NutrientKind,
@@ -32,7 +36,10 @@ import {
   type NutritionContext,
 } from "./nutrition-context.js";
 import { assertFamilyCompatible } from "./unit-family.js";
-import { checkNutrientCompatibility, type SemanticMode } from "./semantic-compatibility.js";
+import {
+  checkNutrientCompatibility,
+  type SemanticMode,
+} from "./semantic-compatibility.js";
 import type { NutritionMetadata } from "./nutrition-metadata.js";
 import { createNutritionMetadata } from "./nutrition-metadata.js";
 
@@ -97,8 +104,12 @@ export class NutritionMeasurement {
     }
     // Validate basis vs unit tag (allow bare)
     validateBasisMatchesUnit(basis, measurement.value.unit);
-    const meta = opts.metadata ? createNutritionMetadata(opts.metadata as never) : undefined;
-    const ctx = opts.context ? createNutritionContext(opts.context as never) : undefined;
+    const meta = opts.metadata
+      ? createNutritionMetadata(opts.metadata as never)
+      : undefined;
+    const ctx = opts.context
+      ? createNutritionContext(opts.context as never)
+      : undefined;
     return new NutritionMeasurement(measurement, nutrient, basis, ctx, meta);
   }
 
@@ -112,7 +123,9 @@ export class NutritionMeasurement {
   ): NutritionMeasurement {
     const q = Quantity.of(value, unit);
     const meas =
-      uncertainty === undefined ? Measurement.exact(q) : Measurement.of(q, uncertainty as never);
+      uncertainty === undefined
+        ? Measurement.exact(q)
+        : Measurement.of(q, uncertainty as never);
     return NutritionMeasurement.of(meas, nutrientId, basisId, opts);
   }
 
@@ -145,7 +158,9 @@ export class NutritionMeasurement {
 
   convertBasis(
     targetBasisId: string,
-    context?: NutritionContext | { dryMatterFraction?: number; moistureFraction?: number },
+    context?:
+      | NutritionContext
+      | { dryMatterFraction?: number; moistureFraction?: number },
     opts: NutritionMeasurementOptions = {},
   ): NutritionMeasurement {
     const basisRegistry = opts.basisRegistry ?? defaultBasisRegistry;
@@ -162,9 +177,13 @@ export class NutritionMeasurement {
     const to = targetBasis.id;
     const isDryLike = (id: string) => id === "drymatter";
     const isAsFedLike = (id: string) =>
-      id === "asfed" || id === "freshmatter" || id === "wet" || id === "normalized";
-    const dmMeas = (ctx as unknown as { resolvedDryMatterMeasurement?: Measurement })
-      .resolvedDryMatterMeasurement;
+      id === "asfed" ||
+      id === "freshmatter" ||
+      id === "wet" ||
+      id === "normalized";
+    const dmMeas = (
+      ctx as unknown as { resolvedDryMatterMeasurement?: Measurement }
+    ).resolvedDryMatterMeasurement;
     let dmFractionForTrace: number;
     if (dmMeas) {
       dmFractionForTrace = dmMeas.value.unit.symbol.includes("%")
@@ -173,11 +192,18 @@ export class NutritionMeasurement {
       if (isDryLike(from) && isAsFedLike(to)) {
         newMeas = this.measurement.multiply(dmMeas);
         try {
-          const targetSymbol = stripBasisTag(this.measurement.value.unit.symbol, this.basis);
+          const targetSymbol = stripBasisTag(
+            this.measurement.value.unit.symbol,
+            this.basis,
+          );
           if (targetSymbol !== this.measurement.value.unit.symbol)
             newMeas = newMeas.to(targetSymbol);
         } catch {
-          throw new UnsupportedBasisConversionError(from, to, "target unit not parseable");
+          throw new UnsupportedBasisConversionError(
+            from,
+            to,
+            "target unit not parseable",
+          );
         }
       } else if (isAsFedLike(from) && isDryLike(to)) {
         newMeas = this.measurement.divide(dmMeas);
@@ -186,12 +212,19 @@ export class NutritionMeasurement {
         try {
           newMeas = newMeas.to(targetSymbol);
         } catch {
-          throw new UnsupportedBasisConversionError(from, to, "target unit not parseable");
+          throw new UnsupportedBasisConversionError(
+            from,
+            to,
+            "target unit not parseable",
+          );
         }
       } else if (isAsFedLike(from) && isAsFedLike(to)) {
         newMeas = this.measurement;
       } else {
-        throw new InvalidNutritionBasisError(`${from}->${to}`, "unsupported basis conversion");
+        throw new InvalidNutritionBasisError(
+          `${from}->${to}`,
+          "unsupported basis conversion",
+        );
       }
     } else {
       const dmFraction = resolveDryMatterFraction(ctx as NutritionContext);
@@ -199,11 +232,18 @@ export class NutritionMeasurement {
       if (isDryLike(from) && isAsFedLike(to)) {
         newMeas = this.measurement.scale(dmFraction);
         try {
-          const targetSymbol = stripBasisTag(this.measurement.value.unit.symbol, this.basis);
+          const targetSymbol = stripBasisTag(
+            this.measurement.value.unit.symbol,
+            this.basis,
+          );
           if (targetSymbol !== this.measurement.value.unit.symbol)
             newMeas = newMeas.to(targetSymbol);
         } catch {
-          throw new UnsupportedBasisConversionError(from, to, "target unit not parseable");
+          throw new UnsupportedBasisConversionError(
+            from,
+            to,
+            "target unit not parseable",
+          );
         }
       } else if (isAsFedLike(from) && isDryLike(to)) {
         newMeas = this.measurement.scale(1 / dmFraction);
@@ -212,12 +252,19 @@ export class NutritionMeasurement {
         try {
           newMeas = newMeas.to(targetSymbol);
         } catch {
-          throw new UnsupportedBasisConversionError(from, to, "target unit not parseable");
+          throw new UnsupportedBasisConversionError(
+            from,
+            to,
+            "target unit not parseable",
+          );
         }
       } else if (isAsFedLike(from) && isAsFedLike(to)) {
         newMeas = this.measurement;
       } else {
-        throw new InvalidNutritionBasisError(`${from}->${to}`, "unsupported basis conversion");
+        throw new InvalidNutritionBasisError(
+          `${from}->${to}`,
+          "unsupported basis conversion",
+        );
       }
     }
     const traceMeta = {
@@ -229,7 +276,13 @@ export class NutritionMeasurement {
         conversionType: "basis-conversion",
       },
     };
-    return new NutritionMeasurement(newMeas, this.nutrient, targetBasis, ctx, traceMeta as never);
+    return new NutritionMeasurement(
+      newMeas,
+      this.nutrient,
+      targetBasis,
+      ctx,
+      traceMeta as never,
+    );
   }
 
   convert(
@@ -263,19 +316,34 @@ export class NutritionMeasurement {
     return this.measurement.exactEquals(other.measurement);
   }
 
-  isCompatibleWith(other: NutritionMeasurement, opts: { mode?: SemanticMode } = {}): boolean {
+  isCompatibleWith(
+    other: NutritionMeasurement,
+    opts: { mode?: SemanticMode } = {},
+  ): boolean {
     return (
-      checkNutrientCompatibility(this.nutrient.id, other.nutrient.id, opts).isCompatible &&
-      this.basis.id === other.basis.id
+      checkNutrientCompatibility(this.nutrient.id, other.nutrient.id, opts)
+        .isCompatible && this.basis.id === other.basis.id
     );
   }
 
-  compare(other: NutritionMeasurement, opts: { mode?: SemanticMode } = {}): number {
-    const compat = checkNutrientCompatibility(this.nutrient.id, other.nutrient.id, opts);
+  compare(
+    other: NutritionMeasurement,
+    opts: { mode?: SemanticMode } = {},
+  ): number {
+    const compat = checkNutrientCompatibility(
+      this.nutrient.id,
+      other.nutrient.id,
+      opts,
+    );
     if (!compat.isCompatible)
-      throw new InvalidNutritionQuantityError(`compare requires same nutrient: ${compat.reason}`);
+      throw new InvalidNutritionQuantityError(
+        `compare requires same nutrient: ${compat.reason}`,
+      );
     if (this.basis.id !== other.basis.id)
-      throw new InvalidNutritionBasisError(other.basis.id, `compare requires same basis`);
+      throw new InvalidNutritionBasisError(
+        other.basis.id,
+        `compare requires same basis`,
+      );
     const a = this.measurement.value.toBase().value;
     const b = other.measurement.value.toBase().value;
     if (a < b) return -1;
@@ -291,7 +359,10 @@ export class NutritionMeasurement {
     return serializeNutritionMeasurement(this);
   }
 
-  static fromJSON(data: unknown, opts: NutritionMeasurementOptions = {}): NutritionMeasurement {
+  static fromJSON(
+    data: unknown,
+    opts: NutritionMeasurementOptions = {},
+  ): NutritionMeasurement {
     return deserializeNutritionMeasurement(data, opts);
   }
 
@@ -307,7 +378,9 @@ export class NutritionMeasurement {
 export interface SerializedNutritionMeasurement {
   readonly version: 1;
   readonly type: "nutrition-measurement";
-  readonly measurement: ReturnType<typeof import("@vetwo/units").serializeMeasurement>;
+  readonly measurement: ReturnType<
+    typeof import("@vetwo/units").serializeMeasurement
+  >;
   readonly nutrient: string;
   readonly basis: string;
   readonly context?: NutritionContext;
@@ -349,14 +422,22 @@ export function deserializeNutritionMeasurement(
     throw new InvalidNutritionQuantityError("forbidden keys");
   }
   if (r.version !== 1)
-    throw new InvalidNutritionQuantityError(`unsupported version ${String(r.version)}`);
+    throw new InvalidNutritionQuantityError(
+      `unsupported version ${String(r.version)}`,
+    );
   if (r.type !== "nutrition-measurement")
     throw new InvalidNutritionQuantityError(`invalid type ${String(r.type)}`);
   if (typeof r.nutrient !== "string" || typeof r.basis !== "string")
-    throw new InvalidNutritionQuantityError("nutrient and basis must be strings");
+    throw new InvalidNutritionQuantityError(
+      "nutrient and basis must be strings",
+    );
   const meas = deserializeMeasurement(r.measurement as never);
-  const ctx = r.context ? createNutritionContext(r.context as never) : undefined;
-  const meta = r.metadata ? createNutritionMetadata(r.metadata as never) : undefined;
+  const ctx = r.context
+    ? createNutritionContext(r.context as never)
+    : undefined;
+  const meta = r.metadata
+    ? createNutritionMetadata(r.metadata as never)
+    : undefined;
   return NutritionMeasurement.of(meas, r.nutrient, r.basis, {
     ...opts,
     context: ctx,
@@ -371,8 +452,15 @@ function validateBasisMatchesUnit(
 ): void {
   const expectedTag = basis.unitBasis;
   const actualTag = unit.basis;
-  if (actualTag !== undefined && expectedTag !== undefined && actualTag !== expectedTag) {
-    throw new InvalidNutritionBasisError(basis.id, `unit basis "${actualTag}" vs "${basis.id}"`);
+  if (
+    actualTag !== undefined &&
+    expectedTag !== undefined &&
+    actualTag !== expectedTag
+  ) {
+    throw new InvalidNutritionBasisError(
+      basis.id,
+      `unit basis "${actualTag}" vs "${basis.id}"`,
+    );
   }
   if (actualTag !== undefined && expectedTag === undefined) {
     throw new InvalidNutritionBasisError(
@@ -382,7 +470,10 @@ function validateBasisMatchesUnit(
   }
 }
 
-function stripBasisTag(symbol: string, basis: import("./basis.js").BasisDefinition): string {
+function stripBasisTag(
+  symbol: string,
+  basis: import("./basis.js").BasisDefinition,
+): string {
   if (!basis.unitBasis) return symbol;
   const suffix = ` ${basis.unitBasis}`;
   if (symbol.endsWith(suffix)) return symbol.slice(0, -suffix.length);

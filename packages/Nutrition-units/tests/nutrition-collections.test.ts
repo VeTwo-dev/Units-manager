@@ -26,16 +26,24 @@ function meas(
 
 describe("NutritionSample", () => {
   it("construction with identity and metadata", () => {
-    const s = new NutritionSample({ id: "S-001", measurements: [meas(10, "g/kg", "cp")] });
+    const s = new NutritionSample({
+      id: "S-001",
+      measurements: [meas(10, "g/kg", "cp")],
+    });
     expect(s.id).toBe("S-001");
     expect(s.measurements.length).toBe(1);
     expect(Object.isFrozen(s)).toBe(true);
   });
 
   it("immutability — cannot mutate measurements array", () => {
-    const s = new NutritionSample({ id: "S-002", measurements: [meas(10, "g/kg")] });
+    const s = new NutritionSample({
+      id: "S-002",
+      measurements: [meas(10, "g/kg")],
+    });
     expect(() =>
-      (s.measurements as unknown as NutritionMeasurement[]).push(meas(20, "g/kg")),
+      (s.measurements as unknown as NutritionMeasurement[]).push(
+        meas(20, "g/kg"),
+      ),
     ).toThrow();
   });
 
@@ -66,7 +74,10 @@ describe("NutritionSample", () => {
 
 describe("NutritionMeasurementSet", () => {
   it("creation, iteration, lookup", () => {
-    const set = new NutritionMeasurementSet([meas(10, "g/kg", "cp"), meas(20, "g/kg", "ca")]);
+    const set = new NutritionMeasurementSet([
+      meas(10, "g/kg", "cp"),
+      meas(20, "g/kg", "ca"),
+    ]);
     expect(set.size).toBe(2);
     const arr = [...set];
     expect(arr.length).toBe(2);
@@ -127,7 +138,10 @@ describe("NutritionMeasurementSet", () => {
   });
 
   it("serialization deterministic", () => {
-    const set = new NutritionMeasurementSet([meas(10, "g/kg", "cp"), meas(20, "g/kg", "ca")]);
+    const set = new NutritionMeasurementSet([
+      meas(10, "g/kg", "cp"),
+      meas(20, "g/kg", "ca"),
+    ]);
     const json = JSON.stringify(set.toJSON());
     const back = NutritionMeasurementSet.fromJSON(JSON.parse(json));
     expect(back.size).toBe(2);
@@ -160,7 +174,10 @@ describe("NutritionMeasurementSeries", () => {
   it("rejects invalid ordering and timestamps", () => {
     const m = meas(10, "g/kg");
     expect(
-      () => new NutritionMeasurementSeries([{ timestamp: "invalid-date", measurement: m }]),
+      () =>
+        new NutritionMeasurementSeries([
+          { timestamp: "invalid-date", measurement: m },
+        ]),
     ).toThrow();
     expect(
       () =>
@@ -173,9 +190,18 @@ describe("NutritionMeasurementSeries", () => {
 
   it("replicates preserved", () => {
     const series = new NutritionMeasurementSeries([
-      { timestamp: "2026-01-01T00:00:00.000Z", measurement: meas(10, "g/kg", "ca") },
-      { timestamp: "2026-01-01T00:01:00.000Z", measurement: meas(11, "g/kg", "ca") },
-      { timestamp: "2026-01-01T00:02:00.000Z", measurement: meas(9, "g/kg", "ca") },
+      {
+        timestamp: "2026-01-01T00:00:00.000Z",
+        measurement: meas(10, "g/kg", "ca"),
+      },
+      {
+        timestamp: "2026-01-01T00:01:00.000Z",
+        measurement: meas(11, "g/kg", "ca"),
+      },
+      {
+        timestamp: "2026-01-01T00:02:00.000Z",
+        measurement: meas(9, "g/kg", "ca"),
+      },
     ]);
     expect(series.size).toBe(3);
     const added = series.add({
@@ -208,7 +234,10 @@ describe("NutritionMeasurementSeries", () => {
 
 describe("collections — semantic safety", () => {
   it("preserves distinct nutrients", () => {
-    const set = new NutritionMeasurementSet([meas(10, "g/kg", "ca"), meas(10, "g/kg", "cp")]);
+    const set = new NutritionMeasurementSet([
+      meas(10, "g/kg", "ca"),
+      meas(10, "g/kg", "cp"),
+    ]);
     expect(set.getAll("ca").length).toBe(1);
     expect(set.getAll("cp").length).toBe(1);
     expect(set.get("ca")?.nutrient.id).toBe("ca");
@@ -216,7 +245,10 @@ describe("collections — semantic safety", () => {
   });
 
   it("collection conversion respects semantic compatibility", () => {
-    const set = new NutritionMeasurementSet([meas(10, "g/kg", "ca"), meas(20, "g/kg", "ca")]);
+    const set = new NutritionMeasurementSet([
+      meas(10, "g/kg", "ca"),
+      meas(20, "g/kg", "ca"),
+    ]);
     const converted = set.convertUnits("mg/kg");
     for (const m of converted) {
       expect(m.nutrient.id).toBe("ca");

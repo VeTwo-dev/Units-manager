@@ -41,7 +41,11 @@ import {
 } from "./dimension.js";
 import { parseUnit } from "./unit-parser.js";
 import { formatQuantity, type FormatOptions } from "./formatter.js";
-import { evaluateFormula, type Formula, type FormulaBindings } from "./formula.js";
+import {
+  evaluateFormula,
+  type Formula,
+  type FormulaBindings,
+} from "./formula.js";
 import type { SemanticPolicy } from "./quantity-kind.js";
 import {
   InvalidMeasurementError,
@@ -84,14 +88,19 @@ function resolveLimits(limits?: ProfileLimits): {
 } {
   const r = {
     maxProfiles: limits?.maxProfiles ?? DEFAULT_LIMITS.maxProfiles,
-    maxUnitsPerProfile: limits?.maxUnitsPerProfile ?? DEFAULT_LIMITS.maxUnitsPerProfile,
+    maxUnitsPerProfile:
+      limits?.maxUnitsPerProfile ?? DEFAULT_LIMITS.maxUnitsPerProfile,
     maxMappings: limits?.maxMappings ?? DEFAULT_LIMITS.maxMappings,
-    maxInheritanceDepth: limits?.maxInheritanceDepth ?? DEFAULT_LIMITS.maxInheritanceDepth,
-    maxSerializedChars: limits?.maxSerializedChars ?? DEFAULT_LIMITS.maxSerializedChars,
+    maxInheritanceDepth:
+      limits?.maxInheritanceDepth ?? DEFAULT_LIMITS.maxInheritanceDepth,
+    maxSerializedChars:
+      limits?.maxSerializedChars ?? DEFAULT_LIMITS.maxSerializedChars,
   };
   for (const [k, v] of Object.entries(r)) {
     if (!Number.isInteger(v) || v < 1) {
-      throw new UnitEngineError(`Profile limit ${k} must be a positive integer.`);
+      throw new UnitEngineError(
+        `Profile limit ${k} must be a positive integer.`,
+      );
     }
   }
   return r;
@@ -105,7 +114,10 @@ function hasPollutionKeys(obj: Record<string, unknown>): boolean {
   );
 }
 
-function assertPlainRecord(value: unknown, what: string): asserts value is Record<string, unknown> {
+function assertPlainRecord(
+  value: unknown,
+  what: string,
+): asserts value is Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new UnitSystemError(`${what} must be a plain object`);
   }
@@ -126,7 +138,12 @@ function assertProfileId(id: string, what = "StandardsProfile id"): void {
 // 28.4 StandardsProfile
 // ---------------------------------------------------------------------------
 
-export type UnitStatus = "preferred" | "accepted" | "deprecated" | "forbidden" | "unknown";
+export type UnitStatus =
+  | "preferred"
+  | "accepted"
+  | "deprecated"
+  | "forbidden"
+  | "unknown";
 
 export interface SymbolConventions {
   /** Multiplication glyph for display (default "·"). */
@@ -211,23 +228,39 @@ export class ProfileRegistry {
   register(profile: StandardsProfile): StandardsProfile {
     const limits = resolveLimits(this.limits);
     if (this.profiles.size >= limits.maxProfiles) {
-      throw new UnitSystemError(`ProfileRegistry exceeds maxProfiles ${limits.maxProfiles}`);
+      throw new UnitSystemError(
+        `ProfileRegistry exceeds maxProfiles ${limits.maxProfiles}`,
+      );
     }
     assertPlainRecord(profile, "StandardsProfile");
     assertProfileId(profile.id);
-    if (typeof profile.version !== "string" || profile.version.trim().length === 0) {
-      throw new UnitSystemError(`StandardsProfile "${profile.id}" needs a non-empty version`);
+    if (
+      typeof profile.version !== "string" ||
+      profile.version.trim().length === 0
+    ) {
+      throw new UnitSystemError(
+        `StandardsProfile "${profile.id}" needs a non-empty version`,
+      );
     }
     if (this.profiles.has(profile.id)) {
-      throw new UnitSystemError(`StandardsProfile "${profile.id}" is already registered`);
+      throw new UnitSystemError(
+        `StandardsProfile "${profile.id}" is already registered`,
+      );
     }
-    if (typeof profile.unitSystem !== "string" || profile.unitSystem.length === 0) {
-      throw new UnitSystemError(`StandardsProfile "${profile.id}" needs a unitSystem name`);
+    if (
+      typeof profile.unitSystem !== "string" ||
+      profile.unitSystem.length === 0
+    ) {
+      throw new UnitSystemError(
+        `StandardsProfile "${profile.id}" needs a unitSystem name`,
+      );
     }
     let base: StandardsProfile | undefined;
     if (profile.extends !== undefined) {
       if (profile.extends === profile.id) {
-        throw new UnitSystemError(`StandardsProfile "${profile.id}" cannot extend itself`);
+        throw new UnitSystemError(
+          `StandardsProfile "${profile.id}" cannot extend itself`,
+        );
       }
       base = this.profiles.get(profile.extends);
       if (!base) {
@@ -286,7 +319,10 @@ export class ProfileRegistry {
     });
   }
 
-  static deserialize(data: unknown, opts: ProfileRegistryOptions = {}): ProfileRegistry {
+  static deserialize(
+    data: unknown,
+    opts: ProfileRegistryOptions = {},
+  ): ProfileRegistry {
     const limits = resolveLimits(opts.limits);
     if (typeof data === "string") {
       if (data.length > limits.maxSerializedChars) {
@@ -298,15 +334,21 @@ export class ProfileRegistry {
       try {
         parsed = JSON.parse(data);
       } catch {
-        throw new UnitSystemError("Malformed serialized profile registry: invalid JSON");
+        throw new UnitSystemError(
+          "Malformed serialized profile registry: invalid JSON",
+        );
       }
       return ProfileRegistry.deserialize(parsed, opts);
     }
     assertPlainRecord(data, "Serialized profile registry");
     if (data.version !== 1) {
       if (data.version === undefined)
-        throw new UnitSystemError("Serialized profile registry missing version");
-      throw new UnitSystemError(`Unsupported profile registry version ${String(data.version)}`);
+        throw new UnitSystemError(
+          "Serialized profile registry missing version",
+        );
+      throw new UnitSystemError(
+        `Unsupported profile registry version ${String(data.version)}`,
+      );
     }
     if (data.type !== "profile-registry") {
       throw new UnitSystemError(
@@ -314,7 +356,9 @@ export class ProfileRegistry {
       );
     }
     if (!Array.isArray(data.profiles)) {
-      throw new UnitSystemError("Serialized profile registry needs a profiles array");
+      throw new UnitSystemError(
+        "Serialized profile registry needs a profiles array",
+      );
     }
     if (data.profiles.length > limits.maxProfiles) {
       throw new UnitSystemError(
@@ -359,7 +403,10 @@ function inheritProfile(
   limits: ReturnType<typeof resolveLimits>,
 ): StandardsProfile {
   void limits;
-  const union = (a?: readonly string[], b?: readonly string[]): readonly string[] | undefined => {
+  const union = (
+    a?: readonly string[],
+    b?: readonly string[],
+  ): readonly string[] | undefined => {
     if (a === undefined) return b;
     if (b === undefined) return a;
     return [...new Set([...a, ...b])].sort();
@@ -367,13 +414,28 @@ function inheritProfile(
   return {
     ...base,
     ...child,
-    preferredUnits: { ...(base.preferredUnits ?? {}), ...(child.preferredUnits ?? {}) },
-    deprecatedUnits: { ...(base.deprecatedUnits ?? {}), ...(child.deprecatedUnits ?? {}) },
+    preferredUnits: {
+      ...(base.preferredUnits ?? {}),
+      ...(child.preferredUnits ?? {}),
+    },
+    deprecatedUnits: {
+      ...(base.deprecatedUnits ?? {}),
+      ...(child.deprecatedUnits ?? {}),
+    },
     allowedUnits: union(base.allowedUnits, child.allowedUnits),
-    symbolConventions: { ...(base.symbolConventions ?? {}), ...(child.symbolConventions ?? {}) },
+    symbolConventions: {
+      ...(base.symbolConventions ?? {}),
+      ...(child.symbolConventions ?? {}),
+    },
     formatting: { ...(base.formatting ?? {}), ...(child.formatting ?? {}) },
-    conversionPolicy: { ...(base.conversionPolicy ?? {}), ...(child.conversionPolicy ?? {}) },
-    referenceData: { ...(base.referenceData ?? {}), ...(child.referenceData ?? {}) },
+    conversionPolicy: {
+      ...(base.conversionPolicy ?? {}),
+      ...(child.conversionPolicy ?? {}),
+    },
+    referenceData: {
+      ...(base.referenceData ?? {}),
+      ...(child.referenceData ?? {}),
+    },
     metadata: { ...(base.metadata ?? {}), ...(child.metadata ?? {}) },
   };
 }
@@ -396,7 +458,11 @@ function validateProfileShape(
     );
   }
   for (const [key, symbol] of Object.entries(profile.preferredUnits ?? {})) {
-    if (typeof key !== "string" || typeof symbol !== "string" || symbol.length === 0) {
+    if (
+      typeof key !== "string" ||
+      typeof symbol !== "string" ||
+      symbol.length === 0
+    ) {
       throw new UnitSystemError(
         `StandardsProfile "${profile.id}" has a malformed preferredUnits entry`,
       );
@@ -404,7 +470,9 @@ function validateProfileShape(
   }
   if (profile.allowedUnits !== undefined) {
     if (!Array.isArray(profile.allowedUnits)) {
-      throw new UnitSystemError(`StandardsProfile "${profile.id}" allowedUnits must be an array`);
+      throw new UnitSystemError(
+        `StandardsProfile "${profile.id}" allowedUnits must be an array`,
+      );
     }
     const seen = new Set<string>();
     for (const symbol of profile.allowedUnits) {
@@ -422,7 +490,10 @@ function validateProfileShape(
     }
   }
   if (profile.deprecatedUnits !== undefined) {
-    assertPlainRecord(profile.deprecatedUnits, `StandardsProfile "${profile.id}" deprecatedUnits`);
+    assertPlainRecord(
+      profile.deprecatedUnits,
+      `StandardsProfile "${profile.id}" deprecatedUnits`,
+    );
     for (const [symbol, reason] of Object.entries(profile.deprecatedUnits)) {
       if (typeof reason !== "string" || reason.length === 0) {
         throw new UnitSystemError(
@@ -442,20 +513,28 @@ function validateProfileShape(
   }
   if (
     profile.formatting?.notation !== undefined &&
-    !["standard", "scientific", "engineering"].includes(profile.formatting.notation)
+    !["standard", "scientific", "engineering"].includes(
+      profile.formatting.notation,
+    )
   ) {
-    throw new UnitSystemError(`StandardsProfile "${profile.id}" formatting.notation is unknown`);
+    throw new UnitSystemError(
+      `StandardsProfile "${profile.id}" formatting.notation is unknown`,
+    );
   }
   if (
     profile.formatting?.decimals !== undefined &&
-    (!Number.isInteger(profile.formatting.decimals) || profile.formatting.decimals < 0)
+    (!Number.isInteger(profile.formatting.decimals) ||
+      profile.formatting.decimals < 0)
   ) {
     throw new UnitSystemError(
       `StandardsProfile "${profile.id}" formatting.decimals must be a non-negative integer`,
     );
   }
   if (profile.referenceData !== undefined) {
-    assertPlainRecord(profile.referenceData, `StandardsProfile "${profile.id}" referenceData`);
+    assertPlainRecord(
+      profile.referenceData,
+      `StandardsProfile "${profile.id}" referenceData`,
+    );
     for (const [name, version] of Object.entries(profile.referenceData)) {
       if (typeof version !== "string" || version.length === 0) {
         throw new UnitSystemError(
@@ -465,7 +544,10 @@ function validateProfileShape(
     }
   }
   if (profile.metadata !== undefined) {
-    assertPlainRecord(profile.metadata, `StandardsProfile "${profile.id}" metadata`);
+    assertPlainRecord(
+      profile.metadata,
+      `StandardsProfile "${profile.id}" metadata`,
+    );
   }
 }
 
@@ -475,19 +557,27 @@ function freezeProfile(profile: StandardsProfile): StandardsProfile {
     preferredUnits: profile.preferredUnits
       ? Object.freeze({ ...profile.preferredUnits })
       : undefined,
-    allowedUnits: profile.allowedUnits ? Object.freeze([...profile.allowedUnits]) : undefined,
+    allowedUnits: profile.allowedUnits
+      ? Object.freeze([...profile.allowedUnits])
+      : undefined,
     deprecatedUnits: profile.deprecatedUnits
       ? Object.freeze({ ...profile.deprecatedUnits })
       : undefined,
     symbolConventions: profile.symbolConventions
       ? Object.freeze({ ...profile.symbolConventions })
       : undefined,
-    formatting: profile.formatting ? Object.freeze({ ...profile.formatting }) : undefined,
+    formatting: profile.formatting
+      ? Object.freeze({ ...profile.formatting })
+      : undefined,
     conversionPolicy: profile.conversionPolicy
       ? Object.freeze({ ...profile.conversionPolicy })
       : undefined,
-    referenceData: profile.referenceData ? Object.freeze({ ...profile.referenceData }) : undefined,
-    metadata: profile.metadata ? Object.freeze({ ...profile.metadata }) : undefined,
+    referenceData: profile.referenceData
+      ? Object.freeze({ ...profile.referenceData })
+      : undefined,
+    metadata: profile.metadata
+      ? Object.freeze({ ...profile.metadata })
+      : undefined,
   });
 }
 
@@ -520,44 +610,68 @@ export interface SerializedProfileRegistry {
   readonly profiles: readonly SerializedStandardsProfile[];
 }
 
-export function serializeProfile(profile: StandardsProfile): SerializedStandardsProfile {
+export function serializeProfile(
+  profile: StandardsProfile,
+): SerializedStandardsProfile {
   return Object.freeze({
     version: 1 as const,
     type: "standards-profile" as const,
     id: profile.id,
     profileVersion: profile.version,
-    ...(profile.displayName !== undefined ? { displayName: profile.displayName } : {}),
-    ...(profile.description !== undefined ? { description: profile.description } : {}),
+    ...(profile.displayName !== undefined
+      ? { displayName: profile.displayName }
+      : {}),
+    ...(profile.description !== undefined
+      ? { description: profile.description }
+      : {}),
     unitSystem: profile.unitSystem,
-    ...(profile.preferredUnits !== undefined ? { preferredUnits: profile.preferredUnits } : {}),
-    ...(profile.allowedUnits !== undefined ? { allowedUnits: profile.allowedUnits } : {}),
-    ...(profile.deprecatedUnits !== undefined ? { deprecatedUnits: profile.deprecatedUnits } : {}),
+    ...(profile.preferredUnits !== undefined
+      ? { preferredUnits: profile.preferredUnits }
+      : {}),
+    ...(profile.allowedUnits !== undefined
+      ? { allowedUnits: profile.allowedUnits }
+      : {}),
+    ...(profile.deprecatedUnits !== undefined
+      ? { deprecatedUnits: profile.deprecatedUnits }
+      : {}),
     ...(profile.symbolConventions !== undefined
       ? { symbolConventions: profile.symbolConventions }
       : {}),
-    ...(profile.formatting !== undefined ? { formatting: profile.formatting } : {}),
+    ...(profile.formatting !== undefined
+      ? { formatting: profile.formatting }
+      : {}),
     ...(profile.conversionPolicy !== undefined
       ? { conversionPolicy: profile.conversionPolicy }
       : {}),
-    ...(profile.referenceData !== undefined ? { referenceData: profile.referenceData } : {}),
+    ...(profile.referenceData !== undefined
+      ? { referenceData: profile.referenceData }
+      : {}),
     ...(profile.extends !== undefined ? { extends: profile.extends } : {}),
     ...(profile.metadata !== undefined ? { metadata: profile.metadata } : {}),
   });
 }
 
-export function deserializeProfile(data: unknown, limits?: ProfileLimits): StandardsProfile {
+export function deserializeProfile(
+  data: unknown,
+  limits?: ProfileLimits,
+): StandardsProfile {
   const resolved = resolveLimits(limits);
   void resolved;
   assertPlainRecord(data, "Serialized standards profile");
   if (data.version !== 1) {
     if (data.version === undefined)
       throw new UnitSystemError("Serialized standards profile missing version");
-    throw new UnitSystemError(`Unsupported standards profile version ${String(data.version)}`);
+    throw new UnitSystemError(
+      `Unsupported standards profile version ${String(data.version)}`,
+    );
   }
   if (data.type !== "standards-profile") {
-    throw new UnitSystemError(`Serialized profile has wrong type "${String(data.type)}"`);
+    throw new UnitSystemError(
+      `Serialized profile has wrong type "${String(data.type)}"`,
+    );
   }
-  if (typeof data.id !== "string") throw new UnitSystemError("Serialized profile missing id");
+  if (typeof data.id !== "string")
+    throw new UnitSystemError("Serialized profile missing id");
   if (typeof data.profileVersion !== "string")
     throw new UnitSystemError("Serialized profile missing profileVersion");
   if (typeof data.unitSystem !== "string")
@@ -565,24 +679,38 @@ export function deserializeProfile(data: unknown, limits?: ProfileLimits): Stand
   const profile: StandardsProfile = {
     id: data.id,
     version: data.profileVersion,
-    ...(typeof data.displayName === "string" ? { displayName: data.displayName } : {}),
-    ...(typeof data.description === "string" ? { description: data.description } : {}),
+    ...(typeof data.displayName === "string"
+      ? { displayName: data.displayName }
+      : {}),
+    ...(typeof data.description === "string"
+      ? { description: data.description }
+      : {}),
     unitSystem: data.unitSystem,
-    ...(isStringRecord(data.preferredUnits) ? { preferredUnits: data.preferredUnits } : {}),
+    ...(isStringRecord(data.preferredUnits)
+      ? { preferredUnits: data.preferredUnits }
+      : {}),
     ...(Array.isArray(data.allowedUnits)
       ? { allowedUnits: [...(data.allowedUnits as string[])] }
       : {}),
-    ...(isStringRecord(data.deprecatedUnits) ? { deprecatedUnits: data.deprecatedUnits } : {}),
+    ...(isStringRecord(data.deprecatedUnits)
+      ? { deprecatedUnits: data.deprecatedUnits }
+      : {}),
     ...(isRecord(data.symbolConventions)
       ? { symbolConventions: data.symbolConventions as SymbolConventions }
       : {}),
-    ...(isRecord(data.formatting) ? { formatting: data.formatting as ProfileFormatting } : {}),
+    ...(isRecord(data.formatting)
+      ? { formatting: data.formatting as ProfileFormatting }
+      : {}),
     ...(isRecord(data.conversionPolicy)
       ? { conversionPolicy: data.conversionPolicy as ConversionPolicy }
       : {}),
-    ...(isStringRecord(data.referenceData) ? { referenceData: data.referenceData } : {}),
+    ...(isStringRecord(data.referenceData)
+      ? { referenceData: data.referenceData }
+      : {}),
     ...(typeof data.extends === "string" ? { extends: data.extends } : {}),
-    ...(isRecord(data.metadata) ? { metadata: data.metadata as Record<string, unknown> } : {}),
+    ...(isRecord(data.metadata)
+      ? { metadata: data.metadata as Record<string, unknown> }
+      : {}),
   };
   // Shape validation happens at registration; validate eagerly here too so
   // malformed payloads fail even without a registry round-trip.
@@ -596,7 +724,9 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function isStringRecord(v: unknown): v is Record<string, string> {
   return (
-    isRecord(v) && !hasPollutionKeys(v) && Object.values(v).every((x) => typeof x === "string")
+    isRecord(v) &&
+    !hasPollutionKeys(v) &&
+    Object.values(v).every((x) => typeof x === "string")
   );
 }
 
@@ -605,18 +735,19 @@ function isStringRecord(v: unknown): v is Record<string, string> {
 // ---------------------------------------------------------------------------
 
 /** Dimension key → UnitSystem preferredUnits category for single-base dimensions. */
-const BASE_DIMENSION_CATEGORIES: Readonly<Record<string, string>> = Object.freeze({
-  "M^1": "mass",
-  "L^1": "length",
-  "T^1": "time",
-  "Temp^1": "temperature",
-  "E^1": "energy",
-  "I^1": "electric current",
-  "Substance^1": "amount of substance",
-  "J^1": "luminous intensity",
-  "N^1": "count",
-  "C^1": "currency",
-});
+const BASE_DIMENSION_CATEGORIES: Readonly<Record<string, string>> =
+  Object.freeze({
+    "M^1": "mass",
+    "L^1": "length",
+    "T^1": "time",
+    "Temp^1": "temperature",
+    "E^1": "energy",
+    "I^1": "electric current",
+    "Substance^1": "amount of substance",
+    "J^1": "luminous intensity",
+    "N^1": "count",
+    "C^1": "currency",
+  });
 
 export interface UnitResolutionOptions {
   readonly systems?: UnitSystemRegistry;
@@ -649,15 +780,24 @@ export function preferredUnitForDimension(
 }
 
 /** Is `unit` usable under the profile? Absent allow-list means unrestricted. */
-export function isAllowed(unitSymbol: string, profile: StandardsProfile): boolean {
+export function isAllowed(
+  unitSymbol: string,
+  profile: StandardsProfile,
+): boolean {
   if (profile.allowedUnits === undefined) return true;
   return profile.allowedUnits.includes(unitSymbol);
 }
 
 /** Policy status of a symbol under a profile (identity never changes). */
-export function unitStatus(unitSymbol: string, profile: StandardsProfile): UnitStatus {
+export function unitStatus(
+  unitSymbol: string,
+  profile: StandardsProfile,
+): UnitStatus {
   if (profile.deprecatedUnits?.[unitSymbol] !== undefined) return "deprecated";
-  if (profile.allowedUnits !== undefined && !profile.allowedUnits.includes(unitSymbol)) {
+  if (
+    profile.allowedUnits !== undefined &&
+    !profile.allowedUnits.includes(unitSymbol)
+  ) {
     return "forbidden";
   }
   return "accepted";
@@ -702,7 +842,8 @@ export function normalizeToSystem(
   // Delta semantics survive normalization: intervals land on kelvin.
   if (q.kind === "temperature-difference") {
     return q.to("K", registry, {
-      semanticPolicy: opts.semanticPolicy ?? policy?.semanticPolicy ?? "dimensional-only",
+      semanticPolicy:
+        opts.semanticPolicy ?? policy?.semanticPolicy ?? "dimensional-only",
     });
   }
   const key = dimensionKey(q.dimension);
@@ -717,7 +858,8 @@ export function normalizeToSystem(
     );
   }
   return q.to(preferred, registry, {
-    semanticPolicy: opts.semanticPolicy ?? policy?.semanticPolicy ?? "dimensional-only",
+    semanticPolicy:
+      opts.semanticPolicy ?? policy?.semanticPolicy ?? "dimensional-only",
   });
 }
 
@@ -732,7 +874,9 @@ export function normalizeMeasurementToSystem(
   opts: NormalizeOptions & { profile?: StandardsProfile } = {},
 ): Measurement {
   if (!(m instanceof Measurement)) {
-    throw new InvalidMeasurementError("normalizeMeasurementToSystem needs a Measurement");
+    throw new InvalidMeasurementError(
+      "normalizeMeasurementToSystem needs a Measurement",
+    );
   }
   const target = normalizeToSystem(m.value, system, opts);
   return m.to(target.unit.symbol, opts.registry ?? defaultUnitRegistry);
@@ -756,7 +900,10 @@ export interface PrefixSelectionOptions {
  * re-parse, e.g. m+"in"→"min") are skipped; if nothing parses, the input
  * is returned unchanged.
  */
-export function selectUnitForMagnitude(q: Quantity, opts: PrefixSelectionOptions = {}): Quantity {
+export function selectUnitForMagnitude(
+  q: Quantity,
+  opts: PrefixSelectionOptions = {},
+): Quantity {
   const registry = opts.registry ?? defaultUnitRegistry;
   const prefixes = opts.prefixes ?? defaultPrefixRegistry;
   const policy = opts.policy ?? "engineering";
@@ -773,14 +920,17 @@ export function selectUnitForMagnitude(q: Quantity, opts: PrefixSelectionOptions
     const targetExp = Math.floor(exp / 3) * 3;
     for (const p of sorted) {
       const pExp = Math.round(Math.log10(p.factor));
-      if (pExp === targetExp) candidates.push({ symbol: p.symbol + base, onTarget: true });
+      if (pExp === targetExp)
+        candidates.push({ symbol: p.symbol + base, onTarget: true });
     }
     // Fall back to plain SI closeness when no engineering prefix matches.
     if (candidates.length === 0) {
-      for (const p of sorted) candidates.push({ symbol: p.symbol + base, onTarget: false });
+      for (const p of sorted)
+        candidates.push({ symbol: p.symbol + base, onTarget: false });
     }
   } else {
-    for (const p of sorted) candidates.push({ symbol: p.symbol + base, onTarget: false });
+    for (const p of sorted)
+      candidates.push({ symbol: p.symbol + base, onTarget: false });
   }
   // Deterministic ranking: (1) keep the input unit when its magnitude
   // already reads well ([1, 1000): 5 m stays m); (2) otherwise the largest
@@ -854,7 +1004,10 @@ export function resolveContext(ctx: ScientificContext = {}): ResolvedContext {
   let system: UnitSystem | undefined;
   if (ctx.unitSystem !== undefined) {
     const found = systems.getSystem(ctx.unitSystem);
-    if (!found) throw new UnitSystemError(`Unknown UnitSystem "${ctx.unitSystem}" in context`);
+    if (!found)
+      throw new UnitSystemError(
+        `Unknown UnitSystem "${ctx.unitSystem}" in context`,
+      );
     system = found;
   }
   let profile: StandardsProfile | undefined;
@@ -878,7 +1031,9 @@ export function resolveContext(ctx: ScientificContext = {}): ResolvedContext {
     // Adopt the system's profile when it is unambiguous (exactly one
     // registered profile claims the system). Ambiguity fails explicitly
     // rather than guessing — pass `profile` to disambiguate.
-    const claimants = ctx.profiles.list().filter((p) => p.unitSystem === system!.name);
+    const claimants = ctx.profiles
+      .list()
+      .filter((p) => p.unitSystem === system!.name);
     if (claimants.length === 1) profile = claimants[0];
   }
   if (ctx.referenceData !== undefined) {
@@ -895,7 +1050,8 @@ export function convertBetweenSystems(
 ): Quantity {
   const systems = opts.systems ?? defaultUnitSystemRegistry;
   const system = systems.getSystem(targetSystem);
-  if (!system) throw new UnitSystemError(`Unknown UnitSystem "${targetSystem}"`);
+  if (!system)
+    throw new UnitSystemError(`Unknown UnitSystem "${targetSystem}"`);
   return normalizeToSystem(q, system, opts);
 }
 
@@ -911,16 +1067,21 @@ export function evaluateInContext(
   opts: NormalizeOptions = {},
 ): { result: Quantity | Measurement; system?: string; unit: string } {
   const resolved = resolveContext(ctx);
-  const raw = evaluateFormula(formula, bindings, { registry: resolved.registry });
+  const raw = evaluateFormula(formula, bindings, {
+    registry: resolved.registry,
+  });
   if (
     raw !== null &&
     typeof raw === "object" &&
     "result" in (raw as unknown as Record<string, unknown>)
   ) {
-    throw new InvalidMeasurementError("evaluateInContext does not support trace mode");
+    throw new InvalidMeasurementError(
+      "evaluateInContext does not support trace mode",
+    );
   }
   const result = raw as Quantity | Measurement;
-  const nominal = result instanceof Measurement ? result.value : (result as Quantity);
+  const nominal =
+    result instanceof Measurement ? result.value : (result as Quantity);
   if (resolved.system === undefined) {
     return { result, system: undefined, unit: nominal.unit.symbol };
   }
@@ -938,7 +1099,9 @@ export function evaluateInContext(
           registry: resolved.registry,
         });
   const unit =
-    converted instanceof Measurement ? converted.value.unit.symbol : converted.unit.symbol;
+    converted instanceof Measurement
+      ? converted.value.unit.symbol
+      : converted.unit.symbol;
   return { result: converted, system: resolved.system.name, unit };
 }
 
@@ -966,16 +1129,22 @@ export function displayMeasurement(
     ...(opts.format ?? {}),
   };
   if (resolved.profile?.symbolConventions?.multiplication !== undefined) {
-    formatting.multiplicationSymbol = resolved.profile.symbolConventions.multiplication;
+    formatting.multiplicationSymbol =
+      resolved.profile.symbolConventions.multiplication;
   }
   if (resolved.profile?.symbolConventions?.power === "caret") {
     formatting.ascii = true;
   }
   const value = formatQuantity(shown.value, formatting);
-  const unc = formatQuantity(shown.uncertainty, { ...formatting, showKind: false });
+  const unc = formatQuantity(shown.uncertainty, {
+    ...formatting,
+    showKind: false,
+  });
   // Strip the unit suffix from the uncertainty rendering ("0.5 kg" → "0.5").
   const unitSuffix = ` ${shown.uncertainty.unit.symbol}`;
-  const uncValue = unc.endsWith(unitSuffix) ? unc.slice(0, -unitSuffix.length) : unc;
+  const uncValue = unc.endsWith(unitSuffix)
+    ? unc.slice(0, -unitSuffix.length)
+    : unc;
   return `${value} ± ${uncValue} ${shown.value.unit.symbol}`;
 }
 
@@ -1000,7 +1169,8 @@ export function formatWithContext(
     ...(opts.format ?? {}),
   };
   if (resolved.profile?.symbolConventions?.multiplication !== undefined) {
-    formatting.multiplicationSymbol = resolved.profile.symbolConventions.multiplication;
+    formatting.multiplicationSymbol =
+      resolved.profile.symbolConventions.multiplication;
   }
   if (resolved.profile?.symbolConventions?.power === "caret") {
     formatting.ascii = true;
@@ -1035,7 +1205,9 @@ export function importUnitName(
   assertPlainRecord(mapping, "import mapping");
   const keys = Object.keys(mapping);
   if (keys.length > limits.maxMappings) {
-    throw new UnitSystemError(`Import mapping has too many entries (max ${limits.maxMappings})`);
+    throw new UnitSystemError(
+      `Import mapping has too many entries (max ${limits.maxMappings})`,
+    );
   }
   if (!Object.prototype.hasOwnProperty.call(mapping, name)) {
     throw new UnitSystemError(`No import mapping for external unit "${name}"`);
@@ -1059,7 +1231,9 @@ export function validateImportMapping(
   assertPlainRecord(mapping, "import mapping");
   const limits = resolveLimits(opts.limits);
   if (Object.keys(mapping).length > limits.maxMappings) {
-    throw new UnitSystemError(`Import mapping has too many entries (max ${limits.maxMappings})`);
+    throw new UnitSystemError(
+      `Import mapping has too many entries (max ${limits.maxMappings})`,
+    );
   }
   const registry = opts.registry ?? defaultUnitRegistry;
   const ok: string[] = [];
@@ -1107,9 +1281,15 @@ function buildProfile(
     preferredUnits: Object.freeze({ ...preferredUnits }),
     allowedUnits: Object.freeze(systemSymbols(system)),
     deprecatedUnits: Object.freeze({}),
-    symbolConventions: Object.freeze({ multiplication: "·", power: "superscript" as const }),
+    symbolConventions: Object.freeze({
+      multiplication: "·",
+      power: "superscript" as const,
+    }),
     formatting: Object.freeze({ notation: "standard" as const, decimals: 2 }),
-    conversionPolicy: Object.freeze({ allowAffine: true, rejectNonlinear: true }),
+    conversionPolicy: Object.freeze({
+      allowAffine: true,
+      rejectNonlinear: true,
+    }),
     referenceData: Object.freeze({}),
     metadata: Object.freeze({ standard: displayName }),
   });

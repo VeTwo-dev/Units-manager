@@ -2,7 +2,11 @@
  * tests/unit-system.test.ts — Phase 12: Unit Standards, Systems & Extensibility
  */
 import { describe, expect, it } from "vitest";
-import { UnitSystemRegistry, defaultUnitSystemRegistry, SI_SYSTEM } from "../src/unit-system.js";
+import {
+  UnitSystemRegistry,
+  defaultUnitSystemRegistry,
+  SI_SYSTEM,
+} from "../src/unit-system.js";
 import { UnitRegistry } from "../src/unit-registry.js";
 import { makeUnit } from "../src/unit.js";
 import { Dim } from "../src/dimension.js";
@@ -21,20 +25,26 @@ describe("UnitSystem registration", () => {
   it("duplicate system throws", () => {
     const reg = new UnitSystemRegistry();
     reg.registerSystem({ name: "test", version: "1.0.0", units: [] });
-    expect(() => reg.registerSystem({ name: "test", version: "1.0.0", units: [] })).toThrow();
+    expect(() =>
+      reg.registerSystem({ name: "test", version: "1.0.0", units: [] }),
+    ).toThrow();
   });
 
   it("invalid name/version throws", () => {
     const reg = new UnitSystemRegistry();
     expect(() =>
-      reg.registerSystem({ name: "", version: "1.0.0", units: [] } as unknown as Parameters<
-        typeof reg.registerSystem
-      >[0]),
+      reg.registerSystem({
+        name: "",
+        version: "1.0.0",
+        units: [],
+      } as unknown as Parameters<typeof reg.registerSystem>[0]),
     ).toThrow();
     expect(() =>
-      reg.registerSystem({ name: "bad name", version: "1.0.0", units: [] } as unknown as Parameters<
-        typeof reg.registerSystem
-      >[0]),
+      reg.registerSystem({
+        name: "bad name",
+        version: "1.0.0",
+        units: [],
+      } as unknown as Parameters<typeof reg.registerSystem>[0]),
     ).toThrow();
   });
 
@@ -70,7 +80,9 @@ describe("UnitPack registration", () => {
   it("duplicate pack throws", () => {
     const reg = new UnitSystemRegistry();
     reg.registerPack({ name: "p", version: "1.0.0", units: [] });
-    expect(() => reg.registerPack({ name: "p", version: "1.0.0", units: [] })).toThrow();
+    expect(() =>
+      reg.registerPack({ name: "p", version: "1.0.0", units: [] }),
+    ).toThrow();
   });
   it("pack immutability", () => {
     const reg = new UnitSystemRegistry();
@@ -82,7 +94,9 @@ describe("UnitPack registration", () => {
     reg.registerPack({
       name: "demo",
       version: "1.0.0",
-      units: [{ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 2, label: "my" }],
+      units: [
+        { symbol: "myU", dimension: Dim.Mass, toBaseFactor: 2, label: "my" },
+      ],
     });
     const ur = new UnitRegistry([]);
     reg.applyPackToRegistry("demo", ur);
@@ -100,10 +114,14 @@ describe("System collisions", () => {
     reg.registerSystem({
       name: "s1",
       version: "1.0.0",
-      units: [{ symbol: "dup", dimension: Dim.Mass, toBaseFactor: 1, label: "a" }],
+      units: [
+        { symbol: "dup", dimension: Dim.Mass, toBaseFactor: 1, label: "a" },
+      ],
     });
     const ur = new UnitRegistry([]);
-    ur.register(makeUnit({ symbol: "dup", dimension: Dim.Length, toBaseFactor: 1 }));
+    ur.register(
+      makeUnit({ symbol: "dup", dimension: Dim.Length, toBaseFactor: 1 }),
+    );
     expect(() => reg.applySystemToRegistry("s1", ur)).toThrow();
   });
   it("same symbol, different meaning via explicit system context", () => {
@@ -116,13 +134,25 @@ describe("System collisions", () => {
     sysReg.registerSystem({
       name: "siTon",
       version: "1.0.0",
-      units: [{ symbol: "ton", dimension: Dim.Mass, toBaseFactor: siTonFactor, label: "SI ton" }],
+      units: [
+        {
+          symbol: "ton",
+          dimension: Dim.Mass,
+          toBaseFactor: siTonFactor,
+          label: "SI ton",
+        },
+      ],
     });
     sysReg.registerSystem({
       name: "impTon",
       version: "1.0.0",
       units: [
-        { symbol: "ton", dimension: Dim.Mass, toBaseFactor: impTonFactor, label: "Imperial ton" },
+        {
+          symbol: "ton",
+          dimension: Dim.Mass,
+          toBaseFactor: impTonFactor,
+          label: "Imperial ton",
+        },
       ],
     });
     const siTon = sysReg.resolveWithSystem("ton", "siTon");
@@ -144,7 +174,9 @@ describe("System context explicit", () => {
     reg.registerSystem({
       name: "custom",
       version: "1.0.0",
-      units: [{ symbol: "foo", dimension: Dim.Length, toBaseFactor: 1, label: "foo" }],
+      units: [
+        { symbol: "foo", dimension: Dim.Length, toBaseFactor: 1, label: "foo" },
+      ],
     });
     const before = new UnitRegistry().has("foo");
     expect(before).toBe(false);
@@ -156,12 +188,16 @@ describe("System context explicit", () => {
     reg.registerSystem({
       name: "a",
       version: "1.0.0",
-      units: [{ symbol: "uA", dimension: Dim.Mass, toBaseFactor: 1, label: "a" }],
+      units: [
+        { symbol: "uA", dimension: Dim.Mass, toBaseFactor: 1, label: "a" },
+      ],
     });
     reg.registerSystem({
       name: "b",
       version: "1.0.0",
-      units: [{ symbol: "uB", dimension: Dim.Mass, toBaseFactor: 2, label: "b" }],
+      units: [
+        { symbol: "uB", dimension: Dim.Mass, toBaseFactor: 2, label: "b" },
+      ],
     });
     const [a, b] = await Promise.all([
       Promise.resolve(reg.resolveWithSystem("uA", "a")),
@@ -190,7 +226,9 @@ describe("Cross-system conversion", () => {
     const siKg = defaultUnitSystemRegistry.resolveWithSystem("kg", "si");
     expect(siKg.dimension).toEqual(Dim.Mass);
     // Even if we had imperial lb in another system, its dimension is still Mass
-    const lb = new UnitRegistry().has("lb") ? new UnitRegistry().resolve("lb") : null;
+    const lb = new UnitRegistry().has("lb")
+      ? new UnitRegistry().resolve("lb")
+      : null;
     if (lb) expect(lb.dimension).toEqual(Dim.Mass);
   });
 });
@@ -219,7 +257,9 @@ describe("System versioning", () => {
     expect(SI_SYSTEM.version).toBe("1.0.0");
   });
   it("unknown system throws", () => {
-    expect(() => defaultUnitSystemRegistry.resolveWithSystem("kg", "unknownSys")).toThrow();
+    expect(() =>
+      defaultUnitSystemRegistry.resolveWithSystem("kg", "unknownSys"),
+    ).toThrow();
   });
 });
 
@@ -230,9 +270,13 @@ describe("System versioning", () => {
 describe("Custom unit registration", () => {
   it("registerAtomic with symbol collision throws", () => {
     const reg = new UnitRegistry([]);
-    reg.register(makeUnit({ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 1 }));
+    reg.register(
+      makeUnit({ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     expect(() =>
-      reg.register(makeUnit({ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 2 })),
+      reg.register(
+        makeUnit({ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 2 }),
+      ),
     ).toThrow();
   });
   it("custom unit via system pack", () => {
@@ -240,7 +284,14 @@ describe("Custom unit registration", () => {
     sysReg.registerPack({
       name: "customPack",
       version: "1.0.0",
-      units: [{ symbol: "myCustom", dimension: Dim.Length, toBaseFactor: 123, label: "my" }],
+      units: [
+        {
+          symbol: "myCustom",
+          dimension: Dim.Length,
+          toBaseFactor: 123,
+          label: "my",
+        },
+      ],
     });
     const ur = new UnitRegistry([]);
     sysReg.applyPackToRegistry("customPack", ur);
@@ -261,9 +312,13 @@ describe("Custom unit registration", () => {
 describe("System security", () => {
   it("pack with __proto__ is rejected", () => {
     const reg = new UnitSystemRegistry();
-    const malicious = JSON.parse('{"name":"bad","version":"1.0.0","units":[],"__proto__":{}}');
+    const malicious = JSON.parse(
+      '{"name":"bad","version":"1.0.0","units":[],"__proto__":{}}',
+    );
     expect(() =>
-      reg.registerSystem(malicious as unknown as Parameters<typeof reg.registerSystem>[0]),
+      reg.registerSystem(
+        malicious as unknown as Parameters<typeof reg.registerSystem>[0],
+      ),
     ).toThrow();
   });
   it("unit with function factor is rejected", () => {
@@ -275,7 +330,11 @@ describe("System security", () => {
       label: "bad",
     } as unknown as Parameters<typeof reg.registerSystem>[0]["units"][number];
     expect(() =>
-      reg.registerSystem({ name: "badSys", version: "1.0.0", units: [badUnit] }),
+      reg.registerSystem({
+        name: "badSys",
+        version: "1.0.0",
+        units: [badUnit],
+      }),
     ).toThrow();
   });
   it("prototype not polluted after malicious pack", () => {

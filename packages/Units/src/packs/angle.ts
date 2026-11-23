@@ -42,14 +42,24 @@ export const ANGLE_PACK: UnitPack = Object.freeze({
       dimension: DIMENSIONLESS,
       toBaseFactor: 1,
       label: "radian",
-      metadata: { system: "SI", standard: "SI", category: "plane angle", kind: "angle" },
+      metadata: {
+        system: "SI",
+        standard: "SI",
+        category: "plane angle",
+        kind: "angle",
+      },
     } as AtomicUnitDef,
     {
       symbol: "deg",
       dimension: DIMENSIONLESS,
       toBaseFactor: DEG_PER_RAD,
       label: "degree",
-      metadata: { system: "SI", standard: "SI accepted", category: "plane angle", kind: "angle" },
+      metadata: {
+        system: "SI",
+        standard: "SI accepted",
+        category: "plane angle",
+        kind: "angle",
+      },
     } as AtomicUnitDef,
     {
       symbol: "arcmin",
@@ -92,5 +102,8 @@ export const ANGLE_PACK: UnitPack = Object.freeze({
     turn: "rev",
     steradian: "sr",
   } as Record<string, string>),
-  metadata: Object.freeze({ standard: "SI", source: "SI Brochure (BIPM), 9th edition" }),
+  metadata: Object.freeze({
+    standard: "SI",
+    source: "SI Brochure (BIPM), 9th edition",
+  }),
 });

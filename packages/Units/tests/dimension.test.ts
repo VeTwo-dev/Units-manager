@@ -43,7 +43,10 @@ describe("defineDimension", () => {
 
   it("is order-independent at construction", () => {
     expect(
-      dimensionsEqual(defineDimension({ M: 1, L: -2 }), defineDimension({ L: -2, M: 1 })),
+      dimensionsEqual(
+        defineDimension({ M: 1, L: -2 }),
+        defineDimension({ L: -2, M: 1 }),
+      ),
     ).toBe(true);
   });
 
@@ -58,7 +61,9 @@ describe("defineDimension", () => {
   it("rejects malformed ids", () => {
     const registry = new DimensionRegistry();
     expect(() => registry.register("1bad", "x")).toThrow(InvalidDimensionError);
-    expect(() => registry.register("has space", "x")).toThrow(InvalidDimensionError);
+    expect(() => registry.register("has space", "x")).toThrow(
+      InvalidDimensionError,
+    );
     expect(() => registry.register("", "x")).toThrow(InvalidDimensionError);
   });
 });
@@ -66,7 +71,9 @@ describe("defineDimension", () => {
 describe("canonical key", () => {
   it("is identical regardless of construction path or insertion order", () => {
     const force = multiplyDim(M, multiplyDim(L, powDim(T, -2)));
-    expect(dimensionKey(force)).toBe(dimensionKey(defineDimension({ M: 1, L: 1, T: -2 })));
+    expect(dimensionKey(force)).toBe(
+      dimensionKey(defineDimension({ M: 1, L: 1, T: -2 })),
+    );
     expect(dimensionKey(force)).toBe(dimensionKey({ T: -2, M: 1, L: 1 }));
   });
 
@@ -82,7 +89,9 @@ describe("canonical key", () => {
   it("is usable as a Map key", () => {
     const map = new Map<string, string>();
     map.set(dimensionKey(defineDimension({ M: 1, T: -1 })), "velocity-like");
-    expect(map.get(dimensionKey(multiplyDim(M, powDim(T, -1))))).toBe("velocity-like");
+    expect(map.get(dimensionKey(multiplyDim(M, powDim(T, -1))))).toBe(
+      "velocity-like",
+    );
   });
 
   it("keys are deterministic across multiple calls", () => {
@@ -130,11 +139,16 @@ describe("multiplyDim (A × B adds exponents)", () => {
   });
 
   it("dimensionless × dimensionless = dimensionless", () => {
-    expect(isDimensionless(multiplyDim(DIMENSIONLESS, DIMENSIONLESS))).toBe(true);
+    expect(isDimensionless(multiplyDim(DIMENSIONLESS, DIMENSIONLESS))).toBe(
+      true,
+    );
   });
 
   it("handles high exponents: L⁵", () => {
-    const l5 = multiplyDim(multiplyDim(L, L), multiplyDim(multiplyDim(L, L), L));
+    const l5 = multiplyDim(
+      multiplyDim(L, L),
+      multiplyDim(multiplyDim(L, L), L),
+    );
     expect(dimensionKey(l5)).toBe("L^5");
   });
 });
@@ -158,7 +172,9 @@ describe("divideDim (A / B subtracts exponents)", () => {
 
   it("dimensionless / A = A⁻¹", () => {
     expect(isDimensionless(divideDim(DIMENSIONLESS, DIMENSIONLESS))).toBe(true);
-    expect(dimensionsEqual(divideDim(DIMENSIONLESS, M), powDim(M, -1))).toBe(true);
+    expect(dimensionsEqual(divideDim(DIMENSIONLESS, M), powDim(M, -1))).toBe(
+      true,
+    );
   });
 
   it("A / dimensionless = A", () => {
@@ -214,7 +230,9 @@ describe("rootDim (exact roots only)", () => {
 
   it("(L²T⁻²)^(1/2) → L·T⁻¹", () => {
     const speedSquared = powDim(divideDim(L, T), 2);
-    expect(dimensionsEqual(rootDim(speedSquared, 2), divideDim(L, T))).toBe(true);
+    expect(dimensionsEqual(rootDim(speedSquared, 2), divideDim(L, T))).toBe(
+      true,
+    );
   });
 
   it("sqrt(L) is invalid and throws DimensionError", () => {
@@ -224,12 +242,18 @@ describe("rootDim (exact roots only)", () => {
   it("degree 1 is the identity root: root(A, 1) = A", () => {
     expect(dimensionsEqual(rootDim(L, 1), L)).toBe(true);
     expect(dimensionsEqual(rootDim(M, 1), M)).toBe(true);
-    expect(dimensionsEqual(rootDim(divideDim(L, T), 1), divideDim(L, T))).toBe(true);
+    expect(dimensionsEqual(rootDim(divideDim(L, T), 1), divideDim(L, T))).toBe(
+      true,
+    );
   });
 
   it("root of dimensionless is dimensionless", () => {
-    expect(dimensionsEqual(rootDim(DIMENSIONLESS, 2), DIMENSIONLESS)).toBe(true);
-    expect(dimensionsEqual(rootDim(DIMENSIONLESS, 5), DIMENSIONLESS)).toBe(true);
+    expect(dimensionsEqual(rootDim(DIMENSIONLESS, 2), DIMENSIONLESS)).toBe(
+      true,
+    );
+    expect(dimensionsEqual(rootDim(DIMENSIONLESS, 5), DIMENSIONLESS)).toBe(
+      true,
+    );
   });
 
   it("rejects degree 0, negatives and non-integers", () => {
@@ -256,7 +280,9 @@ describe("DimensionRegistry", () => {
   it("prevents id collisions", () => {
     const registry = new DimensionRegistry();
     registry.register("X", "first");
-    expect(() => registry.register("X", "second")).toThrow(InvalidDimensionError);
+    expect(() => registry.register("X", "second")).toThrow(
+      InvalidDimensionError,
+    );
   });
 
   it("supports custom base dimensions without touching core math", () => {
@@ -307,7 +333,9 @@ describe("DimensionRegistry", () => {
   it("normalize rejects unregistered ids", () => {
     const registry = new DimensionRegistry([]);
     registry.register("M", "Mass");
-    expect(() => registry.normalize({ Unknown: 1 })).toThrow(InvalidDimensionError);
+    expect(() => registry.normalize({ Unknown: 1 })).toThrow(
+      InvalidDimensionError,
+    );
   });
 
   it("isolated registry does not share state with default", () => {
@@ -401,7 +429,9 @@ const IDS = ["I", "J", "L", "M", "Substance", "T", "Temp"] as const;
 const EXPONENTS = [-3, -2, -1, 0, 1, 2, 3];
 
 /** Generate a random valid dimension vector over the seed ids. */
-function randomDimension(rng: () => number): ReturnType<typeof defineDimension> {
+function randomDimension(
+  rng: () => number,
+): ReturnType<typeof defineDimension> {
   const raw: Record<string, number> = {};
   for (const id of IDS) {
     if (rng() < 0.5) {
@@ -421,7 +451,9 @@ describe("dimension algebra invariants (property-based)", () => {
 
   it("commutativity: A × B = B × A", () => {
     for (const { a, b } of samples) {
-      expect(dimensionKey(multiplyDim(a, b))).toBe(dimensionKey(multiplyDim(b, a)));
+      expect(dimensionKey(multiplyDim(a, b))).toBe(
+        dimensionKey(multiplyDim(b, a)),
+      );
     }
   });
 
@@ -447,7 +479,9 @@ describe("dimension algebra invariants (property-based)", () => {
 
   it("round-trip: (A / B) × B = A", () => {
     for (const { a, b } of samples) {
-      expect(dimensionKey(multiplyDim(divideDim(a, b), b))).toBe(dimensionKey(a));
+      expect(dimensionKey(multiplyDim(divideDim(a, b), b))).toBe(
+        dimensionKey(a),
+      );
     }
   });
 
@@ -461,7 +495,9 @@ describe("dimension algebra invariants (property-based)", () => {
 
   it("division antisymmetry: A / B = A × B⁻¹", () => {
     for (const { a, b } of samples) {
-      expect(dimensionKey(divideDim(a, b))).toBe(dimensionKey(multiplyDim(a, powDim(b, -1))));
+      expect(dimensionKey(divideDim(a, b))).toBe(
+        dimensionKey(multiplyDim(a, powDim(b, -1))),
+      );
     }
   });
 
@@ -491,7 +527,9 @@ describe("dimension algebra invariants (property-based)", () => {
   it("divide with dimensionless: A / dimensionless = A, dimensionless / A = A⁻¹", () => {
     for (const { a } of samples) {
       expect(dimensionsEqual(divideDim(a, DIMENSIONLESS), a)).toBe(true);
-      expect(dimensionsEqual(divideDim(DIMENSIONLESS, a), powDim(a, -1))).toBe(true);
+      expect(dimensionsEqual(divideDim(DIMENSIONLESS, a), powDim(a, -1))).toBe(
+        true,
+      );
     }
   });
 });

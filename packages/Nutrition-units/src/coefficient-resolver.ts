@@ -27,7 +27,11 @@ export class CoefficientResolver {
     nutrientConcentration: Quantity,
     nutrientKey: NutrientKey,
   ): number {
-    const contribution = this.math.calculate(feedUnitIntake, nutrientConcentration, nutrientKey);
+    const contribution = this.math.calculate(
+      feedUnitIntake,
+      nutrientConcentration,
+      nutrientKey,
+    );
     if (!Number.isFinite(contribution.value)) {
       throw new Error(
         `CoefficientResolver.getCoefficient produced non-finite value ${contribution.value}`,
@@ -40,7 +44,9 @@ export class CoefficientResolver {
   getCostCoefficient(feedUnitIntake: Quantity, pricePerKg: Quantity): number {
     const v = this.math.calculateCost(feedUnitIntake, pricePerKg).value;
     if (!Number.isFinite(v))
-      throw new Error(`CoefficientResolver.getCostCoefficient produced non-finite value ${v}`);
+      throw new Error(
+        `CoefficientResolver.getCostCoefficient produced non-finite value ${v}`,
+      );
     return v;
   }
 
@@ -48,7 +54,9 @@ export class CoefficientResolver {
   getBound(quantity: Quantity, targetUnit: string): number {
     const v = quantity.to(targetUnit).value;
     if (!Number.isFinite(v))
-      throw new Error(`CoefficientResolver.getBound produced non-finite value ${v}`);
+      throw new Error(
+        `CoefficientResolver.getBound produced non-finite value ${v}`,
+      );
     return v;
   }
 }

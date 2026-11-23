@@ -232,7 +232,12 @@ export const ATOMIC_UNITS: readonly AtomicUnitDef[] = Object.freeze([
   { symbol: "Mcal", dimension: E, toBaseFactor: 1, label: "megacalorie" },
   { symbol: "Kcal", dimension: E, toBaseFactor: 0.001, label: "kilocalorie" },
   { symbol: "MJ", dimension: E, toBaseFactor: 0.239006, label: "megajoule" },
-  { symbol: "kJ", dimension: E, toBaseFactor: 0.239006 / 1000, label: "kilojoule" },
+  {
+    symbol: "kJ",
+    dimension: E,
+    toBaseFactor: 0.239006 / 1000,
+    label: "kilojoule",
+  },
 
   // ---- Currency (generic — real symbol resolved by the host app) ------
   { symbol: "cur", dimension: C, toBaseFactor: 1, label: "currency unit" },
@@ -244,7 +249,22 @@ export const ATOMIC_UNITS: readonly AtomicUnitDef[] = Object.freeze([
   { symbol: "fraction", dimension: R, toBaseFactor: 1, label: "fraction" },
   { symbol: "%", dimension: R, toBaseFactor: 0.01, label: "percent" },
   { symbol: "‰", dimension: R, toBaseFactor: 0.001, label: "per mille" },
-  { symbol: "ppm", dimension: R, toBaseFactor: 0.000001, label: "parts per million" },
-  { symbol: "ppb", dimension: R, toBaseFactor: 0.000000001, label: "parts per billion" },
-  { symbol: "ppt", dimension: R, toBaseFactor: 0.000000000001, label: "parts per trillion" },
+  {
+    symbol: "ppm",
+    dimension: R,
+    toBaseFactor: 0.000001,
+    label: "parts per million",
+  },
+  {
+    symbol: "ppb",
+    dimension: R,
+    toBaseFactor: 0.000000001,
+    label: "parts per billion",
+  },
+  {
+    symbol: "ppt",
+    dimension: R,
+    toBaseFactor: 0.000000000001,
+    label: "parts per trillion",
+  },
 ]);

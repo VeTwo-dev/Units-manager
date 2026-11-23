@@ -46,7 +46,10 @@ describe("scientific pipeline integration", () => {
       {
         id: "force",
         expression: mul(v("mass"), v("accel")),
-        inputs: { mass: { dimension: Dim.Mass }, accel: { dimension: "m/s^2" } },
+        inputs: {
+          mass: { dimension: Dim.Mass },
+          accel: { dimension: "m/s^2" },
+        },
         outputName: "force",
         outputUnit: "N",
         expectedDimension: { M: 1, L: 1, T: -2 },
@@ -80,10 +83,16 @@ describe("scientific pipeline integration", () => {
       JSON.parse(JSON.stringify(serializeQuantity(workInJoules))),
       reg,
     );
-    expect(restored.to("N·m", reg).value).toBeCloseTo(workInJoules.to("N·m", reg).value, 9);
+    expect(restored.to("N·m", reg).value).toBeCloseTo(
+      workInJoules.to("N·m", reg).value,
+      9,
+    );
 
     // 6. …and formulas + graph serialize for storage.
-    const reloaded = deserializeFormula(JSON.parse(JSON.stringify(serializeFormula(force))), O);
+    const reloaded = deserializeFormula(
+      JSON.parse(JSON.stringify(serializeFormula(force))),
+      O,
+    );
     expect(reloaded.id).toBe("force");
     const graph = createDependencyGraph([reloaded, work], O);
     expect(graph.evaluationOrder()).toEqual(["force", "work"]);
@@ -94,7 +103,10 @@ describe("scientific pipeline integration", () => {
       {
         id: "arc_length",
         expression: mul(v("radius"), v("angle")),
-        inputs: { radius: { dimension: "m" }, angle: { dimension: "1", kind: "angle" } },
+        inputs: {
+          radius: { dimension: "m" },
+          angle: { dimension: "1", kind: "angle" },
+        },
         outputName: "arc",
       },
       { ...O, semanticPolicy: "semantic-aware" },
@@ -109,7 +121,9 @@ describe("scientific pipeline integration", () => {
     // Same dimension but wrong kind (Hz is T⁻¹… use a dimensionless impostor):
     // a kind-less fraction passes the wildcard, but an explicitly wrong kind fails.
     const wrongKind = Quantity.of(0.5, "rad", reg).withKind("solid-angle");
-    expect(() => compiled.evaluate({ radius: Quantity.of(2, "m"), angle: wrongKind })).toThrow();
+    expect(() =>
+      compiled.evaluate({ radius: Quantity.of(2, "m"), angle: wrongKind }),
+    ).toThrow();
   });
 
   it("pendulum period: T = 2π√(L/g) end to end", () => {

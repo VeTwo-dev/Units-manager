@@ -65,14 +65,22 @@ export const CGS_PACK: UnitPack = Object.freeze({
       dimension: defineDimension({ M: 1, L: -1, T: -1 }),
       toBaseFactor: POISE_PER_BASE,
       label: "poise",
-      metadata: { system: "CGS", standard: "CGS", category: "dynamic viscosity" },
+      metadata: {
+        system: "CGS",
+        standard: "CGS",
+        category: "dynamic viscosity",
+      },
     } as AtomicUnitDef,
     {
       symbol: "St",
       dimension: defineDimension({ L: 2, T: -1 }),
       toBaseFactor: STOKES_PER_BASE,
       label: "stokes",
-      metadata: { system: "CGS", standard: "CGS", category: "kinematic viscosity" },
+      metadata: {
+        system: "CGS",
+        standard: "CGS",
+        category: "kinematic viscosity",
+      },
     } as AtomicUnitDef,
   ]),
   aliases: Object.freeze({

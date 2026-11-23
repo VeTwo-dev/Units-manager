@@ -52,7 +52,9 @@ describe("SI pack", () => {
   it("SI derived pack is real (N, Pa, J, Wh)", () => {
     expect(defaultUnitSystemRegistry.hasPack("si-derived")).toBe(true);
     const symbols = new Set(
-      (defaultUnitSystemRegistry.getPack("si-derived")?.units ?? []).map((u) => u.symbol),
+      (defaultUnitSystemRegistry.getPack("si-derived")?.units ?? []).map(
+        (u) => u.symbol,
+      ),
     );
     for (const s of ["N", "Pa", "J", "Wh"]) expect(symbols.has(s)).toBe(true);
     // Exported pack object matches the registered definition
@@ -90,8 +92,14 @@ describe("SI pack", () => {
 
   it("converts N ↔ lbf and Pa ↔ psi across packs", () => {
     const reg = createRegistry({ packs: [SI_PACK, IMPERIAL_PACK] });
-    expect(Quantity.of(1, "N", reg).to("lbf", reg).value).toBeCloseTo(0.224809, 6);
-    expect(Quantity.of(1, "Pa", reg).to("psi", reg).value).toBeCloseTo(0.0001450377, 9);
+    expect(Quantity.of(1, "N", reg).to("lbf", reg).value).toBeCloseTo(
+      0.224809,
+      6,
+    );
+    expect(Quantity.of(1, "Pa", reg).to("psi", reg).value).toBeCloseTo(
+      0.0001450377,
+      9,
+    );
   });
 
   it("converts J ↔ cal and Wh ↔ J", () => {
@@ -145,13 +153,34 @@ describe("Imperial pack", () => {
 
   it("converts imperial to SI bases", () => {
     const reg = createRegistry({ packs: [SI_PACK, IMPERIAL_PACK] });
-    expect(Quantity.of(1, "mile", reg).to("m", reg).value).toBeCloseTo(1609.344, 9);
-    expect(Quantity.of(1, "yd", reg).to("m", reg).value).toBeCloseTo(0.9144, 12);
-    expect(Quantity.of(1, "oz", reg).to("g", reg).value).toBeCloseTo(28.349523125, 9);
-    expect(Quantity.of(1, "gal", reg).to("L", reg).value).toBeCloseTo(4.54609, 9);
-    expect(Quantity.of(1, "acre", reg).to("m^2", reg).value).toBeCloseTo(4046.8564224, 6);
-    expect(Quantity.of(1, "mph", reg).to("m/s", reg).value).toBeCloseTo(0.44704, 9);
-    expect(Quantity.of(1, "knot", reg).to("m/s", reg).value).toBeCloseTo(1852 / 3600, 9);
+    expect(Quantity.of(1, "mile", reg).to("m", reg).value).toBeCloseTo(
+      1609.344,
+      9,
+    );
+    expect(Quantity.of(1, "yd", reg).to("m", reg).value).toBeCloseTo(
+      0.9144,
+      12,
+    );
+    expect(Quantity.of(1, "oz", reg).to("g", reg).value).toBeCloseTo(
+      28.349523125,
+      9,
+    );
+    expect(Quantity.of(1, "gal", reg).to("L", reg).value).toBeCloseTo(
+      4.54609,
+      9,
+    );
+    expect(Quantity.of(1, "acre", reg).to("m^2", reg).value).toBeCloseTo(
+      4046.8564224,
+      6,
+    );
+    expect(Quantity.of(1, "mph", reg).to("m/s", reg).value).toBeCloseTo(
+      0.44704,
+      9,
+    );
+    expect(Quantity.of(1, "knot", reg).to("m/s", reg).value).toBeCloseTo(
+      1852 / 3600,
+      9,
+    );
   });
 
   it("resolves imperial aliases", () => {
@@ -162,7 +191,10 @@ describe("Imperial pack", () => {
 
   it("imperial ton is the long ton", () => {
     const reg = createRegistry({ packs: [IMPERIAL_PACK] });
-    expect(Quantity.of(1, "ton", reg).to("kg", reg).value).toBeCloseTo(1016.0469088, 6);
+    expect(Quantity.of(1, "ton", reg).to("kg", reg).value).toBeCloseTo(
+      1016.0469088,
+      6,
+    );
   });
 });
 
@@ -185,10 +217,22 @@ describe("US customary pack", () => {
   it("US gallon differs from imperial gallon; short ton differs from long ton", () => {
     const us = createRegistry({ packs: [SI_PACK, US_CUSTOMARY_PACK] });
     const imp = createRegistry({ packs: [SI_PACK, IMPERIAL_PACK] });
-    expect(Quantity.of(1, "gal", us).to("L", us).value).toBeCloseTo(3.785411784, 9);
-    expect(Quantity.of(1, "gal", imp).to("L", imp).value).toBeCloseTo(4.54609, 9);
-    expect(Quantity.of(1, "ton", us).to("kg", us).value).toBeCloseTo(907.18474, 6);
-    expect(Quantity.of(1, "ton", imp).to("kg", imp).value).toBeCloseTo(1016.0469088, 6);
+    expect(Quantity.of(1, "gal", us).to("L", us).value).toBeCloseTo(
+      3.785411784,
+      9,
+    );
+    expect(Quantity.of(1, "gal", imp).to("L", imp).value).toBeCloseTo(
+      4.54609,
+      9,
+    );
+    expect(Quantity.of(1, "ton", us).to("kg", us).value).toBeCloseTo(
+      907.18474,
+      6,
+    );
+    expect(Quantity.of(1, "ton", imp).to("kg", imp).value).toBeCloseTo(
+      1016.0469088,
+      6,
+    );
   });
 
   it("US volume ladder is exact powers of two", () => {
@@ -201,14 +245,20 @@ describe("US customary pack", () => {
   });
 
   it("combining imperial + US packs in one registry throws (conflict policy)", () => {
-    expect(() => createRegistry({ packs: [IMPERIAL_PACK, US_CUSTOMARY_PACK] })).toThrow(
-      UnitRegistrationError,
-    );
+    expect(() =>
+      createRegistry({ packs: [IMPERIAL_PACK, US_CUSTOMARY_PACK] }),
+    ).toThrow(UnitRegistrationError);
   });
 
   it("system context disambiguates shared symbols deterministically", () => {
-    const impTon = defaultUnitSystemRegistry.resolveWithSystem("ton", "imperial");
-    const usTon = defaultUnitSystemRegistry.resolveWithSystem("ton", "us-customary");
+    const impTon = defaultUnitSystemRegistry.resolveWithSystem(
+      "ton",
+      "imperial",
+    );
+    const usTon = defaultUnitSystemRegistry.resolveWithSystem(
+      "ton",
+      "us-customary",
+    );
     expect(impTon.toBaseFactor).toBeCloseTo(1016.0469088, 6);
     expect(usTon.toBaseFactor).toBeCloseTo(907.18474, 6);
     expect(impTon.toBaseFactor).not.toBe(usTon.toBaseFactor);
@@ -245,16 +295,31 @@ describe("Scientific pack", () => {
   it("bar/atm/mmHg conversions", () => {
     const reg = createRegistry({ packs: [SI_PACK, SCIENTIFIC_PACK] });
     expect(Quantity.of(1, "bar", reg).to("Pa", reg).value).toBeCloseTo(1e5, 6);
-    expect(Quantity.of(1, "atm", reg).to("Pa", reg).value).toBeCloseTo(101325, 6);
-    expect(Quantity.of(1, "mmHg", reg).to("Pa", reg).value).toBeCloseTo(133.322387415, 9);
-    expect(Quantity.of(1, "atm", reg).to("bar", reg).value).toBeCloseTo(1.01325, 9);
+    expect(Quantity.of(1, "atm", reg).to("Pa", reg).value).toBeCloseTo(
+      101325,
+      6,
+    );
+    expect(Quantity.of(1, "mmHg", reg).to("Pa", reg).value).toBeCloseTo(
+      133.322387415,
+      9,
+    );
+    expect(Quantity.of(1, "atm", reg).to("bar", reg).value).toBeCloseTo(
+      1.01325,
+      9,
+    );
   });
 
   it("cal/BTU/hp/week conversions", () => {
     const reg = createRegistry({ packs: [SI_PACK, SCIENTIFIC_PACK] });
     expect(Quantity.of(1, "cal", reg).to("J", reg).value).toBeCloseTo(4.184, 9);
-    expect(Quantity.of(1, "BTU", reg).to("J", reg).value).toBeCloseTo(1055.05585262, 6);
-    expect(Quantity.of(1, "hp", reg).to("W", reg).value).toBeCloseTo(745.6998715822702, 6);
+    expect(Quantity.of(1, "BTU", reg).to("J", reg).value).toBeCloseTo(
+      1055.05585262,
+      6,
+    );
+    expect(Quantity.of(1, "hp", reg).to("W", reg).value).toBeCloseTo(
+      745.6998715822702,
+      6,
+    );
     expect(Quantity.of(1, "week", reg).to("day", reg).value).toBe(7);
   });
 
@@ -295,8 +360,12 @@ describe("UnitSystemRegistry mechanics", () => {
 
   it("getPreferredUnit returns metadata, throws for unknown system", () => {
     expect(defaultUnitSystemRegistry.getPreferredUnit("si", "mass")).toBe("kg");
-    expect(defaultUnitSystemRegistry.getPreferredUnit("si", "nope")).toBeUndefined();
-    expect(() => defaultUnitSystemRegistry.getPreferredUnit("unknown", "mass")).toThrow();
+    expect(
+      defaultUnitSystemRegistry.getPreferredUnit("si", "nope"),
+    ).toBeUndefined();
+    expect(() =>
+      defaultUnitSystemRegistry.getPreferredUnit("unknown", "mass"),
+    ).toThrow();
   });
 
   it("createRegistry builds isolated registries", () => {
@@ -375,7 +444,9 @@ describe("Pack validation", () => {
       reg.registerPack({
         name: "dangling",
         version: "1.0.0",
-        units: [{ symbol: "x", dimension: Dim.Mass, toBaseFactor: 1, label: "a" }],
+        units: [
+          { symbol: "x", dimension: Dim.Mass, toBaseFactor: 1, label: "a" },
+        ],
         aliases: { ghost: "missing" },
       }),
     ).toThrow();
@@ -387,7 +458,9 @@ describe("Pack validation", () => {
       reg.registerPack({
         name: "badexp",
         version: "1.0.0",
-        units: [{ symbol: "x", dimension: { M: 1.5 }, toBaseFactor: 1, label: "a" }],
+        units: [
+          { symbol: "x", dimension: { M: 1.5 }, toBaseFactor: 1, label: "a" },
+        ],
       }),
     ).toThrow();
   });

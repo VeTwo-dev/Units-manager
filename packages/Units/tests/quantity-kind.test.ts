@@ -33,7 +33,13 @@ import {
 import { defineDimension } from "../src/dimension.js";
 
 const reg = createRegistry({
-  packs: [SI_PACK, ANGLE_PACK, RADIATION_PACK, ASTRONOMY_PACK, INFORMATION_PACK],
+  packs: [
+    SI_PACK,
+    ANGLE_PACK,
+    RADIATION_PACK,
+    ASTRONOMY_PACK,
+    INFORMATION_PACK,
+  ],
 });
 const q = (value: number, unit: string) => Quantity.of(value, unit, reg);
 
@@ -62,7 +68,11 @@ describe("QuantityKindRegistry", () => {
 
   it("registers isolated custom kinds without touching the default", () => {
     const isolated = new QuantityKindRegistry([]);
-    isolated.register({ id: "angle", name: "Angle", dimension: defineDimension({}) });
+    isolated.register({
+      id: "angle",
+      name: "Angle",
+      dimension: defineDimension({}),
+    });
     expect(isolated.has("angle")).toBe(true);
     expect(defaultQuantityKindRegistry.has("angle")).toBe(true);
     expect(isolated.list().length).toBe(1);
@@ -71,12 +81,12 @@ describe("QuantityKindRegistry", () => {
   it("rejects duplicates, bad ids, self-compatibility, functions, pollution", () => {
     const r = new QuantityKindRegistry([]);
     r.register({ id: "ok", name: "Ok", dimension: defineDimension({}) });
-    expect(() => r.register({ id: "ok", name: "Dup", dimension: defineDimension({}) })).toThrow(
-      UnitEngineError,
-    );
-    expect(() => r.register({ id: "Bad Id", name: "x", dimension: defineDimension({}) })).toThrow(
-      UnitEngineError,
-    );
+    expect(() =>
+      r.register({ id: "ok", name: "Dup", dimension: defineDimension({}) }),
+    ).toThrow(UnitEngineError);
+    expect(() =>
+      r.register({ id: "Bad Id", name: "x", dimension: defineDimension({}) }),
+    ).toThrow(UnitEngineError);
     expect(() =>
       r.register({
         id: "self",
@@ -94,7 +104,9 @@ describe("QuantityKindRegistry", () => {
       }),
     ).toThrow(UnitEngineError);
     expect(() =>
-      r.register(JSON.parse('{"id":"p","name":"x","dimension":{},"__proto__":{}}')),
+      r.register(
+        JSON.parse('{"id":"p","name":"x","dimension":{},"__proto__":{}}'),
+      ),
     ).toThrow();
     expect(() => r.require("nope")).toThrow(UnitEngineError);
   });
@@ -115,29 +127,35 @@ describe("semantic compatibility", () => {
     ["strict-semantic", "angle", "angle", true],
     ["strict-semantic", "angle", undefined, false],
     ["strict-semantic", undefined, undefined, true],
-  ] as Array<[SemanticPolicy, string | undefined, string | undefined, boolean]>)(
-    "%s: %s vs %s → %s",
-    (policy, a, b, expected) => {
-      expect(areKindsCompatible(a, b, policy)).toBe(expected);
-    },
-  );
+  ] as Array<
+    [SemanticPolicy, string | undefined, string | undefined, boolean]
+  >)("%s: %s vs %s → %s", (policy, a, b, expected) => {
+    expect(areKindsCompatible(a, b, policy)).toBe(expected);
+  });
 
   it("explicit compatibleKinds listings work symmetrically", () => {
     const r = new QuantityKindRegistry([]);
     r.register({ id: "a", name: "A", dimension: defineDimension({}) });
-    r.register({ id: "b", name: "B", dimension: defineDimension({}), compatibleKinds: ["a"] });
+    r.register({
+      id: "b",
+      name: "B",
+      dimension: defineDimension({}),
+      compatibleKinds: ["a"],
+    });
     expect(areKindsCompatible("a", "b", "semantic-aware", r)).toBe(true);
     expect(areKindsCompatible("b", "a", "semantic-aware", r)).toBe(true);
   });
 
   it("assertSemanticCompatible throws typed errors; default policy never throws", () => {
-    expect(() => assertSemanticCompatible("activity", "frequency", "semantic-aware")).toThrow(
-      IncompatibleQuantityKindError,
-    );
+    expect(() =>
+      assertSemanticCompatible("activity", "frequency", "semantic-aware"),
+    ).toThrow(IncompatibleQuantityKindError);
     expect(() =>
       assertSemanticCompatible("activity", "frequency", "dimensional-only"),
     ).not.toThrow();
-    expect(() => areKindsCompatible("a", "b", "bogus" as SemanticPolicy)).toThrow(UnitEngineError);
+    expect(() =>
+      areKindsCompatible("a", "b", "bogus" as SemanticPolicy),
+    ).toThrow(UnitEngineError);
     expect(isSemanticPolicy("strict-semantic")).toBe(true);
     expect(isSemanticPolicy("lax")).toBe(false);
     expect(isQuantityKindId("absorbed-dose")).toBe(true);
@@ -187,10 +205,12 @@ describe("kind resolution", () => {
     ).toBeCloseTo(1, 12);
     // A gate needs strict-semantic: under semantic-aware, an unknown
     // (kind-less) quantity carries no claim to contradict, so it passes.
-    expect(() => q(0.5, "fraction").requireKind("angle", "strict-semantic")).toThrow(
-      IncompatibleQuantityKindError,
-    );
-    expect(q(0.5, "fraction").requireKind("angle", "semantic-aware").value).toBe(0.5);
+    expect(() =>
+      q(0.5, "fraction").requireKind("angle", "strict-semantic"),
+    ).toThrow(IncompatibleQuantityKindError);
+    expect(
+      q(0.5, "fraction").requireKind("angle", "semantic-aware").value,
+    ).toBe(0.5);
     // Default dimensional path still accepts plain dimensionless trig.
     expect(Quantity.of(0, "fraction", reg).sin().value).toBe(0);
   });
@@ -202,7 +222,9 @@ describe("kind resolution", () => {
 
 describe("temperature semantics", () => {
   it("absolute − absolute = explicitly-tagged interval", () => {
-    const delta = Quantity.of(20, "°C", reg).subtract(Quantity.of(15, "°C", reg));
+    const delta = Quantity.of(20, "°C", reg).subtract(
+      Quantity.of(15, "°C", reg),
+    );
     expect(delta.kind).toBe("temperature-difference");
     expect(delta.value).toBeCloseTo(5, 12);
   });
@@ -214,7 +236,9 @@ describe("temperature semantics", () => {
 
   it("semantic-aware blocks absolute/interval mixing, default allows", () => {
     const abs = Quantity.of(10, "°C", reg);
-    const delta = Quantity.of(20, "°C", reg).subtract(Quantity.of(15, "°C", reg));
+    const delta = Quantity.of(20, "°C", reg).subtract(
+      Quantity.of(15, "°C", reg),
+    );
     expect(() => abs.add(delta, { semanticPolicy: "semantic-aware" })).toThrow(
       IncompatibleQuantityKindError,
     );
@@ -222,7 +246,9 @@ describe("temperature semantics", () => {
   });
 
   it("scaling an interval preserves its kind", () => {
-    const delta = Quantity.of(20, "°C", reg).subtract(Quantity.of(15, "°C", reg));
+    const delta = Quantity.of(20, "°C", reg).subtract(
+      Quantity.of(15, "°C", reg),
+    );
     expect(delta.scale(2).kind).toBe("temperature-difference");
   });
 });
@@ -237,9 +263,9 @@ describe("dose and activity semantics", () => {
     expect(q(1, "Gy").kind).not.toBe(q(1, "Sv").kind);
     // Dimensional math converts (same vector); semantic-aware callers block.
     expect(q(1, "Gy").to("Sv", reg).value).toBeCloseTo(1, 12);
-    expect(() => q(1, "Gy").to("Sv", reg, { semanticPolicy: "semantic-aware" })).toThrow(
-      UnsupportedSemanticConversionError,
-    );
+    expect(() =>
+      q(1, "Gy").to("Sv", reg, { semanticPolicy: "semantic-aware" }),
+    ).toThrow(UnsupportedSemanticConversionError);
   });
 
   it("activity ≠ frequency under semantic-aware addition", () => {
@@ -281,15 +307,21 @@ describe("semantic conversion context", () => {
       dimension: defineDimension({}),
       requiresContext: true,
     });
-    expect(() => assertSemanticConvertible("level", "level", { registry: r })).toThrow(
-      MissingSemanticContextError,
-    );
     expect(() =>
-      assertSemanticConvertible("level", "level", { registry: r, context: { ref: 1 } }),
+      assertSemanticConvertible("level", "level", { registry: r }),
+    ).toThrow(MissingSemanticContextError);
+    expect(() =>
+      assertSemanticConvertible("level", "level", {
+        registry: r,
+        context: { ref: 1 },
+      }),
     ).not.toThrow();
     // dimensional-only ignores kinds entirely, even context-requiring ones.
     expect(() =>
-      assertSemanticConvertible("level", "level", { registry: r, policy: "dimensional-only" }),
+      assertSemanticConvertible("level", "level", {
+        registry: r,
+        policy: "dimensional-only",
+      }),
     ).not.toThrow();
   });
 });
@@ -321,14 +353,19 @@ describe("kind serialization", () => {
       ),
     ).toThrow();
     // Absent kind falls back to the unit's registered claim (not inference).
-    const bare = deserializeQuantity({ version: 1, type: "quantity", value: 1, unit: "rad" }, reg);
+    const bare = deserializeQuantity(
+      { version: 1, type: "quantity", value: 1, unit: "rad" },
+      reg,
+    );
     expect(bare.kind).toBe("angle");
   });
 
   it("rejects kind pollution payloads", () => {
     expect(() =>
       deserializeQuantity(
-        JSON.parse('{"version":1,"type":"quantity","value":1,"unit":"rad","__proto__":{}}'),
+        JSON.parse(
+          '{"version":1,"type":"quantity","value":1,"unit":"rad","__proto__":{}}',
+        ),
         reg,
       ),
     ).toThrow();
@@ -346,9 +383,13 @@ describe("parser and formatter integration", () => {
   });
 
   it("showKind is display-only", () => {
-    expect(formatQuantity(q(1.5, "rad"), { showKind: true })).toBe("1.50 rad [angle]");
+    expect(formatQuantity(q(1.5, "rad"), { showKind: true })).toBe(
+      "1.50 rad [angle]",
+    );
     expect(formatQuantity(q(1.5, "rad")).includes("[angle]")).toBe(false);
-    expect(formatQuantity(q(5, "kg"), { showKind: true }).includes("[")).toBe(false);
+    expect(formatQuantity(q(5, "kg"), { showKind: true }).includes("[")).toBe(
+      false,
+    );
   });
 });
 
@@ -359,7 +400,9 @@ describe("parser and formatter integration", () => {
 describe("backward compatibility and properties", () => {
   it("basic API needs no kind knowledge", () => {
     expect(Quantity.of(10, "kg").to("g").value).toBe(10000);
-    expect(Quantity.of(5, "kg").multiply(Quantity.of(2, "m")).toBase().value).toBe(10);
+    expect(
+      Quantity.of(5, "kg").multiply(Quantity.of(2, "m")).toBase().value,
+    ).toBe(10);
   });
 
   it("equivalent representations share dimensions (property)", () => {
@@ -379,18 +422,25 @@ describe("backward compatibility and properties", () => {
   });
 
   it("kind-tagged conversions are symmetric where compatible (property)", () => {
-    expect(q(180, "deg").to("rad", reg).to("deg", reg).value).toBeCloseTo(180, 9);
+    expect(q(180, "deg").to("rad", reg).to("deg", reg).value).toBeCloseTo(
+      180,
+      9,
+    );
     expect(q(1, "Ci").to("Bq", reg).to("Ci", reg).value).toBeCloseTo(1, 9);
     expect(q(1, "pc").to("m", reg).to("pc", reg).value).toBeCloseTo(1, 6);
   });
 
   it("no semantic equivalence assumed between dose kinds (property)", () => {
     expect(() =>
-      assertSemanticCompatible("absorbed-dose", "equivalent-dose", "semantic-aware"),
+      assertSemanticCompatible(
+        "absorbed-dose",
+        "equivalent-dose",
+        "semantic-aware",
+      ),
     ).toThrow(IncompatibleQuantityKindError);
-    expect(() => assertSemanticCompatible("activity", "frequency", "semantic-aware")).toThrow(
-      IncompatibleQuantityKindError,
-    );
+    expect(() =>
+      assertSemanticCompatible("activity", "frequency", "semantic-aware"),
+    ).toThrow(IncompatibleQuantityKindError);
   });
 });
 
@@ -404,6 +454,8 @@ describe("Measurement kinds", () => {
     expect(m.kind).toBe("activity");
     expect(Measurement.of(q(10, "kg"), q(1, "kg")).kind).toBeUndefined();
     const same = Measurement.of(q(5, "Bq"), q(0.5, "Bq"));
-    expect(m.add(same, { semanticPolicy: "semantic-aware" }).kind).toBe("activity");
+    expect(m.add(same, { semanticPolicy: "semantic-aware" }).kind).toBe(
+      "activity",
+    );
   });
 });

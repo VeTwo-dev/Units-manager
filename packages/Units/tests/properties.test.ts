@@ -60,7 +60,9 @@ describe("dimension algebra invariants", () => {
         dimensionKey(multiplyDim(a, multiplyDim(b, c))),
       );
       expect(dimensionKey(multiplyDim(a, DIMENSIONLESS))).toBe(dimensionKey(a));
-      expect(dimensionKey(divideDim(multiplyDim(a, b), b))).toBe(dimensionKey(a));
+      expect(dimensionKey(divideDim(multiplyDim(a, b), b))).toBe(
+        dimensionKey(a),
+      );
     }
   });
 });
@@ -107,7 +109,9 @@ describe("canonicalization stability", () => {
     ];
     const keys = new Set<string>();
     for (const family of families) {
-      const familyKeys = family.map((text) => canonicalizeUnitText(text, si).key);
+      const familyKeys = family.map(
+        (text) => canonicalizeUnitText(text, si).key,
+      );
       for (const k of familyKeys) {
         expect(k).toBe(familyKeys[0]);
         keys.add(k);
@@ -115,7 +119,9 @@ describe("canonicalization stability", () => {
     }
     // Named (N) and expanded (kg·m/s²) forms share one identity by design.
     expect(keys.size).toBe(2);
-    expect(canonicalizeUnitText("N", si).key).toBe(canonicalizeUnitText("kg·m/s²", si).key);
+    expect(canonicalizeUnitText("N", si).key).toBe(
+      canonicalizeUnitText("kg·m/s²", si).key,
+    );
   });
 });
 
@@ -126,15 +132,24 @@ describe("serialization round-trips", () => {
       const value = Math.round((rand() - 0.5) * 1e6) / 1000;
       const unit = ["m", "kg", "s"][Math.floor(rand() * 3)]!;
       const q = Quantity.of(value, unit);
-      expect(deserializeQuantity(JSON.parse(JSON.stringify(serializeQuantity(q))))).toEqual(q);
+      expect(
+        deserializeQuantity(JSON.parse(JSON.stringify(serializeQuantity(q)))),
+      ).toEqual(q);
       const m = Measurement.of(q, Math.abs(value) * 0.01 + 0.001);
-      const back = deserializeMeasurement(JSON.parse(JSON.stringify(serializeMeasurement(m))));
+      const back = deserializeMeasurement(
+        JSON.parse(JSON.stringify(serializeMeasurement(m))),
+      );
       expect(back.value).toEqual(m.value);
     }
-    const expr = Expression.add(Expression.variable("x"), Expression.literal(1, "m"));
-    expect(deserializeExpression(JSON.parse(JSON.stringify(serializeExpression(expr))))).toEqual(
-      expr,
+    const expr = Expression.add(
+      Expression.variable("x"),
+      Expression.literal(1, "m"),
     );
+    expect(
+      deserializeExpression(
+        JSON.parse(JSON.stringify(serializeExpression(expr))),
+      ),
+    ).toEqual(expr);
   });
 });
 
@@ -154,7 +169,12 @@ describe("extension atomicity invariant", () => {
           id: "bad",
           version: "1.0.0",
           units: [
-            { symbol: "okunit", dimension: { L: 1 }, toBaseFactor: 1, label: "ok" },
+            {
+              symbol: "okunit",
+              dimension: { L: 1 },
+              toBaseFactor: 1,
+              label: "ok",
+            },
             { symbol: "", dimension: { L: 1 }, toBaseFactor: 1, label: "bad" },
           ],
         },
@@ -176,7 +196,9 @@ describe("extension atomicity invariant", () => {
 describe("interchange determinism", () => {
   it("same value serializes byte-identically; migration is deterministic", () => {
     const q = Quantity.of(10, "kg");
-    expect(JSON.stringify(toInterchange(q))).toBe(JSON.stringify(toInterchange(q)));
+    expect(JSON.stringify(toInterchange(q))).toBe(
+      JSON.stringify(toInterchange(q)),
+    );
     const m = Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.2, "kg"));
     const a = fromInterchange(JSON.parse(JSON.stringify(toInterchange(m))));
     const b = fromInterchange(JSON.parse(JSON.stringify(toInterchange(m))));

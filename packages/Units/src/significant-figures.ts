@@ -35,7 +35,9 @@ import { NumericalError } from "./numerical.js";
  */
 export function countSignificantFigures(text: string): number {
   if (typeof text !== "string") {
-    throw new NumericalError(`Significant-figure input must be a string, got ${typeof text}`);
+    throw new NumericalError(
+      `Significant-figure input must be a string, got ${typeof text}`,
+    );
   }
   const t = text.trim();
   const m = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(t);
@@ -63,7 +65,9 @@ export function countSignificantFigures(text: string): number {
 
 function assertSigFigCount(n: number, what: string): void {
   if (!Number.isInteger(n) || n < 1) {
-    throw new NumericalError(`${what} must be a positive integer count, got ${String(n)}`);
+    throw new NumericalError(
+      `${what} must be a positive integer count, got ${String(n)}`,
+    );
   }
 }
 
@@ -83,10 +87,14 @@ export function mulDivSigFigs(aSigFigs: number, bSigFigs: number): number {
  */
 export function addSubDecimalPlaces(aPlaces: number, bPlaces: number): number {
   if (!Number.isInteger(aPlaces) || aPlaces < 0) {
-    throw new NumericalError(`aPlaces must be a non-negative integer, got ${String(aPlaces)}`);
+    throw new NumericalError(
+      `aPlaces must be a non-negative integer, got ${String(aPlaces)}`,
+    );
   }
   if (!Number.isInteger(bPlaces) || bPlaces < 0) {
-    throw new NumericalError(`bPlaces must be a non-negative integer, got ${String(bPlaces)}`);
+    throw new NumericalError(
+      `bPlaces must be a non-negative integer, got ${String(bPlaces)}`,
+    );
   }
   return Math.min(aPlaces, bPlaces);
 }
@@ -130,7 +138,11 @@ function splitMantissaExponent(
   }
   if (!Number.isFinite(value) || value === 0) {
     const zeroMantissa =
-      value === 0 ? (sigFigs === 1 ? "0" : `0.${"0".repeat(sigFigs - 1)}`) : String(value);
+      value === 0
+        ? sigFigs === 1
+          ? "0"
+          : `0.${"0".repeat(sigFigs - 1)}`
+        : String(value);
     return { mantissa: zeroMantissa, exponent: 0 };
   }
   let exp = Math.floor(Math.log10(Math.abs(value)));

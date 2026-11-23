@@ -18,7 +18,11 @@
  *   before use; all failures are typed errors, never silent guesses.
  */
 import { Quantity } from "./quantity.js";
-import { Measurement, deserializeMeasurement, serializeMeasurement } from "./measurement.js";
+import {
+  Measurement,
+  deserializeMeasurement,
+  serializeMeasurement,
+} from "./measurement.js";
 import type { Unit } from "./unit.js";
 import { defaultUnitRegistry, UnitRegistry } from "./unit-registry.js";
 import {
@@ -29,8 +33,15 @@ import {
 } from "./unit-system.js";
 import type { AtomicUnitDef } from "./units/atomic-units.js";
 import { PrefixRegistry, type Prefix } from "./prefix.js";
-import { QuantityKindRegistry, type QuantityKind, type SemanticPolicy } from "./quantity-kind.js";
-import { FunctionRegistry, type ScientificFunction } from "./function-registry.js";
+import {
+  QuantityKindRegistry,
+  type QuantityKind,
+  type SemanticPolicy,
+} from "./quantity-kind.js";
+import {
+  FunctionRegistry,
+  type ScientificFunction,
+} from "./function-registry.js";
 import {
   ConstantRegistry,
   deserializeConstantRegistry,
@@ -43,13 +54,21 @@ import {
   importUnitName,
   type StandardsProfile,
 } from "./standards-profile.js";
-import { dimensionKey, dimensionsEqual, type DimensionVector } from "./dimension.js";
+import {
+  dimensionKey,
+  dimensionsEqual,
+  type DimensionVector,
+} from "./dimension.js";
 import { parseUnit } from "./unit-parser.js";
 
 import { formatQuantity, type FormatOptions } from "./formatter.js";
 import { deserializeQuantity, serializeQuantity } from "./serializer.js";
 import { MeasurementDataset, MeasurementSeries } from "./statistics.js";
-import { evaluateFormula, type Formula, type FormulaBindings } from "./formula.js";
+import {
+  evaluateFormula,
+  type Formula,
+  type FormulaBindings,
+} from "./formula.js";
 import { inferExpressionDimension } from "./expression.js";
 import type { ComparisonOptions } from "./numerical.js";
 import {
@@ -88,15 +107,20 @@ function resolveLimits(limits?: InteropLimits): {
   maxInterchangeObservations: number;
 } {
   const r = {
-    maxExtensionEntries: limits?.maxExtensionEntries ?? DEFAULT_LIMITS.maxExtensionEntries,
+    maxExtensionEntries:
+      limits?.maxExtensionEntries ?? DEFAULT_LIMITS.maxExtensionEntries,
     maxSources: limits?.maxSources ?? DEFAULT_LIMITS.maxSources,
-    maxInterchangeChars: limits?.maxInterchangeChars ?? DEFAULT_LIMITS.maxInterchangeChars,
+    maxInterchangeChars:
+      limits?.maxInterchangeChars ?? DEFAULT_LIMITS.maxInterchangeChars,
     maxInterchangeObservations:
-      limits?.maxInterchangeObservations ?? DEFAULT_LIMITS.maxInterchangeObservations,
+      limits?.maxInterchangeObservations ??
+      DEFAULT_LIMITS.maxInterchangeObservations,
   };
   for (const [k, v] of Object.entries(r)) {
     if (!Number.isInteger(v) || v < 1) {
-      throw new UnitEngineError(`Interop limit ${k} must be a positive integer.`);
+      throw new UnitEngineError(
+        `Interop limit ${k} must be a positive integer.`,
+      );
     }
   }
   return r;
@@ -110,7 +134,10 @@ function hasPollutionKeys(obj: Record<string, unknown>): boolean {
   );
 }
 
-function assertPlainRecord(value: unknown, what: string): asserts value is Record<string, unknown> {
+function assertPlainRecord(
+  value: unknown,
+  what: string,
+): asserts value is Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new ExtensionError(`${what} must be a plain object`);
   }
@@ -162,7 +189,14 @@ export interface ExtensionTargets {
 
 export interface ExtensionConflict {
   /** What collided: symbol, alias, identifier, dimension, factor, kind, version. */
-  readonly kind: "symbol" | "alias" | "identifier" | "dimension" | "factor" | "kind" | "version";
+  readonly kind:
+    | "symbol"
+    | "alias"
+    | "identifier"
+    | "dimension"
+    | "factor"
+    | "kind"
+    | "version";
   /** The colliding name. */
   readonly name: string;
   /** Human-readable detail (existing vs incoming). */
@@ -178,10 +212,17 @@ function assertManifestShape(
 ): void {
   assertPlainRecord(manifest, "ExtensionManifest");
   if (typeof manifest.id !== "string" || !ID_RE.test(manifest.id)) {
-    throw new ExtensionError(`Extension id must match /^[A-Za-z][A-Za-z0-9_-]*$/`);
+    throw new ExtensionError(
+      `Extension id must match /^[A-Za-z][A-Za-z0-9_-]*$/`,
+    );
   }
-  if (typeof manifest.version !== "string" || manifest.version.trim().length === 0) {
-    throw new ExtensionError(`Extension "${manifest.id}" needs a non-empty version`);
+  if (
+    typeof manifest.version !== "string" ||
+    manifest.version.trim().length === 0
+  ) {
+    throw new ExtensionError(
+      `Extension "${manifest.id}" needs a non-empty version`,
+    );
   }
   if (manifest.requiresUnits !== undefined) {
     checkRequiresUnits(manifest.requiresUnits, manifest.id);
@@ -200,7 +241,9 @@ function assertManifestShape(
     const entries = manifest[section];
     if (entries === undefined) continue;
     if (!Array.isArray(entries)) {
-      throw new ExtensionError(`Extension "${manifest.id}" section "${section}" must be an array`);
+      throw new ExtensionError(
+        `Extension "${manifest.id}" section "${section}" must be an array`,
+      );
     }
     if (entries.length > limits.maxExtensionEntries) {
       throw new ExtensionError(
@@ -218,9 +261,14 @@ function assertManifestShape(
  * Supported: ">=X", ">X", "=X"/"X", "^X" (compatible: same major, >= minor),
  * "~X" (same major.minor, >= patch). Anything else throws ExtensionError.
  */
-export function checkRequiresUnits(range: string, extensionId = "<unknown>"): void {
+export function checkRequiresUnits(
+  range: string,
+  extensionId = "<unknown>",
+): void {
   if (typeof range !== "string" || range.trim().length === 0) {
-    throw new ExtensionError(`Extension "${extensionId}" requiresUnits must be a non-empty string`);
+    throw new ExtensionError(
+      `Extension "${extensionId}" requiresUnits must be a non-empty string`,
+    );
   }
   const m = /^(>=|>|=|\^|~)?\s*(\d+)\.(\d+)\.(\d+)\s*$/.exec(range.trim());
   if (!m) {
@@ -231,7 +279,11 @@ export function checkRequiresUnits(range: string, extensionId = "<unknown>"): vo
   }
   const op = m[1] ?? "=";
   const want = [Number(m[2]), Number(m[3]), Number(m[4])] as const;
-  const have = ENGINE_VERSION.split(".").map(Number) as [number, number, number];
+  const have = ENGINE_VERSION.split(".").map(Number) as [
+    number,
+    number,
+    number,
+  ];
   const cmp = (): number => {
     for (let i = 0; i < 3; i++) {
       if (have[i]! !== want[i]!) return have[i]! < want[i]! ? -1 : 1;
@@ -279,7 +331,11 @@ export function validateExtension(
   const units = targets.units;
   if (units !== undefined && manifest.units !== undefined) {
     for (const def of manifest.units) {
-      if (def === null || typeof def !== "object" || typeof def.symbol !== "string") {
+      if (
+        def === null ||
+        typeof def !== "object" ||
+        typeof def.symbol !== "string"
+      ) {
         conflicts.push({
           kind: "identifier",
           name: String((def as { symbol?: unknown })?.symbol),
@@ -292,7 +348,8 @@ export function validateExtension(
         const sameDim = dimensionsEqual(existing.dimension, def.dimension);
         const sameScale = existing.toBaseFactor === def.toBaseFactor;
         const sameKind =
-          (existing.metadata?.kind ?? undefined) === (def.metadata?.kind ?? undefined);
+          (existing.metadata?.kind ?? undefined) ===
+          (def.metadata?.kind ?? undefined);
         if (!sameDim) {
           conflicts.push({
             kind: "dimension",
@@ -325,7 +382,10 @@ export function validateExtension(
         : [];
       for (const alias of aliases) {
         if (typeof alias !== "string") continue;
-        if (alias !== def.symbol && tryResolveSymbol(units, alias) !== undefined) {
+        if (
+          alias !== def.symbol &&
+          tryResolveSymbol(units, alias) !== undefined
+        ) {
           conflicts.push({
             kind: "alias",
             name: alias,
@@ -339,16 +399,29 @@ export function validateExtension(
     const existing = new Map<string, string>();
     for (const p of targets.prefixes.list()) {
       existing.set(p.symbol, `prefix "${p.symbol}"`);
-      for (const a of p.aliases ?? []) existing.set(a, `alias of "${p.symbol}"`);
+      for (const a of p.aliases ?? [])
+        existing.set(a, `alias of "${p.symbol}"`);
     }
     for (const prefix of manifest.prefixes) {
-      if (prefix === null || typeof prefix !== "object" || Array.isArray(prefix)) {
-        conflicts.push({ kind: "identifier", name: "?", detail: "malformed prefix definition" });
+      if (
+        prefix === null ||
+        typeof prefix !== "object" ||
+        Array.isArray(prefix)
+      ) {
+        conflicts.push({
+          kind: "identifier",
+          name: "?",
+          detail: "malformed prefix definition",
+        });
         continue;
       }
       const symbol = (prefix as { symbol?: unknown }).symbol;
       if (typeof symbol !== "string" || symbol.length === 0) {
-        conflicts.push({ kind: "identifier", name: "?", detail: "malformed prefix definition" });
+        conflicts.push({
+          kind: "identifier",
+          name: "?",
+          detail: "malformed prefix definition",
+        });
         continue;
       }
       if (existing.has(symbol)) {
@@ -358,7 +431,9 @@ export function validateExtension(
           detail: `prefix collides with ${existing.get(symbol)}`,
         });
       }
-      for (const alias of asStringArray((prefix as { aliases?: unknown }).aliases)) {
+      for (const alias of asStringArray(
+        (prefix as { aliases?: unknown }).aliases,
+      )) {
         if (existing.has(alias)) {
           conflicts.push({
             kind: "alias",
@@ -376,11 +451,19 @@ export function validateExtension(
         typeof kind !== "object" ||
         typeof (kind as { id?: unknown }).id !== "string"
       ) {
-        conflicts.push({ kind: "identifier", name: "?", detail: "malformed kind definition" });
+        conflicts.push({
+          kind: "identifier",
+          name: "?",
+          detail: "malformed kind definition",
+        });
         continue;
       }
       if (targets.kinds.has(kind.id)) {
-        conflicts.push({ kind: "identifier", name: kind.id, detail: "kind id already registered" });
+        conflicts.push({
+          kind: "identifier",
+          name: kind.id,
+          detail: "kind id already registered",
+        });
       }
     }
   }
@@ -388,13 +471,23 @@ export function validateExtension(
     for (const fn of manifest.functions) {
       const name = (fn as { name?: unknown })?.name;
       if (typeof name !== "string") {
-        conflicts.push({ kind: "identifier", name: "?", detail: "malformed function definition" });
+        conflicts.push({
+          kind: "identifier",
+          name: "?",
+          detail: "malformed function definition",
+        });
         continue;
       }
       if (targets.functions.has(name)) {
-        conflicts.push({ kind: "identifier", name, detail: "function name already registered" });
+        conflicts.push({
+          kind: "identifier",
+          name,
+          detail: "function name already registered",
+        });
       }
-      for (const alias of asStringArray((fn as { aliases?: unknown }).aliases)) {
+      for (const alias of asStringArray(
+        (fn as { aliases?: unknown }).aliases,
+      )) {
         if (typeof alias === "string" && targets.functions.has(alias)) {
           conflicts.push({
             kind: "alias",
@@ -410,20 +503,34 @@ export function validateExtension(
       const id = (def as { id?: unknown })?.id;
       const symbol = (def as { symbol?: unknown })?.symbol;
       if (typeof id !== "string") {
-        conflicts.push({ kind: "identifier", name: "?", detail: "malformed constant definition" });
+        conflicts.push({
+          kind: "identifier",
+          name: "?",
+          detail: "malformed constant definition",
+        });
         continue;
       }
       if (targets.constants.has(id)) {
-        conflicts.push({ kind: "identifier", name: id, detail: "constant id already registered" });
+        conflicts.push({
+          kind: "identifier",
+          name: id,
+          detail: "constant id already registered",
+        });
       }
-      if (typeof symbol === "string" && symbol !== id && targets.constants.has(symbol)) {
+      if (
+        typeof symbol === "string" &&
+        symbol !== id &&
+        targets.constants.has(symbol)
+      ) {
         conflicts.push({
           kind: "symbol",
           name: symbol,
           detail: `constant symbol collides (id "${id}")`,
         });
       }
-      for (const alias of asStringArray((def as { aliases?: unknown }).aliases)) {
+      for (const alias of asStringArray(
+        (def as { aliases?: unknown }).aliases,
+      )) {
         if (typeof alias === "string" && targets.constants.has(alias)) {
           conflicts.push({
             kind: "alias",
@@ -449,7 +556,11 @@ export function validateExtension(
         continue;
       }
       if (targets.systems.hasSystem(name) || targets.systems.hasPack(name)) {
-        conflicts.push({ kind: "identifier", name, detail: "system/pack name already registered" });
+        conflicts.push({
+          kind: "identifier",
+          name,
+          detail: "system/pack name already registered",
+        });
       }
     }
   }
@@ -489,18 +600,29 @@ export function validateExtension(
     for (const profile of manifest.profiles) {
       const id = (profile as { id?: unknown })?.id;
       if (typeof id !== "string") {
-        conflicts.push({ kind: "identifier", name: "?", detail: "malformed profile definition" });
+        conflicts.push({
+          kind: "identifier",
+          name: "?",
+          detail: "malformed profile definition",
+        });
         continue;
       }
       if (targets.profiles.has(id)) {
-        conflicts.push({ kind: "identifier", name: id, detail: "profile id already registered" });
+        conflicts.push({
+          kind: "identifier",
+          name: id,
+          detail: "profile id already registered",
+        });
       }
     }
   }
   return conflicts;
 }
 
-function tryResolveSymbol(registry: UnitRegistry, symbol: string): Unit | undefined {
+function tryResolveSymbol(
+  registry: UnitRegistry,
+  symbol: string,
+): Unit | undefined {
   try {
     return registry.resolve(symbol);
   } catch {
@@ -544,13 +666,16 @@ export function applyExtension(
   }
   // Trial pass on detached snapshots: catches validator rejections that
   // dry-run comparison cannot (malformed factors, bad dimensions, …).
-  const trialUnits = targets.units ? trialUnitRegistry(targets.units) : undefined;
+  const trialUnits = targets.units
+    ? trialUnitRegistry(targets.units)
+    : undefined;
   try {
     if (trialUnits !== undefined) {
       for (const def of manifest.units ?? []) trialUnits.registerAtomic(def);
       // Prefixes have no standalone registry in this engine version: they
       // attach at UnitRegistry construction. Trial-apply validates shape.
-      for (const prefix of manifest.prefixes ?? []) assertPrefixShape(prefix, manifest.id);
+      for (const prefix of manifest.prefixes ?? [])
+        assertPrefixShape(prefix, manifest.id);
     }
     if (targets.prefixes !== undefined) {
       const trial = new PrefixRegistry(targets.prefixes.list());
@@ -663,13 +788,21 @@ function trialUnitRegistry(source: UnitRegistry): UnitRegistry {
 
 function assertPrefixShape(prefix: unknown, extensionId: string): void {
   if (prefix === null || typeof prefix !== "object" || Array.isArray(prefix)) {
-    throw new ExtensionError(`Extension "${extensionId}" prefix must be a plain object`);
+    throw new ExtensionError(
+      `Extension "${extensionId}" prefix must be a plain object`,
+    );
   }
   const p = prefix as Record<string, unknown>;
   if (typeof p.symbol !== "string" || p.symbol.length === 0) {
-    throw new ExtensionError(`Extension "${extensionId}" prefix needs a symbol`);
+    throw new ExtensionError(
+      `Extension "${extensionId}" prefix needs a symbol`,
+    );
   }
-  if (typeof p.factor !== "number" || !Number.isFinite(p.factor) || p.factor <= 0) {
+  if (
+    typeof p.factor !== "number" ||
+    !Number.isFinite(p.factor) ||
+    p.factor <= 0
+  ) {
     throw new ExtensionError(
       `Extension "${extensionId}" prefix "${p.symbol}" needs a finite positive factor`,
     );
@@ -737,16 +870,22 @@ function snapshotSystems(registry: UnitSystemRegistry): UnitSystemRegistry {
   // order-sensitive since collisions throw identically either way).
   const Ctor = registry.constructor as new () => UnitSystemRegistry;
   const copy: UnitSystemRegistry = new Ctor();
-  for (const system of [...registry.listSystems()].sort((a, b) => (a.name < b.name ? -1 : 1))) {
+  for (const system of [...registry.listSystems()].sort((a, b) =>
+    a.name < b.name ? -1 : 1,
+  )) {
     try {
       copy.registerSystem(system);
     } catch {
       // Already present (e.g. shared defaults) — deterministic skip.
     }
   }
-  const packs = (registry as unknown as { listPacks?: () => Array<{ name: string }> }).listPacks;
+  const packs = (
+    registry as unknown as { listPacks?: () => Array<{ name: string }> }
+  ).listPacks;
   if (typeof packs === "function") {
-    for (const pack of [...packs.call(registry)].sort((a, b) => (a.name < b.name ? -1 : 1))) {
+    for (const pack of [...packs.call(registry)].sort((a, b) =>
+      a.name < b.name ? -1 : 1,
+    )) {
       try {
         copy.registerPack(pack as never);
       } catch {
@@ -833,10 +972,16 @@ export function resolveAmbiguous(
     throw new ExtensionError("resolveAmbiguous needs at least one source");
   }
   if (opts.sources.length > limits.maxSources) {
-    throw new ExtensionError(`Too many ambiguity sources (max ${limits.maxSources})`);
+    throw new ExtensionError(
+      `Too many ambiguity sources (max ${limits.maxSources})`,
+    );
   }
   const strategy = opts.strategy ?? "standard";
-  if (strategy !== "strict" && strategy !== "standard" && strategy !== "permissive") {
+  if (
+    strategy !== "strict" &&
+    strategy !== "standard" &&
+    strategy !== "permissive"
+  ) {
     throw new ExtensionError(`Unknown ambiguity strategy "${strategy}"`);
   }
   const parsed = parseNamespacedSymbol(input);
@@ -844,18 +989,31 @@ export function resolveAmbiguous(
   const wanted = parsed.symbol;
   const candidates: AmbiguityCandidate[] = [];
   const seen = new Set<string>();
-  const ordered = [...opts.sources].sort((a, b) => (a.namespace < b.namespace ? -1 : 1));
+  const ordered = [...opts.sources].sort((a, b) =>
+    a.namespace < b.namespace ? -1 : 1,
+  );
   // Validate all sources up front (fail fast, even for filtered namespaces).
   for (const source of ordered) {
-    if (typeof source.namespace !== "string" || !(source.registry instanceof UnitRegistry)) {
-      throw new ExtensionError("Ambiguity sources need {namespace, registry: UnitRegistry}");
+    if (
+      typeof source.namespace !== "string" ||
+      !(source.registry instanceof UnitRegistry)
+    ) {
+      throw new ExtensionError(
+        "Ambiguity sources need {namespace, registry: UnitRegistry}",
+      );
     }
   }
   // The system hint is source-independent: resolve it once, not per source.
   const systemOk =
-    opts.system === undefined ? null : systemKnowsSymbol(opts.system, wanted, opts.systems);
+    opts.system === undefined
+      ? null
+      : systemKnowsSymbol(opts.system, wanted, opts.systems);
   for (const source of ordered) {
-    if (effectiveNamespace !== undefined && source.namespace !== effectiveNamespace) continue;
+    if (
+      effectiveNamespace !== undefined &&
+      source.namespace !== effectiveNamespace
+    )
+      continue;
     const unit = tryResolveSymbol(source.registry, wanted);
     if (unit === undefined) continue;
     if (systemOk === false) continue;
@@ -893,7 +1051,12 @@ export function resolveAmbiguous(
     (c) => c.dimension === first.dimension && c.scale === first.scale,
   );
   if (identical) {
-    return { input, candidates: Object.freeze(candidates), resolution: "unique", resolved: first };
+    return {
+      input,
+      candidates: Object.freeze(candidates),
+      resolution: "unique",
+      resolved: first,
+    };
   }
   if (strategy === "standard") {
     throw new AmbiguousUnitError(
@@ -901,7 +1064,12 @@ export function resolveAmbiguous(
       candidates.map((c) => `${c.namespace}:${c.symbol}`),
     );
   }
-  return { input, candidates: Object.freeze(candidates), resolution: "ambiguous", resolved: first };
+  return {
+    input,
+    candidates: Object.freeze(candidates),
+    resolution: "ambiguous",
+    resolved: first,
+  };
 }
 
 function systemKnowsSymbol(
@@ -955,7 +1123,9 @@ export function mapExternalUnit(
   // validation semantics (fail fast on bad targets).
   const hits: Array<{ namespace: string; unit: Unit }> = [];
   let lastError: unknown;
-  const ordered = [...scopes].sort((a, b) => (a.namespace < b.namespace ? -1 : 1));
+  const ordered = [...scopes].sort((a, b) =>
+    a.namespace < b.namespace ? -1 : 1,
+  );
   for (const scope of ordered) {
     try {
       const unit = importUnitName(name, mapping, { registry: scope.registry });
@@ -1032,7 +1202,9 @@ function checkUnknownFields(
   const unknown = Object.keys(payload).filter((k) => !known.includes(k));
   if (unknown.length === 0) return;
   if (policy === "reject") {
-    throw new ExtensionError(`${what} has unknown field(s): ${unknown.sort().join(", ")}`);
+    throw new ExtensionError(
+      `${what} has unknown field(s): ${unknown.sort().join(", ")}`,
+    );
   }
   // "ignore": drop silently (documented).
 }
@@ -1048,12 +1220,19 @@ export function toInterchange(
   value: unknown,
   opts: { extensions?: Readonly<Record<string, unknown>> } = {},
 ): InterchangeEnvelope {
-  const extensions = opts.extensions === undefined ? undefined : freezeExtensions(opts.extensions);
+  const extensions =
+    opts.extensions === undefined
+      ? undefined
+      : freezeExtensions(opts.extensions);
   if (value instanceof Quantity) {
     return freezeEnvelope("quantity", serializeQuantity(value), extensions);
   }
   if (value instanceof Measurement) {
-    return freezeEnvelope("measurement", serializeMeasurement(value), extensions);
+    return freezeEnvelope(
+      "measurement",
+      serializeMeasurement(value),
+      extensions,
+    );
   }
   if (value instanceof MeasurementSeries) {
     return freezeEnvelope("measurement-series", value.serialize(), extensions);
@@ -1097,7 +1276,12 @@ function freezeEnvelope(
   });
 }
 
-const INTERCHANGE_KNOWN_TOP_LEVEL = ["schemaVersion", "kind", "payload", "extensions"] as const;
+const INTERCHANGE_KNOWN_TOP_LEVEL = [
+  "schemaVersion",
+  "kind",
+  "payload",
+  "extensions",
+] as const;
 
 /**
  * Reconstruct validated engine values from interchange envelopes.
@@ -1141,7 +1325,9 @@ export function fromInterchange(
     Object.fromEntries(
       Object.entries(data).filter(
         ([k]) =>
-          !INTERCHANGE_KNOWN_TOP_LEVEL.includes(k as (typeof INTERCHANGE_KNOWN_TOP_LEVEL)[number]),
+          !INTERCHANGE_KNOWN_TOP_LEVEL.includes(
+            k as (typeof INTERCHANGE_KNOWN_TOP_LEVEL)[number],
+          ),
       ),
     ),
     [],
@@ -1158,9 +1344,15 @@ export function fromInterchange(
     case "measurement":
       return deserializeMeasurement(data.payload, registry);
     case "measurement-series":
-      return MeasurementSeries.deserialize(data.payload, { registry, limits: datasetLimits });
+      return MeasurementSeries.deserialize(data.payload, {
+        registry,
+        limits: datasetLimits,
+      });
     case "measurement-dataset": {
-      return MeasurementDataset.deserialize(data.payload, { registry, limits: datasetLimits });
+      return MeasurementDataset.deserialize(data.payload, {
+        registry,
+        limits: datasetLimits,
+      });
     }
     case "formula-result":
       // Formula results are Quantity|Measurement payloads tagged at export.
@@ -1176,11 +1368,16 @@ export function fromInterchange(
       // Reuse the constants deserializer (validates registry data fully).
       return deserializeConstantRegistryRef(data.payload, registry);
     default:
-      throw new ExtensionError(`Unknown interchange kind "${String(data.kind)}"`);
+      throw new ExtensionError(
+        `Unknown interchange kind "${String(data.kind)}"`,
+      );
   }
 }
 
-function deserializeConstantRegistryRef(payload: unknown, registry: UnitRegistry): unknown {
+function deserializeConstantRegistryRef(
+  payload: unknown,
+  registry: UnitRegistry,
+): unknown {
   return deserializeConstantRegistry(payload, { units: registry });
 }
 
@@ -1213,14 +1410,18 @@ export function migrateSerialized(
     throw new MigrationError("migrateSerialized needs an array of migrations");
   }
   if (!Number.isInteger(targetVersion) || targetVersion < 1) {
-    throw new MigrationError("migrateSerialized target version must be a positive integer");
+    throw new MigrationError(
+      "migrateSerialized target version must be a positive integer",
+    );
   }
   if (data === null || typeof data !== "object" || Array.isArray(data)) {
     throw new MigrationError("migrateSerialized needs a serialized object");
   }
   const record = data as Record<string, unknown>;
   if (hasPollutionKeys(record)) {
-    throw new MigrationError("Cannot migrate data with forbidden prototype keys");
+    throw new MigrationError(
+      "Cannot migrate data with forbidden prototype keys",
+    );
   }
   let current = data;
   let guard = 0;
@@ -1228,17 +1429,22 @@ export function migrateSerialized(
     const version = (current as Record<string, unknown>).version;
     if (version === targetVersion) return current;
     if (typeof version !== "number" || !Number.isInteger(version)) {
-      throw new MigrationError("Migrated data must carry an integer version at every step");
+      throw new MigrationError(
+        "Migrated data must carry an integer version at every step",
+      );
     }
     if (++guard > 64) {
-      throw new MigrationError("Migration chain exceeds 64 steps (possible cycle)");
+      throw new MigrationError(
+        "Migration chain exceeds 64 steps (possible cycle)",
+      );
     }
     const step = migrations.find(
       (m) =>
         m.kind ===
           (kind ??
             (current as Record<string, unknown>).type ??
-            (current as Record<string, unknown>).kind) && m.fromVersion === version,
+            (current as Record<string, unknown>).kind) &&
+        m.fromVersion === version,
     );
     if (!step) {
       throw new MigrationError(
@@ -1249,11 +1455,17 @@ export function migrateSerialized(
       throw new MigrationError("Migration entry needs a migrate function");
     }
     current = step.migrate(current);
-    if (current === null || typeof current !== "object" || Array.isArray(current)) {
+    if (
+      current === null ||
+      typeof current !== "object" ||
+      Array.isArray(current)
+    ) {
       throw new MigrationError("Migration step must return a plain object");
     }
     if (hasPollutionKeys(current as Record<string, unknown>)) {
-      throw new MigrationError("Migration step produced forbidden prototype keys");
+      throw new MigrationError(
+        "Migration step produced forbidden prototype keys",
+      );
     }
   }
 }
@@ -1330,7 +1542,12 @@ export function canonicalizeUnitText(
 }
 
 export type FormatPreset =
-  "canonical" | "symbolic" | "human" | "compact" | "machine" | "system-preferred";
+  | "canonical"
+  | "symbolic"
+  | "human"
+  | "compact"
+  | "machine"
+  | "system-preferred";
 
 export interface FormatPresetOptions {
   readonly registry?: UnitRegistry;
@@ -1378,10 +1595,16 @@ export function formatWithPreset(
         multiplicationSymbol: "*",
       });
     case "machine":
-      return formatValue(value, { ...base, ascii: true, significantFigures: 17 });
+      return formatValue(value, {
+        ...base,
+        ascii: true,
+        significantFigures: 17,
+      });
     case "system-preferred": {
       if (opts.system === undefined) {
-        throw new ExtensionError('Format preset "system-preferred" needs opts.system');
+        throw new ExtensionError(
+          'Format preset "system-preferred" needs opts.system',
+        );
       }
       // Reuse the standards-profile machinery (no duplicate logic).
       return formatViaProfile(value, opts);
@@ -1391,14 +1614,20 @@ export function formatWithPreset(
   }
 }
 
-function formatValue(value: Quantity | Measurement, opts: FormatOptions): string {
+function formatValue(
+  value: Quantity | Measurement,
+  opts: FormatOptions,
+): string {
   if (value instanceof Measurement) {
     return `${formatQuantity(value.value, opts)} ± ${formatQuantity(value.uncertainty, opts)}`;
   }
   return formatQuantity(value, opts);
 }
 
-function formatViaProfile(value: Quantity | Measurement, opts: FormatPresetOptions): string {
+function formatViaProfile(
+  value: Quantity | Measurement,
+  opts: FormatPresetOptions,
+): string {
   const systems = opts.systems ?? defaultUnitSystemRegistry;
   const system = systems.getSystem(opts.system!);
   if (!system) throw new ExtensionError(`Unknown unit system "${opts.system}"`);
@@ -1469,7 +1698,8 @@ export function compareQuantities(
   const diff = Math.abs(av - bv);
   if (mode === "absolute") return diff <= absTol;
   const scale = Math.max(Math.abs(av), Math.abs(bv));
-  if (mode === "relative") return scale === 0 ? diff <= absTol : diff <= relTol * scale;
+  if (mode === "relative")
+    return scale === 0 ? diff <= absTol : diff <= relTol * scale;
   return diff <= Math.max(absTol, relTol * scale);
 }
 
@@ -1528,7 +1758,9 @@ export interface ResolvedStrictness {
  * standard: normal safe behavior. permissive: documented compat behavior
  * (deprecated allowed with warning, ambiguous resolved deterministically).
  */
-export function resolveStrictness(policy: StrictnessPolicy = "standard"): ResolvedStrictness {
+export function resolveStrictness(
+  policy: StrictnessPolicy = "standard",
+): ResolvedStrictness {
   if (policy !== "strict" && policy !== "standard" && policy !== "permissive") {
     throw new UnitEngineError(`Unknown strictness policy "${policy}"`);
   }
@@ -1589,7 +1821,9 @@ export function explainConversion(
   }
   const registry = opts.registry ?? defaultUnitRegistry;
   const strictness = resolveStrictness(opts.strictness ?? "standard");
-  const target = parseUnit(targetUnit, registry, { strict: strictness.parserStrict });
+  const target = parseUnit(targetUnit, registry, {
+    strict: strictness.parserStrict,
+  });
   // Factor as "value of 1 source-unit in target" (avoids 0/0 for zero
   // quantities; for affine units this includes the offset by definition).
   let factor: number;
@@ -1616,7 +1850,9 @@ export function explainConversion(
   return Object.freeze({
     inputs: Object.freeze({ value: `${q.value} ${q.unit.symbol}` }),
     dimension: dimensionKey(q.dimension),
-    conversionSteps: Object.freeze([{ from: q.unit.symbol, to: target.symbol, factor }]),
+    conversionSteps: Object.freeze([
+      { from: q.unit.symbol, to: target.symbol, factor },
+    ]),
     output: `${q.to(target).value} ${target.symbol}`,
     warnings: Object.freeze(warnings),
   });
@@ -1636,7 +1872,8 @@ export function explainFormula(
   const registry = opts.registry ?? defaultUnitRegistry;
   const inputs: Record<string, string> = {};
   for (const [name, binding] of Object.entries(bindings)) {
-    if (binding instanceof Quantity) inputs[name] = `${binding.value} ${binding.unit.symbol}`;
+    if (binding instanceof Quantity)
+      inputs[name] = `${binding.value} ${binding.unit.symbol}`;
     else if (binding instanceof Measurement) {
       inputs[name] =
         `${binding.value.value} ± ${binding.uncertainty.value} ${binding.value.unit.symbol}`;
@@ -1649,7 +1886,9 @@ export function explainFormula(
     if (binding instanceof Quantity) varDims[name] = binding.dimension;
     else if (binding instanceof Measurement) varDims[name] = binding.dimension;
   }
-  const analysis = inferExpressionDimension(formula.expression, varDims, { registry });
+  const analysis = inferExpressionDimension(formula.expression, varDims, {
+    registry,
+  });
   const result = evaluateFormula(formula, bindings, { registry });
   const output =
     result instanceof Measurement
@@ -1685,7 +1924,9 @@ export function explainFormula(
  */
 export function assertValidFunctionName(name: string, owner: string): void {
   if (typeof name !== "string" || !/^[a-z][a-z0-9_]*$/.test(name)) {
-    throw new ExtensionError(`${owner} function name must match /^[a-z][a-z0-9_]*$/`);
+    throw new ExtensionError(
+      `${owner} function name must match /^[a-z][a-z0-9_]*$/`,
+    );
   }
 }
 
@@ -1706,25 +1947,46 @@ export interface StandardReference {
 }
 
 /** Validate a StandardReference (data only — the engine never fetches it). */
-export function assertValidStandardReference(ref: StandardReference, owner: string): void {
+export function assertValidStandardReference(
+  ref: StandardReference,
+  owner: string,
+): void {
   if (ref === null || typeof ref !== "object" || Array.isArray(ref)) {
-    throw new ExtensionError(`${owner} standard reference must be a plain object`);
+    throw new ExtensionError(
+      `${owner} standard reference must be a plain object`,
+    );
   }
   if (hasPollutionKeys(ref as unknown as Record<string, unknown>)) {
-    throw new ExtensionError(`${owner} standard reference contains forbidden keys`);
+    throw new ExtensionError(
+      `${owner} standard reference contains forbidden keys`,
+    );
   }
-  if (typeof ref.identifier !== "string" || ref.identifier.trim().length === 0) {
-    throw new ExtensionError(`${owner} standard reference needs a non-empty identifier`);
+  if (
+    typeof ref.identifier !== "string" ||
+    ref.identifier.trim().length === 0
+  ) {
+    throw new ExtensionError(
+      `${owner} standard reference needs a non-empty identifier`,
+    );
   }
   if (ref.edition !== undefined && typeof ref.edition !== "string") {
-    throw new ExtensionError(`${owner} standard reference edition must be a string`);
+    throw new ExtensionError(
+      `${owner} standard reference edition must be a string`,
+    );
   }
   if (ref.source !== undefined && typeof ref.source !== "string") {
-    throw new ExtensionError(`${owner} standard reference source must be a string`);
+    throw new ExtensionError(
+      `${owner} standard reference source must be a string`,
+    );
   }
   if (ref.effectiveDate !== undefined) {
-    if (typeof ref.effectiveDate !== "string" || Number.isNaN(Date.parse(ref.effectiveDate))) {
-      throw new ExtensionError(`${owner} standard reference effectiveDate must be ISO 8601`);
+    if (
+      typeof ref.effectiveDate !== "string" ||
+      Number.isNaN(Date.parse(ref.effectiveDate))
+    ) {
+      throw new ExtensionError(
+        `${owner} standard reference effectiveDate must be ISO 8601`,
+      );
     }
   }
 }

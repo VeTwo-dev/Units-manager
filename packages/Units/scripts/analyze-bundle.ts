@@ -12,7 +12,8 @@ async function walk(dir: string): Promise<Array<[string, number]>> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) entries.push(...(await walk(full)));
-    else if (entry.isFile()) entries.push([relative(root, full), (await stat(full)).size]);
+    else if (entry.isFile())
+      entries.push([relative(root, full), (await stat(full)).size]);
   }
   return entries;
 }

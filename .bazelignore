@@ -1,0 +1,7 @@
+# Exclude node_modules and pnpm store from Bazel file system scanning.
+# These directories are managed by pnpm and contain thousands of files
+# that Bazel does not need to stat during diff detection. Dependencies
+# are declared via pnpm-lock.yaml and resolved through npm_translate_lock.
+
+node_modules
+.pnpm-store

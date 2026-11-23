@@ -17,7 +17,11 @@ import {
 } from "../src/index.js";
 
 const exactCa = () =>
-  NutritionMeasurement.of(Measurement.exact(Quantity.of(100, "mg/kg")), "ca", "asFed");
+  NutritionMeasurement.of(
+    Measurement.exact(Quantity.of(100, "mg/kg")),
+    "ca",
+    "asFed",
+  );
 
 describe("NutritionMeasurementOptions — construction contract", () => {
   it("minimum valid construction needs only measurement + nutrient", () => {
@@ -44,18 +48,25 @@ describe("NutritionMeasurementOptions — construction contract", () => {
   });
 
   it("from() builds value + uncertainty through the same options", () => {
-    const nm = NutritionMeasurement.from(100, "mg/kg", "ca", "asFed", Quantity.of(2, "mg/kg"), {
-      metadata: { reference: "lot-42" },
-    } satisfies NutritionMeasurementOptions);
+    const nm = NutritionMeasurement.from(
+      100,
+      "mg/kg",
+      "ca",
+      "asFed",
+      Quantity.of(2, "mg/kg"),
+      {
+        metadata: { reference: "lot-42" },
+      } satisfies NutritionMeasurementOptions,
+    );
     expect(nm.value.value).toBe(100);
     expect(nm.uncertainty.value).toBe(2);
     expect(nm.metadata?.reference).toBe("lot-42");
   });
 
   it("non-Measurement input is rejected", () => {
-    expect(() => NutritionMeasurement.of({ nope: 1 } as never, "ca", "asFed")).toThrow(
-      InvalidNutritionQuantityError,
-    );
+    expect(() =>
+      NutritionMeasurement.of({ nope: 1 } as never, "ca", "asFed"),
+    ).toThrow(InvalidNutritionQuantityError);
   });
 
   it("unknown nutrient is rejected", () => {
@@ -70,34 +81,51 @@ describe("NutritionMeasurementOptions — construction contract", () => {
 
   it("unknown basis is rejected", () => {
     expect(() =>
-      NutritionMeasurement.of(Measurement.exact(Quantity.of(1, "mg/kg")), "ca", "not-a-basis"),
+      NutritionMeasurement.of(
+        Measurement.exact(Quantity.of(1, "mg/kg")),
+        "ca",
+        "not-a-basis",
+      ),
     ).toThrow();
   });
 
   it("incompatible measurement unit is rejected (mineral vs energy unit)", () => {
     expect(() =>
-      NutritionMeasurement.of(Measurement.exact(Quantity.of(10, "MJ/kg")), "ca", "asFed"),
+      NutritionMeasurement.of(
+        Measurement.exact(Quantity.of(10, "MJ/kg")),
+        "ca",
+        "asFed",
+      ),
     ).toThrow(NutritionUnitCompatibilityError);
   });
 
   it("malformed metadata is rejected", () => {
     expect(() =>
-      NutritionMeasurement.of(Measurement.exact(Quantity.of(1, "mg/kg")), "ca", "asFed", {
-        metadata: [] as never,
-      }),
+      NutritionMeasurement.of(
+        Measurement.exact(Quantity.of(1, "mg/kg")),
+        "ca",
+        "asFed",
+        {
+          metadata: [] as never,
+        },
+      ),
     ).toThrow();
   });
 
   it("caller mutation of opts cannot corrupt the measurement", () => {
     const ctx = { dryMatterFraction: 0.9 } as never;
-    const nm = NutritionMeasurement.of(Measurement.exact(Quantity.of(1, "mg/kg")), "ca", "asFed", {
-      context: ctx,
-    });
-    (ctx as Record<string, unknown>).dryMatterFraction = 0.1;
-    expect(nm.context?.dryMatterFraction ?? nm.context?.resolvedDryMatterFraction).toBeCloseTo(
-      0.9,
-      12,
+    const nm = NutritionMeasurement.of(
+      Measurement.exact(Quantity.of(1, "mg/kg")),
+      "ca",
+      "asFed",
+      {
+        context: ctx,
+      },
     );
+    (ctx as Record<string, unknown>).dryMatterFraction = 0.1;
+    expect(
+      nm.context?.dryMatterFraction ?? nm.context?.resolvedDryMatterFraction,
+    ).toBeCloseTo(0.9, 12);
     expect(Object.isFrozen(nm)).toBe(true);
   });
 });
@@ -110,7 +138,9 @@ describe("NutritionMeasurementOptions — serialization round-trip", () => {
       "asFed",
       { context: createNutritionContext({ dryMatterFraction: 0.9 }) },
     );
-    const back = NutritionMeasurement.fromJSON(JSON.parse(JSON.stringify(nm.toJSON())));
+    const back = NutritionMeasurement.fromJSON(
+      JSON.parse(JSON.stringify(nm.toJSON())),
+    );
     expect(back.equals(nm)).toBe(true);
     expect(back.context?.resolvedDryMatterFraction).toBeCloseTo(0.9, 12);
   });
@@ -122,17 +152,21 @@ describe("NutritionMeasurementOptions — serialization round-trip", () => {
   });
 
   it("malformed serialization is rejected, never defaulted", () => {
-    expect(() => NutritionMeasurement.fromJSON({ version: 2 } as never)).toThrow(
-      InvalidNutritionQuantityError,
-    );
-    expect(() => NutritionMeasurement.fromJSON({ version: 1, type: "nope" } as never)).toThrow(
-      InvalidNutritionQuantityError,
-    );
+    expect(() =>
+      NutritionMeasurement.fromJSON({ version: 2 } as never),
+    ).toThrow(InvalidNutritionQuantityError);
+    expect(() =>
+      NutritionMeasurement.fromJSON({ version: 1, type: "nope" } as never),
+    ).toThrow(InvalidNutritionQuantityError);
   });
 
   it("basis mismatch between unit tag and basis id is rejected", () => {
     expect(() =>
-      NutritionMeasurement.of(Measurement.exact(Quantity.of(1, "mg/kg")), "ca", "!!"),
+      NutritionMeasurement.of(
+        Measurement.exact(Quantity.of(1, "mg/kg")),
+        "ca",
+        "!!",
+      ),
     ).toThrow(InvalidNutritionBasisError);
   });
 });

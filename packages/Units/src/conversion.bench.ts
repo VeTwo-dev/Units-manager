@@ -13,8 +13,19 @@ import {
 } from "./serializer.js";
 import { isQuantity, isUnit } from "./guards.js";
 import { defaultUnitSystemRegistry } from "./unit-system.js";
-import { Dim, multiplyDim, divideDim, powDim, dimensionKey, dimensionsEqual } from "./dimension.js";
-import { Expression, compileExpression, evaluateExpression } from "./expression.js";
+import {
+  Dim,
+  multiplyDim,
+  divideDim,
+  powDim,
+  dimensionKey,
+  dimensionsEqual,
+} from "./dimension.js";
+import {
+  Expression,
+  compileExpression,
+  evaluateExpression,
+} from "./expression.js";
 import { getConversionPlan, convertWithPlan } from "./conversion-engine.js";
 import { canonicalUnitKey } from "./unit.js";
 import { createRegistry } from "./unit-system.js";
@@ -22,9 +33,16 @@ import { SI_PACK } from "./packs/si.js";
 import { IMPERIAL_PACK } from "./packs/imperial.js";
 import { ANGLE_PACK } from "./packs/angle.js";
 import { Measurement } from "./measurement.js";
-import { toSignificantFigures, toEngineeringNotation } from "./significant-figures.js";
+import {
+  toSignificantFigures,
+  toEngineeringNotation,
+} from "./significant-figures.js";
 import { areKindsCompatible } from "./quantity-kind.js";
-import { parseUnitExpression, unitExprKey, equivalentUnits } from "./unit-algebra.js";
+import {
+  parseUnitExpression,
+  unitExprKey,
+  equivalentUnits,
+} from "./unit-algebra.js";
 import { defineFormula, compileFormula } from "./formula.js";
 import {
   Measurement as BenchMeasurement,
@@ -269,7 +287,9 @@ describe("benchmarks: numerical (Phase 11)", () => {
     q.pow(2);
   });
   bench("approx equals", () => {
-    Quantity.of(1, "kg").approximatelyEquals(Quantity.of(1000, "g"), { absoluteTolerance: 1e-9 });
+    Quantity.of(1, "kg").approximatelyEquals(Quantity.of(1000, "g"), {
+      absoluteTolerance: 1e-9,
+    });
   });
   bench("round", () => {
     q.round(0);
@@ -312,8 +332,14 @@ describe("benchmarks: advanced conversion (Phase 13)", () => {
 });
 
 describe("benchmarks: expression engine (Phase 15)", () => {
-  const ctx = { intake: Quantity.of(10, "kg/day"), conc: Quantity.of(80, "mg/kg") };
-  const expr = Expression.multiply(Expression.variable("intake"), Expression.variable("conc"));
+  const ctx = {
+    intake: Quantity.of(10, "kg/day"),
+    conc: Quantity.of(80, "mg/kg"),
+  };
+  const expr = Expression.multiply(
+    Expression.variable("intake"),
+    Expression.variable("conc"),
+  );
   const compiled = compileExpression(expr);
   const directA = Quantity.of(10, "kg/day");
   const directB = Quantity.of(80, "mg/kg");
@@ -329,8 +355,14 @@ describe("benchmarks: expression engine (Phase 15)", () => {
   });
   bench("compiled expression batch (3 contexts)", () => {
     compiled.evaluate(ctx);
-    compiled.evaluate({ intake: Quantity.of(5, "kg/day"), conc: Quantity.of(40, "mg/kg") });
-    compiled.evaluate({ intake: Quantity.of(20, "kg/day"), conc: Quantity.of(160, "mg/kg") });
+    compiled.evaluate({
+      intake: Quantity.of(5, "kg/day"),
+      conc: Quantity.of(40, "mg/kg"),
+    });
+    compiled.evaluate({
+      intake: Quantity.of(20, "kg/day"),
+      conc: Quantity.of(160, "mg/kg"),
+    });
   });
   bench("expression compile (cached)", () => {
     compileExpression(expr);
@@ -443,19 +475,28 @@ describe("benchmarks: unit algebra and formulas (Phase 23/24)", () => {
   const forceDef = defineFormula(
     {
       id: "bench_force",
-      expression: Expression.multiply(Expression.variable("mass"), Expression.variable("accel")),
+      expression: Expression.multiply(
+        Expression.variable("mass"),
+        Expression.variable("accel"),
+      ),
       inputs: { mass: { dimension: "kg" }, accel: { dimension: "m/s^2" } },
       outputName: "force",
     },
     { registry: siOnly },
   );
   const compiled = compileFormula(forceDef, { registry: siOnly });
-  const ctx = { mass: Quantity.of(10, "kg"), accel: Quantity.of(9.81, "m/s^2", siOnly) };
+  const ctx = {
+    mass: Quantity.of(10, "kg"),
+    accel: Quantity.of(9.81, "m/s^2", siOnly),
+  };
   bench("parseUnitExpression + canonicalize", () => {
     unitExprKey(parseUnitExpression("kg*m/s^2", siOnly));
   });
   bench("equivalentUnits (N vs kg·m/s²)", () => {
-    equivalentUnits(parseUnitExpression("N", siOnly), parseUnitExpression("kg*m/s^2", siOnly));
+    equivalentUnits(
+      parseUnitExpression("N", siOnly),
+      parseUnitExpression("kg*m/s^2", siOnly),
+    );
   });
   bench("compiled formula evaluate", () => {
     compiled.evaluate(ctx);
@@ -464,7 +505,10 @@ describe("benchmarks: unit algebra and formulas (Phase 23/24)", () => {
     defineFormula(
       {
         id: "bench_tmp",
-        expression: Expression.add(Expression.variable("a"), Expression.variable("b")),
+        expression: Expression.add(
+          Expression.variable("a"),
+          Expression.variable("b"),
+        ),
         inputs: { a: { dimension: "kg" }, b: { dimension: "kg" } },
       },
       { registry: siOnly },
@@ -474,20 +518,32 @@ describe("benchmarks: unit algebra and formulas (Phase 23/24)", () => {
 
 describe("benchmarks: measurements and constants (Phase 25/26)", () => {
   const siOnly = createRegistry({ packs: [SI_PACK] });
-  const m10 = BenchMeasurement.of(Quantity.of(10, "kg"), Quantity.of(0.2, "kg"));
+  const m10 = BenchMeasurement.of(
+    Quantity.of(10, "kg"),
+    Quantity.of(0.2, "kg"),
+  );
   const m5 = BenchMeasurement.of(Quantity.of(5, "kg"), Quantity.of(0.1, "kg"));
   const mForm = defineFormula(
     {
       id: "bench_mforce",
-      expression: Expression.multiply(Expression.variable("mass"), Expression.variable("accel")),
+      expression: Expression.multiply(
+        Expression.variable("mass"),
+        Expression.variable("accel"),
+      ),
       inputs: { mass: { dimension: "kg" }, accel: { dimension: "m/s^2" } },
       outputName: "force",
     },
     { registry: siOnly },
   );
   const mCompiled = compileFormula(mForm, { registry: siOnly });
-  const mCtx = { mass: m10, accel: BenchMeasurement.of(Quantity.of(9.81, "m/s^2", siOnly), 0.01) };
-  const qCtx = { mass: Quantity.of(10, "kg"), accel: Quantity.of(9.81, "m/s^2", siOnly) };
+  const mCtx = {
+    mass: m10,
+    accel: BenchMeasurement.of(Quantity.of(9.81, "m/s^2", siOnly), 0.01),
+  };
+  const qCtx = {
+    mass: Quantity.of(10, "kg"),
+    accel: Quantity.of(9.81, "m/s^2", siOnly),
+  };
   const constReg = createStandardConstantRegistry({ units: siOnly });
   const constPayload = JSON.stringify(serializeConstantRegistry(constReg));
   bench("Measurement creation", () => {
@@ -500,7 +556,9 @@ describe("benchmarks: measurements and constants (Phase 25/26)", () => {
     m10.multiply(m5);
   });
   bench("Measurement serialization round-trip", () => {
-    deserializeMeasurement(JSON.parse(JSON.stringify(serializeMeasurement(m10))));
+    deserializeMeasurement(
+      JSON.parse(JSON.stringify(serializeMeasurement(m10))),
+    );
   });
   bench("formula evaluation with Quantity", () => {
     mCompiled.evaluate(qCtx);
@@ -522,12 +580,20 @@ describe("benchmarks: measurements and constants (Phase 25/26)", () => {
 describe("benchmarks: statistics (Phase 27)", () => {
   const m = (v: number, u: number): Measurement =>
     Measurement.of(Quantity.of(v, "m"), Quantity.of(u, "m"));
-  const series = MeasurementSeries.of([m(1, 0.1), m(2, 0.2), m(3, 0.3), m(4, 0.4)]);
+  const series = MeasurementSeries.of([
+    m(1, 0.1),
+    m(2, 0.2),
+    m(3, 0.3),
+    m(4, 0.4),
+  ]);
   const cov = CovarianceMatrix.fromData(["a", "b"], "m", [
     [0.04, 0.01],
     [0.01, 0.09],
   ]);
-  const expr = Expression.add(Expression.variable("a"), Expression.variable("b"));
+  const expr = Expression.add(
+    Expression.variable("a"),
+    Expression.variable("b"),
+  );
   const bindings = { a: m(10, 0.3), b: m(5, 0.4) };
   const comps = [
     { id: "a", standardUncertainty: Quantity.of(3, "g") },
@@ -552,7 +618,9 @@ describe("benchmarks: statistics (Phase 27)", () => {
     propagateWithCovariance(expr, bindings, cov);
   });
   bench("series serialization round-trip", () => {
-    MeasurementSeries.deserialize(JSON.parse(JSON.stringify(series.serialize())));
+    MeasurementSeries.deserialize(
+      JSON.parse(JSON.stringify(series.serialize())),
+    );
   });
 });
 
@@ -576,7 +644,9 @@ describe("benchmarks: standards profiles (Phase 28)", () => {
     });
   });
   bench("automatic unit selection", () => {
-    selectUnitForMagnitude(Quantity.of(1500, "m", siImpReg), { registry: siImpReg });
+    selectUnitForMagnitude(Quantity.of(1500, "m", siImpReg), {
+      registry: siImpReg,
+    });
   });
   bench("context creation + formatting", () => {
     formatWithContext(Quantity.of(1500, "m", siImpReg), {
@@ -609,7 +679,14 @@ describe("benchmarks: interoperability (Phase 29/30)", () => {
   const manifest = {
     id: "bench-ext",
     version: "1.0.0",
-    units: [{ symbol: "benchm", dimension: { L: 1 }, toBaseFactor: 1, label: "bench" }],
+    units: [
+      {
+        symbol: "benchm",
+        dimension: { L: 1 },
+        toBaseFactor: 1,
+        label: "bench",
+      },
+    ],
   };
   const q = Quantity.of(1500, "m", siImpReg);
   let benchId = 0;
@@ -618,7 +695,10 @@ describe("benchmarks: interoperability (Phase 29/30)", () => {
   });
   bench("extension apply (1 unit, atomic)", () => {
     benchId += 1;
-    applyExtension({ ...manifest, id: `bench-ext-${benchId}` }, { units: new UnitRegistry([]) });
+    applyExtension(
+      { ...manifest, id: `bench-ext-${benchId}` },
+      { units: new UnitRegistry([]) },
+    );
   });
   bench("ambiguity resolution (unique hit)", () => {
     resolveAmbiguous("m", {

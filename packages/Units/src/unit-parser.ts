@@ -45,17 +45,34 @@
  * Parser cache is bounded to avoid DoS via arbitrary input.
  * -----------------------------------------------------------------------
  */
-import { DIMENSIONLESS, divideDim, isDimensionless, multiplyDim, powDim } from "./dimension.js";
+import {
+  DIMENSIONLESS,
+  divideDim,
+  isDimensionless,
+  multiplyDim,
+  powDim,
+} from "./dimension.js";
 import { isAffineUnit, makeUnit, type Unit, type Basis } from "./unit.js";
 import { defaultUnitRegistry, UnitRegistry } from "./unit-registry.js";
-import { InvalidUnitExpressionError, UnsupportedUnitError } from "./errors/index.js";
+import {
+  InvalidUnitExpressionError,
+  UnsupportedUnitError,
+} from "./errors/index.js";
 import { linearScaleOf } from "./conversion-engine.js";
 
 // ---------------------------------------------------------------------------
 // Tokenization
 // ---------------------------------------------------------------------------
 
-type TokenType = "UNIT" | "MUL" | "DIV" | "POW" | "LPAREN" | "RPAREN" | "INT" | "SUPER";
+type TokenType =
+  | "UNIT"
+  | "MUL"
+  | "DIV"
+  | "POW"
+  | "LPAREN"
+  | "RPAREN"
+  | "INT"
+  | "SUPER";
 
 interface Token {
   readonly type: TokenType;
@@ -173,7 +190,11 @@ function tokenize(input: string): Token[] {
       ch === "|" ||
       ch === "\\"
     ) {
-      throw new InvalidUnitExpressionError(input, `invalid character "${ch}" at position ${i}`, i);
+      throw new InvalidUnitExpressionError(
+        input,
+        `invalid character "${ch}" at position ${i}`,
+        i,
+      );
     }
     // Collect UNIT
     const start = i;
@@ -199,7 +220,11 @@ function tokenize(input: string): Token[] {
     }
     if (raw.length === 0) {
       // Should not happen, but protect
-      throw new InvalidUnitExpressionError(input, `unexpected character "${ch}"`, i);
+      throw new InvalidUnitExpressionError(
+        input,
+        `unexpected character "${ch}"`,
+        i,
+      );
     }
     tokens.push({ type: "UNIT", value: raw, pos: start });
   }
@@ -211,14 +236,22 @@ function superToInt(raw: string, input: string, pos: number): number {
   for (const ch of raw) {
     const mapped = SUPER_MAP[ch];
     if (mapped === undefined) {
-      throw new InvalidUnitExpressionError(input, `invalid superscript character "${ch}"`, pos);
+      throw new InvalidUnitExpressionError(
+        input,
+        `invalid superscript character "${ch}"`,
+        pos,
+      );
     }
     ascii += mapped;
   }
   // ascii now like "-1", "2", "12" etc.
   const n = Number.parseInt(ascii, 10);
   if (!Number.isInteger(n)) {
-    throw new InvalidUnitExpressionError(input, `superscript "${raw}" is not an integer`, pos);
+    throw new InvalidUnitExpressionError(
+      input,
+      `superscript "${raw}" is not an integer`,
+      pos,
+    );
   }
   return n;
 }
@@ -227,7 +260,12 @@ function superToInt(raw: string, input: string, pos: number): number {
 // Parser helpers (Unit algebra)
 // ---------------------------------------------------------------------------
 
-function requireLinearOperands(a: Unit, b: Unit, rawExpr: string, op: string): void {
+function requireLinearOperands(
+  a: Unit,
+  b: Unit,
+  rawExpr: string,
+  op: string,
+): void {
   for (const u of [a, b]) {
     if (u.conversion.kind !== "linear") {
       throw new InvalidUnitExpressionError(
@@ -250,7 +288,10 @@ function multiplyUnits(a: Unit, b: Unit, rawExpr: string): Unit {
   const dimension = multiplyDim(a.dimension, b.dimension);
   const scale = linearScaleOf(a) * linearScaleOf(b);
   if (!Number.isFinite(scale) || scale === 0) {
-    throw new InvalidUnitExpressionError(rawExpr, "multiplication produced non-finite scale");
+    throw new InvalidUnitExpressionError(
+      rawExpr,
+      "multiplication produced non-finite scale",
+    );
   }
   return makeUnit({
     symbol: `${a.symbol}·${b.symbol}`,
@@ -271,14 +312,20 @@ function divideUnits(a: Unit, b: Unit, rawExpr: string): Unit {
   const dimension = divideDim(a.dimension, b.dimension);
   const scale = linearScaleOf(a) / linearScaleOf(b);
   if (!Number.isFinite(scale) || scale === 0) {
-    throw new InvalidUnitExpressionError(rawExpr, "division produced non-finite scale");
+    throw new InvalidUnitExpressionError(
+      rawExpr,
+      "division produced non-finite scale",
+    );
   }
   // Audit §5 fix: a composite denominator must be grouped — "kg/m·s" would
   // otherwise re-parse as (kg/m)·s, a different dimension. A bare power
   // denominator ("s^2") is left alone: "kg/s^2" already reads correctly.
-  const denominatorNeedsParens = /[*·×\s/]/.test(b.symbol) && !isFullyParenthesized(b.symbol);
+  const denominatorNeedsParens =
+    /[*·×\s/]/.test(b.symbol) && !isFullyParenthesized(b.symbol);
   const bSymbol = denominatorNeedsParens ? `(${b.symbol})` : b.symbol;
-  const bLabel = denominatorNeedsParens ? `(${b.label ?? b.symbol})` : (b.label ?? b.symbol);
+  const bLabel = denominatorNeedsParens
+    ? `(${b.label ?? b.symbol})`
+    : (b.label ?? b.symbol);
   return makeUnit({
     symbol: `${a.symbol}/${bSymbol}`,
     dimension: isDimensionless(dimension) ? DIMENSIONLESS : dimension,
@@ -320,7 +367,10 @@ export function parenthesizeComposite(symbol: string): string {
 
 function powUnit(base: Unit, exponent: number, rawExpr: string): Unit {
   if (!Number.isInteger(exponent)) {
-    throw new InvalidUnitExpressionError(rawExpr, `exponent must be an integer, got ${exponent}`);
+    throw new InvalidUnitExpressionError(
+      rawExpr,
+      `exponent must be an integer, got ${exponent}`,
+    );
   }
   if (isAffineUnit(base)) {
     if (exponent !== 1) {
@@ -371,9 +421,11 @@ function powUnit(base: Unit, exponent: number, rawExpr: string): Unit {
 
 function extractBasis(raw: string): { core: string; basis: Basis } {
   const dmMatch = raw.match(/^(.*)\s+DM$/);
-  if (dmMatch?.[1] !== undefined) return { core: dmMatch[1].trim(), basis: "DM" };
+  if (dmMatch?.[1] !== undefined)
+    return { core: dmMatch[1].trim(), basis: "DM" };
   const asFedMatch = raw.match(/^(.*)\s+asFed$/);
-  if (asFedMatch?.[1] !== undefined) return { core: asFedMatch[1].trim(), basis: "asFed" };
+  if (asFedMatch?.[1] !== undefined)
+    return { core: asFedMatch[1].trim(), basis: "asFed" };
   return { core: raw, basis: undefined };
 }
 
@@ -396,7 +448,11 @@ function parseTokens(
   function consume(): Token {
     const t = tokens[pos];
     if (!t)
-      throw new InvalidUnitExpressionError(input, "unexpected end of expression", input.length);
+      throw new InvalidUnitExpressionError(
+        input,
+        "unexpected end of expression",
+        input.length,
+      );
     pos++;
     return t;
   }
@@ -475,7 +531,11 @@ function parseTokens(
       consume(); // "^"
       const afterPow = peek();
       if (!afterPow) {
-        throw new InvalidUnitExpressionError(input, 'expected integer after "^"', next.pos);
+        throw new InvalidUnitExpressionError(
+          input,
+          'expected integer after "^"',
+          next.pos,
+        );
       }
       if (afterPow.type === "INT") {
         const intTok = consume();
@@ -696,7 +756,10 @@ export function parseUnit(
   opts: ParseOptions = {},
 ): Unit {
   if (typeof input !== "string") {
-    throw new InvalidUnitExpressionError(String(input), "unit expression must be a string");
+    throw new InvalidUnitExpressionError(
+      String(input),
+      "unit expression must be a string",
+    );
   }
   // Unicode NFC normalization first (deterministic; precomposed ° µ ² unaffected,
   // decomposed sequences collapse). Positions in errors refer to normalized text.
@@ -742,7 +805,10 @@ export function parseUnit(
   try {
     const tokens = tokenize(rawCore);
     if (tokens.length === 0) {
-      throw new InvalidUnitExpressionError(input, "empty unit expression after basis extraction");
+      throw new InvalidUnitExpressionError(
+        input,
+        "empty unit expression after basis extraction",
+      );
     }
     // Guard against obvious malformed leading/trailing operators before parsing
     const first = tokens[0];
@@ -754,7 +820,10 @@ export function parseUnit(
         first.pos,
       );
     }
-    if (last && (last.type === "DIV" || last.type === "MUL" || last.type === "POW")) {
+    if (
+      last &&
+      (last.type === "DIV" || last.type === "MUL" || last.type === "POW")
+    ) {
       throw new InvalidUnitExpressionError(
         input,
         `expression cannot end with "${last.value}"`,
@@ -766,7 +835,10 @@ export function parseUnit(
     for (let i = 0; i < tokens.length - 1; i++) {
       const a = tokens[i]!;
       const b = tokens[i + 1]!;
-      if ((a.type === "DIV" && b.type === "DIV") || (a.type === "MUL" && b.type === "MUL")) {
+      if (
+        (a.type === "DIV" && b.type === "DIV") ||
+        (a.type === "MUL" && b.type === "MUL")
+      ) {
         throw new InvalidUnitExpressionError(
           input,
           `consecutive operators "${a.value}${b.value}"`,
@@ -774,13 +846,21 @@ export function parseUnit(
         );
       }
       if (a.type === "POW" && b.type === "POW") {
-        throw new InvalidUnitExpressionError(input, `consecutive "^" operators`, b.pos);
+        throw new InvalidUnitExpressionError(
+          input,
+          `consecutive "^" operators`,
+          b.pos,
+        );
       }
     }
 
     unit = parseTokens(tokens, rawCore, registry, strict);
   } catch (e) {
-    if (e instanceof InvalidUnitExpressionError || e instanceof UnsupportedUnitError) throw e;
+    if (
+      e instanceof InvalidUnitExpressionError ||
+      e instanceof UnsupportedUnitError
+    )
+      throw e;
     // Wrap unknown errors as InvalidUnitExpressionError for consistent typed errors
     throw new InvalidUnitExpressionError(input, (e as Error).message);
   }

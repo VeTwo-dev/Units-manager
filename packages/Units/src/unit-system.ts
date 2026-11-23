@@ -52,7 +52,11 @@ export class UnitSystemError extends UnitEngineError {
 // ---------------------------------------------------------------------------
 
 function assertValidName(name: string, kind: string): void {
-  if (!name || typeof name !== "string" || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(name)) {
+  if (
+    !name ||
+    typeof name !== "string" ||
+    !/^[A-Za-z][A-Za-z0-9_-]*$/.test(name)
+  ) {
     throw new UnitSystemError(
       `${kind} name must be a valid identifier (e.g. "si", "imperial"), got "${String(name)}"`,
     );
@@ -61,7 +65,9 @@ function assertValidName(name: string, kind: string): void {
 
 function assertValidVersion(version: string): void {
   if (!version || typeof version !== "string" || version.trim().length === 0) {
-    throw new UnitSystemError(`Version must be a non-empty string, got "${String(version)}"`);
+    throw new UnitSystemError(
+      `Version must be a non-empty string, got "${String(version)}"`,
+    );
   }
 }
 
@@ -78,7 +84,9 @@ const DIMENSION_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
 /** Structural dimension check (plain object, valid ids, integer exponents). No registry coupling. */
 function assertValidDimensionVector(dim: unknown, owner: string): void {
   if (!dim || typeof dim !== "object" || Array.isArray(dim)) {
-    throw new UnitSystemError(`${owner} has an invalid dimension (must be a plain object)`);
+    throw new UnitSystemError(
+      `${owner} has an invalid dimension (must be a plain object)`,
+    );
   }
   const record = dim as Record<string, unknown>;
   if (hasPollutionKeys(record)) {
@@ -89,7 +97,9 @@ function assertValidDimensionVector(dim: unknown, owner: string): void {
       throw new UnitSystemError(`${owner} has invalid dimension id "${id}"`);
     }
     if (typeof exp !== "number" || !Number.isInteger(exp)) {
-      throw new UnitSystemError(`${owner} has non-integer exponent for "${id}"`);
+      throw new UnitSystemError(
+        `${owner} has non-integer exponent for "${id}"`,
+      );
     }
   }
 }
@@ -97,7 +107,11 @@ function assertValidDimensionVector(dim: unknown, owner: string): void {
 /** Conversion definitions must be declarative (no functions) with finite scale/offset. */
 function assertValidConversionDef(conversion: unknown, owner: string): void {
   if (conversion === undefined) return;
-  if (!conversion || typeof conversion !== "object" || Array.isArray(conversion)) {
+  if (
+    !conversion ||
+    typeof conversion !== "object" ||
+    Array.isArray(conversion)
+  ) {
     throw new UnitSystemError(`${owner} has an invalid conversion definition`);
   }
   const conv = conversion as Record<string, unknown>;
@@ -110,7 +124,9 @@ function assertValidConversionDef(conversion: unknown, owner: string): void {
     conv.kind !== "logarithmic" &&
     conv.kind !== "custom"
   ) {
-    throw new UnitSystemError(`${owner} has unknown conversion kind "${String(conv.kind)}"`);
+    throw new UnitSystemError(
+      `${owner} has unknown conversion kind "${String(conv.kind)}"`,
+    );
   }
   if (conv.kind === "logarithmic") {
     if (
@@ -122,25 +138,41 @@ function assertValidConversionDef(conversion: unknown, owner: string): void {
         `${owner} logarithmic conversion needs a finite non-zero reference`,
       );
     }
-    if (typeof conv.factor !== "number" || !Number.isFinite(conv.factor) || conv.factor === 0) {
-      throw new UnitSystemError(`${owner} logarithmic conversion needs a finite non-zero factor`);
+    if (
+      typeof conv.factor !== "number" ||
+      !Number.isFinite(conv.factor) ||
+      conv.factor === 0
+    ) {
+      throw new UnitSystemError(
+        `${owner} logarithmic conversion needs a finite non-zero factor`,
+      );
     }
     return;
   }
   if (conv.kind === "custom") {
     if (typeof conv.id !== "string" || conv.id.trim().length === 0) {
-      throw new UnitSystemError(`${owner} custom conversion needs a non-empty id`);
+      throw new UnitSystemError(
+        `${owner} custom conversion needs a non-empty id`,
+      );
     }
     return;
   }
-  if (typeof conv.scale !== "number" || !Number.isFinite(conv.scale) || conv.scale === 0) {
+  if (
+    typeof conv.scale !== "number" ||
+    !Number.isFinite(conv.scale) ||
+    conv.scale === 0
+  ) {
     throw new UnitSystemError(`${owner} has invalid conversion scale`);
   }
   if (conv.kind === "affine" && typeof conv.offset !== "number") {
-    throw new UnitSystemError(`${owner} affine conversion needs a numeric offset`);
+    throw new UnitSystemError(
+      `${owner} affine conversion needs a numeric offset`,
+    );
   }
   if (conv.kind === "affine" && !Number.isFinite(conv.offset as number)) {
-    throw new UnitSystemError(`${owner} affine conversion needs a finite offset`);
+    throw new UnitSystemError(
+      `${owner} affine conversion needs a finite offset`,
+    );
   }
 }
 
@@ -148,12 +180,19 @@ function assertValidConversionDef(conversion: unknown, owner: string): void {
  * Metadata must be declarative data only — no functions, symbols or prototype
  * tricks. Packs are configuration, never executable behavior.
  */
-function assertDeclarativeMetadata(value: unknown, owner: string, depth = 0): void {
-  if (depth > 4) throw new UnitSystemError(`${owner} metadata is nested too deeply`);
+function assertDeclarativeMetadata(
+  value: unknown,
+  owner: string,
+  depth = 0,
+): void {
+  if (depth > 4)
+    throw new UnitSystemError(`${owner} metadata is nested too deeply`);
   if (value === null || value === undefined) return;
   const t = typeof value;
   if (t === "function" || t === "symbol") {
-    throw new UnitSystemError(`${owner} metadata must not contain executable values`);
+    throw new UnitSystemError(
+      `${owner} metadata must not contain executable values`,
+    );
   }
   if (t !== "object") return; // primitives (string/number/boolean) are fine
   if (Array.isArray(value)) {
@@ -164,7 +203,8 @@ function assertDeclarativeMetadata(value: unknown, owner: string, depth = 0): vo
   if (hasPollutionKeys(record)) {
     throw new UnitSystemError(`${owner} metadata contains forbidden keys`);
   }
-  for (const v of Object.values(record)) assertDeclarativeMetadata(v, owner, depth + 1);
+  for (const v of Object.values(record))
+    assertDeclarativeMetadata(v, owner, depth + 1);
 }
 
 /** Full unit-definition validation shared by system and pack registration. */
@@ -179,7 +219,9 @@ function assertValidUnitDef(def: AtomicUnitDef, owner: string): void {
     throw new UnitSystemError(`${owner} has invalid unit symbol`);
   }
   if (typeof def.label !== "string" || def.label.trim().length === 0) {
-    throw new UnitSystemError(`${owner} unit "${def.symbol}" needs a non-empty label`);
+    throw new UnitSystemError(
+      `${owner} unit "${def.symbol}" needs a non-empty label`,
+    );
   }
   assertValidDimensionVector(def.dimension, `${owner} unit "${def.symbol}"`);
   assertValidConversionDef(
@@ -191,10 +233,15 @@ function assertValidUnitDef(def: AtomicUnitDef, owner: string): void {
     !Number.isFinite(def.toBaseFactor) ||
     def.toBaseFactor === 0
   ) {
-    throw new UnitSystemError(`${owner} unit "${def.symbol}" has invalid factor`);
+    throw new UnitSystemError(
+      `${owner} unit "${def.symbol}" has invalid factor`,
+    );
   }
   if (def.metadata !== undefined) {
-    assertDeclarativeMetadata(def.metadata, `${owner} unit "${def.symbol}" metadata`);
+    assertDeclarativeMetadata(
+      def.metadata,
+      `${owner} unit "${def.symbol}" metadata`,
+    );
   }
 }
 
@@ -222,7 +269,9 @@ function assertValidAliases(
       throw new UnitSystemError(`${owner} has an invalid alias key`);
     }
     if (typeof target !== "string" || target.trim().length === 0) {
-      throw new UnitSystemError(`${owner} alias "${alias}" has an invalid target`);
+      throw new UnitSystemError(
+        `${owner} alias "${alias}" has an invalid target`,
+      );
     }
     if (!unitSymbols.has(target)) {
       throw new UnitSystemError(
@@ -271,33 +320,50 @@ export class UnitSystemRegistry {
     assertValidName(system.name, "UnitSystem");
     assertValidVersion(system.version);
     if (!Array.isArray(system.units))
-      throw new UnitSystemError(`UnitSystem "${system.name}" units must be an array`);
+      throw new UnitSystemError(
+        `UnitSystem "${system.name}" units must be an array`,
+      );
     if (hasPollutionKeys(system as unknown as Record<string, unknown>)) {
-      throw new UnitSystemError(`UnitSystem "${system.name}" contains forbidden keys`);
+      throw new UnitSystemError(
+        `UnitSystem "${system.name}" contains forbidden keys`,
+      );
     }
     if (this.systems.has(system.name)) {
-      throw new UnitSystemError(`UnitSystem "${system.name}" is already registered`);
+      throw new UnitSystemError(
+        `UnitSystem "${system.name}" is already registered`,
+      );
     }
     const symbols = new Set(system.units.map((u) => u?.symbol));
     for (const u of system.units) {
       assertValidUnitDef(u, `UnitSystem "${system.name}"`);
     }
     if (symbols.size !== system.units.length) {
-      throw new UnitSystemError(`UnitSystem "${system.name}" contains duplicate unit symbols`);
+      throw new UnitSystemError(
+        `UnitSystem "${system.name}" contains duplicate unit symbols`,
+      );
     }
     assertValidAliases(system.aliases, symbols, `UnitSystem "${system.name}"`);
     if (system.metadata !== undefined) {
-      assertDeclarativeMetadata(system.metadata, `UnitSystem "${system.name}" metadata`);
+      assertDeclarativeMetadata(
+        system.metadata,
+        `UnitSystem "${system.name}" metadata`,
+      );
     }
     const frozen: UnitSystem = Object.freeze({
       ...system,
       units: Object.freeze([...system.units]),
-      aliases: system.aliases ? Object.freeze({ ...system.aliases }) : undefined,
+      aliases: system.aliases
+        ? Object.freeze({ ...system.aliases })
+        : undefined,
       preferredUnits: system.preferredUnits
         ? Object.freeze({ ...system.preferredUnits })
         : undefined,
-      prefixes: system.prefixes ? Object.freeze([...system.prefixes]) : undefined,
-      metadata: system.metadata ? Object.freeze({ ...system.metadata }) : undefined,
+      prefixes: system.prefixes
+        ? Object.freeze([...system.prefixes])
+        : undefined,
+      metadata: system.metadata
+        ? Object.freeze({ ...system.metadata })
+        : undefined,
     });
     this.systems.set(frozen.name, frozen);
     this._version++;
@@ -337,7 +403,8 @@ export class UnitSystemRegistry {
    */
   getPreferredUnit(systemName: string, category: string): string | undefined {
     const system = this.getSystem(systemName);
-    if (!system) throw new UnitSystemError(`Unknown UnitSystem "${systemName}"`);
+    if (!system)
+      throw new UnitSystemError(`Unknown UnitSystem "${systemName}"`);
     return system.preferredUnits?.[category];
   }
 
@@ -347,23 +414,34 @@ export class UnitSystemRegistry {
     assertValidName(pack.name, "UnitPack");
     assertValidVersion(pack.version);
     if (!Array.isArray(pack.units))
-      throw new UnitSystemError(`UnitPack "${pack.name}" units must be an array`);
+      throw new UnitSystemError(
+        `UnitPack "${pack.name}" units must be an array`,
+      );
     if (hasPollutionKeys(pack as unknown as Record<string, unknown>)) {
-      throw new UnitSystemError(`UnitPack "${pack.name}" contains forbidden keys`);
+      throw new UnitSystemError(
+        `UnitPack "${pack.name}" contains forbidden keys`,
+      );
     }
     if (this.packs.has(pack.name)) {
-      throw new UnitSystemError(`UnitPack "${pack.name}" is already registered`);
+      throw new UnitSystemError(
+        `UnitPack "${pack.name}" is already registered`,
+      );
     }
     const symbols = new Set(pack.units.map((u) => u?.symbol));
     for (const u of pack.units) {
       assertValidUnitDef(u, `UnitPack "${pack.name}"`);
     }
     if (symbols.size !== pack.units.length) {
-      throw new UnitSystemError(`UnitPack "${pack.name}" contains duplicate unit symbols`);
+      throw new UnitSystemError(
+        `UnitPack "${pack.name}" contains duplicate unit symbols`,
+      );
     }
     assertValidAliases(pack.aliases, symbols, `UnitPack "${pack.name}"`);
     if (pack.metadata !== undefined) {
-      assertDeclarativeMetadata(pack.metadata, `UnitPack "${pack.name}" metadata`);
+      assertDeclarativeMetadata(
+        pack.metadata,
+        `UnitPack "${pack.name}" metadata`,
+      );
     }
     const frozen: UnitPack = Object.freeze({
       ...pack,
@@ -410,7 +488,8 @@ export class UnitSystemRegistry {
    */
   applySystemToRegistry(systemName: string, registry: UnitRegistry): void {
     const system = this.getSystem(systemName);
-    if (!system) throw new UnitSystemError(`Unknown UnitSystem "${systemName}"`);
+    if (!system)
+      throw new UnitSystemError(`Unknown UnitSystem "${systemName}"`);
     applyDefs(registry, system.units, system.aliases);
   }
 
@@ -434,7 +513,8 @@ export class UnitSystemRegistry {
     fallbackRegistry: UnitRegistry = new UnitRegistry(ATOMIC_UNITS),
   ): import("./unit.js").Unit {
     const system = this.getSystem(systemName);
-    if (!system) throw new UnitSystemError(`Unknown UnitSystem "${systemName}"`);
+    if (!system)
+      throw new UnitSystemError(`Unknown UnitSystem "${systemName}"`);
     const temp = new UnitRegistry([]);
     // Seed with system's units first, then fallback's units where not colliding (system wins)
     applyDefsLenient(temp, system.units, system.aliases);
@@ -555,7 +635,8 @@ export const CGS_SYSTEM: UnitSystem = Object.freeze({
   name: "cgs",
   version: "1.0.0",
   displayName: "CGS units",
-  description: "Centimetre–gram–second derived units (dyne, erg); base cm/g/s resolve via core.",
+  description:
+    "Centimetre–gram–second derived units (dyne, erg); base cm/g/s resolve via core.",
   units: CGS_PACK.units,
   aliases: CGS_PACK.aliases,
   preferredUnits: Object.freeze({ mass: "g", length: "cm", time: "s" }),
@@ -586,7 +667,12 @@ export const SI_DERIVED_PACK: UnitPack = Object.freeze({
 // Auto-register built-in systems/packs as *definitions* (metadata only).
 // This never registers units into any UnitRegistry, so default parse
 // behavior is unchanged. Idempotent for hot reload.
-for (const entry of [SI_SYSTEM, IMPERIAL_SYSTEM, US_CUSTOMARY_SYSTEM, CGS_SYSTEM] as const) {
+for (const entry of [
+  SI_SYSTEM,
+  IMPERIAL_SYSTEM,
+  US_CUSTOMARY_SYSTEM,
+  CGS_SYSTEM,
+] as const) {
   try {
     defaultUnitSystemRegistry.registerSystem(entry);
   } catch {
@@ -641,11 +727,18 @@ export interface CreateRegistryOptions {
  * touched. Tree-shakeable: importing one pack does not pull other packs
  * into the bundle (each pack module is side-effect free).
  */
-export function createRegistry(options: CreateRegistryOptions = {}): UnitRegistry {
-  const registry = new UnitRegistry(options.seed ?? ATOMIC_UNITS, options.prefixRegistry);
+export function createRegistry(
+  options: CreateRegistryOptions = {},
+): UnitRegistry {
+  const registry = new UnitRegistry(
+    options.seed ?? ATOMIC_UNITS,
+    options.prefixRegistry,
+  );
   for (const pack of options.packs ?? []) {
     if (!pack || typeof pack !== "object" || Array.isArray(pack)) {
-      throw new UnitSystemError("createRegistry packs must be UnitPack objects");
+      throw new UnitSystemError(
+        "createRegistry packs must be UnitPack objects",
+      );
     }
     if (hasPollutionKeys(pack as unknown as Record<string, unknown>)) {
       throw new UnitSystemError("createRegistry pack contains forbidden keys");
@@ -656,7 +749,9 @@ export function createRegistry(options: CreateRegistryOptions = {}): UnitRegistr
       assertValidUnitDef(u, `pack "${pack.name}"`);
     }
     if (symbols.size !== (pack.units ?? []).length) {
-      throw new UnitSystemError(`pack "${pack.name}" contains duplicate unit symbols`);
+      throw new UnitSystemError(
+        `pack "${pack.name}" contains duplicate unit symbols`,
+      );
     }
     assertValidAliases(pack.aliases, symbols, `pack "${pack.name}"`);
     applyDefs(registry, pack.units ?? [], pack.aliases);

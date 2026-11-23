@@ -31,7 +31,11 @@ describe("Unit construction", () => {
   });
 
   it("infers conversion from toBaseFactor", () => {
-    const u = makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 });
+    const u = makeUnit({
+      symbol: "g",
+      dimension: Dim.Mass,
+      toBaseFactor: 0.001,
+    });
     expect(u.conversion).toEqual({ kind: "linear", scale: 0.001 });
   });
 
@@ -46,7 +50,12 @@ describe("Unit construction", () => {
   });
 
   it("defaults id to symbol and name to label", () => {
-    const u = makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1, label: "meter" });
+    const u = makeUnit({
+      symbol: "m",
+      dimension: Dim.Length,
+      toBaseFactor: 1,
+      label: "meter",
+    });
     expect(u.id).toBe("m");
     expect(u.name).toBe("meter");
   });
@@ -115,7 +124,10 @@ describe("Unit immutability", () => {
   it("cannot mutate conversion", () => {
     const u = makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 });
     expect(() => {
-      (u as unknown as Record<string, unknown>).conversion = { kind: "linear", scale: 2 };
+      (u as unknown as Record<string, unknown>).conversion = {
+        kind: "linear",
+        scale: 2,
+      };
     }).toThrow();
     expect(u.conversion.scale).toBe(1);
   });
@@ -133,7 +145,11 @@ describe("Unit immutability", () => {
   });
 
   it("creating a new unit from an existing one does not affect the original", () => {
-    const original = makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 });
+    const original = makeUnit({
+      symbol: "kg",
+      dimension: Dim.Mass,
+      toBaseFactor: 1,
+    });
     const modified = makeUnit({ ...original, symbol: "kg2" });
     expect(original.symbol).toBe("kg");
     expect(modified.symbol).toBe("kg2");
@@ -173,7 +189,11 @@ describe("Unit dimension", () => {
   });
 
   it("uses generic Dimension system (no hard-coded dimension check)", () => {
-    const customDim = makeUnit({ symbol: "custom", dimension: Dim.Energy, toBaseFactor: 1 });
+    const customDim = makeUnit({
+      symbol: "custom",
+      dimension: Dim.Energy,
+      toBaseFactor: 1,
+    });
     expect(customDim.dimension).toEqual(Dim.Energy);
   });
 });
@@ -184,8 +204,18 @@ describe("Unit dimension", () => {
 
 describe("Unit identity", () => {
   it("unitKey uses id, not symbol for identity", () => {
-    const a = makeUnit({ id: "meter", symbol: "m", dimension: Dim.Length, toBaseFactor: 1 });
-    const b = makeUnit({ id: "meter", symbol: "meter", dimension: Dim.Length, toBaseFactor: 1 });
+    const a = makeUnit({
+      id: "meter",
+      symbol: "m",
+      dimension: Dim.Length,
+      toBaseFactor: 1,
+    });
+    const b = makeUnit({
+      id: "meter",
+      symbol: "meter",
+      dimension: Dim.Length,
+      toBaseFactor: 1,
+    });
     expect(unitKey(a)).toBe(unitKey(b));
   });
 
@@ -212,8 +242,18 @@ describe("Unit identity", () => {
   });
 
   it("unitsEqual fails when id differs", () => {
-    const a = makeUnit({ id: "a", symbol: "m", dimension: Dim.Length, toBaseFactor: 1 });
-    const b = makeUnit({ id: "b", symbol: "m", dimension: Dim.Length, toBaseFactor: 1 });
+    const a = makeUnit({
+      id: "a",
+      symbol: "m",
+      dimension: Dim.Length,
+      toBaseFactor: 1,
+    });
+    const b = makeUnit({
+      id: "b",
+      symbol: "m",
+      dimension: Dim.Length,
+      toBaseFactor: 1,
+    });
     expect(unitsEqual(a, b)).toBe(false);
   });
 
@@ -266,7 +306,12 @@ describe("Unit aliases", () => {
   it("alias system is deterministic", () => {
     const registry = new UnitRegistry([]);
     registry.register(
-      makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1, aliases: ["meter"] }),
+      makeUnit({
+        symbol: "m",
+        dimension: Dim.Length,
+        toBaseFactor: 1,
+        aliases: ["meter"],
+      }),
     );
     expect(registry.resolve("meter").symbol).toBe("m");
     expect(registry.resolve("meter").symbol).toBe("m");
@@ -276,7 +321,12 @@ describe("Unit aliases", () => {
   it("distinguishes canonical symbols from aliases via aliasIndex", () => {
     const registry = new UnitRegistry([]);
     registry.register(
-      makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1, aliases: ["meter"] }),
+      makeUnit({
+        symbol: "m",
+        dimension: Dim.Length,
+        toBaseFactor: 1,
+        aliases: ["meter"],
+      }),
     );
     expect(registry.has("m")).toBe(true);
     expect(registry.has("meter")).toBe(true);
@@ -331,19 +381,31 @@ describe("UnitRegistry lookup", () => {
 
   it("list returns all units", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
-    registry.register(makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
+    registry.register(
+      makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1 }),
+    );
     expect(registry.list()).toHaveLength(2);
     expect(registry.size).toBe(2);
   });
 
   it("deterministic lookup independent of insertion order", () => {
     const r1 = new UnitRegistry([]);
-    r1.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
-    r1.register(makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }));
+    r1.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
+    r1.register(
+      makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }),
+    );
     const r2 = new UnitRegistry([]);
-    r2.register(makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }));
-    r2.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    r2.register(
+      makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 }),
+    );
+    r2.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     expect(r1.resolve("kg").toBaseFactor).toBe(r2.resolve("kg").toBaseFactor);
     expect(r1.resolve("g").toBaseFactor).toBe(r2.resolve("g").toBaseFactor);
   });
@@ -356,18 +418,29 @@ describe("UnitRegistry lookup", () => {
 describe("UnitRegistry registration safety", () => {
   it("rejects duplicate canonical symbols", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     expect(() =>
-      registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 0.5 })),
+      registry.register(
+        makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 0.5 }),
+      ),
     ).toThrow(UnitRegistrationError);
   });
 
   it("rejects conflicting aliases (alias already used as canonical symbol)", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1 }),
+    );
     expect(() =>
       registry.register(
-        makeUnit({ symbol: "km", dimension: Dim.Length, toBaseFactor: 1000, aliases: ["m"] }),
+        makeUnit({
+          symbol: "km",
+          dimension: Dim.Length,
+          toBaseFactor: 1000,
+          aliases: ["m"],
+        }),
       ),
     ).toThrow(UnitRegistrationError);
   });
@@ -375,31 +448,55 @@ describe("UnitRegistry registration safety", () => {
   it("rejects conflicting aliases (alias already registered for another unit)", () => {
     const registry = new UnitRegistry([]);
     registry.register(
-      makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1, aliases: ["meter"] }),
+      makeUnit({
+        symbol: "m",
+        dimension: Dim.Length,
+        toBaseFactor: 1,
+        aliases: ["meter"],
+      }),
     );
     expect(() =>
       registry.register(
-        makeUnit({ symbol: "km", dimension: Dim.Length, toBaseFactor: 1000, aliases: ["meter"] }),
+        makeUnit({
+          symbol: "km",
+          dimension: Dim.Length,
+          toBaseFactor: 1000,
+          aliases: ["meter"],
+        }),
       ),
     ).toThrow(UnitRegistrationError);
   });
 
   it("rejects invalid dimensions (via makeUnit validation)", () => {
-    expect(() => makeUnit({ symbol: "", dimension: Dim.Mass, toBaseFactor: 1 })).toThrow();
     expect(() =>
-      makeUnit({ symbol: "x", dimension: null as unknown as typeof Dim.Mass, toBaseFactor: 1 }),
+      makeUnit({ symbol: "", dimension: Dim.Mass, toBaseFactor: 1 }),
+    ).toThrow();
+    expect(() =>
+      makeUnit({
+        symbol: "x",
+        dimension: null as unknown as typeof Dim.Mass,
+        toBaseFactor: 1,
+      }),
     ).toThrow();
   });
 
   it("rejects invalid conversion definitions (scale 0)", () => {
     expect(() =>
-      makeUnit({ symbol: "bad", dimension: Dim.Mass, conversion: { kind: "linear", scale: 0 } }),
+      makeUnit({
+        symbol: "bad",
+        dimension: Dim.Mass,
+        conversion: { kind: "linear", scale: 0 },
+      }),
     ).toThrow();
   });
 
   it("rejects invalid conversion definitions (scale NaN)", () => {
     expect(() =>
-      makeUnit({ symbol: "bad", dimension: Dim.Mass, conversion: { kind: "linear", scale: NaN } }),
+      makeUnit({
+        symbol: "bad",
+        dimension: Dim.Mass,
+        conversion: { kind: "linear", scale: NaN },
+      }),
     ).toThrow();
   });
 
@@ -425,20 +522,28 @@ describe("UnitRegistry registration safety", () => {
 
   it("does not silently overwrite an existing unit", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     const original = registry.resolve("kg");
     expect(() =>
-      registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 2 })),
+      registry.register(
+        makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 2 }),
+      ),
     ).toThrow();
     expect(registry.resolve("kg")).toBe(original);
   });
 
   it("unregistering allows re-registration", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     registry.unregister("kg");
     expect(() =>
-      registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 2 })),
+      registry.register(
+        makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 2 }),
+      ),
     ).not.toThrow();
     expect(registry.resolve("kg").toBaseFactor).toBe(2);
   });
@@ -478,7 +583,11 @@ describe("Unit equality and metadata", () => {
 
   it("unit registry does not mutate Unit objects", () => {
     const registry = new UnitRegistry([]);
-    const unit = makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 });
+    const unit = makeUnit({
+      symbol: "kg",
+      dimension: Dim.Mass,
+      toBaseFactor: 1,
+    });
     const frozenSnapshot = JSON.stringify(unit);
     registry.register(unit);
     expect(JSON.stringify(unit)).toBe(frozenSnapshot);
@@ -498,7 +607,11 @@ describe("Unit equality and metadata", () => {
 
 describe("Conversion definition validation", () => {
   it("linear conversion has correct shape", () => {
-    const u = makeUnit({ symbol: "g", dimension: Dim.Mass, toBaseFactor: 0.001 });
+    const u = makeUnit({
+      symbol: "g",
+      dimension: Dim.Mass,
+      toBaseFactor: 0.001,
+    });
     expect(u.conversion.kind).toBe("linear");
     expect(u.conversion.scale).toBe(0.001);
   });
@@ -533,20 +646,26 @@ describe("Conversion definition validation", () => {
 describe("Backward compatibility", () => {
   it("hasAtomic still works as alias to has", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     expect(registry.hasAtomic("kg")).toBe(true);
     expect(registry.hasAtomic("missing")).toBe(false);
   });
 
   it("getAtomic still works as alias to resolve", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     expect(registry.getAtomic("kg").symbol).toBe("kg");
   });
 
   it("listAtomics still works as alias to list", () => {
     const registry = new UnitRegistry([]);
-    registry.register(makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }));
+    registry.register(
+      makeUnit({ symbol: "kg", dimension: Dim.Mass, toBaseFactor: 1 }),
+    );
     expect(registry.listAtomics()).toHaveLength(1);
   });
 

@@ -26,24 +26,34 @@ describe("getting-started examples", () => {
     const time = Quantity.of(10, "s");
     const velocity = distance.divide(time);
     expect(velocity.to("km/h").value).toBeCloseTo(36, 9);
-    expect(() => Quantity.of(1, "kg").add(Quantity.of(1, "m"))).toThrow(UnitMismatchError);
+    expect(() => Quantity.of(1, "kg").add(Quantity.of(1, "m"))).toThrow(
+      UnitMismatchError,
+    );
   });
 
   it("measurement workflow", () => {
     const mass = Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.2, "kg"));
     expect(mass.relativeUncertainty()).toBeCloseTo(0.02, 12);
-    const total = mass.add(Measurement.of(Quantity.of(5, "kg"), Quantity.of(0.1, "kg")));
+    const total = mass.add(
+      Measurement.of(Quantity.of(5, "kg"), Quantity.of(0.1, "kg")),
+    );
     expect(total.uncertainty.value).toBeCloseTo(Math.sqrt(0.05), 9);
   });
 
   it("formula workflow", () => {
     const speed = defineFormula({
       id: "speed",
-      expression: Expression.divide(Expression.variable("d"), Expression.variable("t")),
+      expression: Expression.divide(
+        Expression.variable("d"),
+        Expression.variable("t"),
+      ),
       inputs: { d: { dimension: "m" }, t: { dimension: "s" } },
       outputName: "v",
     });
-    const v = evaluateFormula(speed, { d: Quantity.of(100, "m"), t: Quantity.of(10, "s") });
+    const v = evaluateFormula(speed, {
+      d: Quantity.of(100, "m"),
+      t: Quantity.of(10, "s"),
+    });
     expect(v).toBeInstanceOf(Quantity);
   });
 
@@ -101,7 +111,10 @@ describe("public API surface (stability tripwire)", () => {
       const lower = n.toLowerCase();
       if (!allowlisted.has(n)) {
         expect(lower.includes("unsafe"), `unsafe export: ${n}`).toBe(false);
-        expect(lower === "eval" || lower.startsWith("eval_"), `eval export: ${n}`).toBe(false);
+        expect(
+          lower === "eval" || lower.startsWith("eval_"),
+          `eval export: ${n}`,
+        ).toBe(false);
       }
     }
     // Snapshot the count so growth is a deliberate, reviewed diff.

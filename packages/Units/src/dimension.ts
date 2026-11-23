@@ -81,7 +81,9 @@ export class DimensionRegistry {
    * registries EXTEND the known set; pass an explicit seed (possibly
    * empty) to build a fully isolated one.
    */
-  constructor(seed: readonly RegisteredDimension[] = defaultDimensionRegistry.list()) {
+  constructor(
+    seed: readonly RegisteredDimension[] = defaultDimensionRegistry.list(),
+  ) {
     for (const def of seed) this.register(def.id, def.name);
   }
 
@@ -95,7 +97,9 @@ export class DimensionRegistry {
       );
     }
     if (typeof name !== "string" || name.trim().length === 0) {
-      throw new InvalidDimensionError("dimension name must be a non-empty string");
+      throw new InvalidDimensionError(
+        "dimension name must be a non-empty string",
+      );
     }
     this.defs.set(id, name.trim());
   }
@@ -153,7 +157,11 @@ function assertValidDimensionId(id: DimensionId): void {
  */
 export const defaultDimensionRegistry = new DimensionRegistry([]);
 
-function seed(registry: DimensionRegistry, id: DimensionId, name: string): void {
+function seed(
+  registry: DimensionRegistry,
+  id: DimensionId,
+  name: string,
+): void {
   registry.register(id, name);
 }
 
@@ -177,7 +185,9 @@ seed(defaultDimensionRegistry, "Info", "Information");
  * Build a validated, frozen DimensionVector from a raw record.
  * Zero exponents are dropped; ids must be registered; exponents must be integers.
  */
-export function defineDimension(vector: Record<string, number>): DimensionVector {
+export function defineDimension(
+  vector: Record<string, number>,
+): DimensionVector {
   return defaultDimensionRegistry.normalize(vector);
 }
 
@@ -201,7 +211,10 @@ export function isDimensionless(dim: DimensionVector): boolean {
   return dimensionKey(dim) === "1";
 }
 
-export function dimensionsEqual(a: DimensionVector, b: DimensionVector): boolean {
+export function dimensionsEqual(
+  a: DimensionVector,
+  b: DimensionVector,
+): boolean {
   return dimensionKey(a) === dimensionKey(b);
 }
 
@@ -217,7 +230,9 @@ function internDimension(dim: DimensionVector): DimensionVector {
   const cached = dimensionInternCache.get(key);
   if (cached) return cached;
   if (dimensionInternCache.size >= MAX_INTERN) {
-    const first = dimensionInternCache.keys().next().value as string | undefined;
+    const first = dimensionInternCache.keys().next().value as
+      | string
+      | undefined;
     if (first) dimensionInternCache.delete(first);
   }
   dimensionInternCache.set(key, dim);
@@ -232,7 +247,10 @@ dimensionInternCache.set("1", DIMENSIONLESS);
 // ---------------------------------------------------------------------------
 
 /** A × B — add corresponding exponents. Returns a new frozen vector; inputs are never mutated. */
-export function multiplyDim(a: DimensionVector, b: DimensionVector): DimensionVector {
+export function multiplyDim(
+  a: DimensionVector,
+  b: DimensionVector,
+): DimensionVector {
   const result: Record<string, number> = { ...a };
   for (const k of Object.keys(b)) {
     const exp = (result[k] ?? 0) + (b[k] ?? 0);
@@ -243,7 +261,10 @@ export function multiplyDim(a: DimensionVector, b: DimensionVector): DimensionVe
 }
 
 /** A / B — subtract corresponding exponents. Returns a new frozen vector; inputs are never mutated. */
-export function divideDim(a: DimensionVector, b: DimensionVector): DimensionVector {
+export function divideDim(
+  a: DimensionVector,
+  b: DimensionVector,
+): DimensionVector {
   const result: Record<string, number> = { ...a };
   for (const k of Object.keys(b)) {
     const exp = (result[k] ?? 0) - (b[k] ?? 0);
@@ -277,13 +298,18 @@ export function powDim(a: DimensionVector, power: number): DimensionVector {
  */
 export function rootDim(a: DimensionVector, degree: number): DimensionVector {
   if (!Number.isInteger(degree) || degree <= 0) {
-    throw new InvalidDimensionError(`root degree must be a positive integer, got ${degree}`);
+    throw new InvalidDimensionError(
+      `root degree must be a positive integer, got ${degree}`,
+    );
   }
   const result: Record<string, number> = {};
   for (const k of Object.keys(a)) {
     const exp = a[k] ?? 0;
     if (exp % degree !== 0) {
-      throw new DimensionError(dimensionKey(DIMENSIONLESS), `${dimensionKey(a)}^(1/${degree})`);
+      throw new DimensionError(
+        dimensionKey(DIMENSIONLESS),
+        `${dimensionKey(a)}^(1/${degree})`,
+      );
     }
     result[k] = exp / degree;
   }

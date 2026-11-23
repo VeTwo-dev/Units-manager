@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 import { parseUnit, UnitParser } from "../src/unit-parser.js";
 import { Quantity } from "../src/quantity.js";
 import { isDimensionless } from "../src/dimension.js";
-import { InvalidUnitExpressionError, UnsupportedUnitError } from "../src/errors/index.js";
+import {
+  InvalidUnitExpressionError,
+  UnsupportedUnitError,
+} from "../src/errors/index.js";
 import { Dim } from "../src/dimension.js";
 import { UnitRegistry } from "../src/unit-registry.js";
 import { makeUnit } from "../src/unit.js";
@@ -15,13 +18,22 @@ import { makeUnit } from "../src/unit.js";
 // ---------------------------------------------------------------------------
 
 describe("Parser basic — atomic & aliases", () => {
-  it.each(["kg", "g", "mg", "m", "cm", "km", "s", "h", "hour", "%", "ppm"] as const)(
-    "parses %s",
-    (sym) => {
-      // "h" is alias for hour, should resolve to hour
-      expect(parseUnit(sym).symbol).toBeTruthy();
-    },
-  );
+  it.each([
+    "kg",
+    "g",
+    "mg",
+    "m",
+    "cm",
+    "km",
+    "s",
+    "h",
+    "hour",
+    "%",
+    "ppm",
+  ] as const)("parses %s", (sym) => {
+    // "h" is alias for hour, should resolve to hour
+    expect(parseUnit(sym).symbol).toBeTruthy();
+  });
   it("aliases handled via registry (meter via m)", () => {
     const reg = new UnitRegistry([]);
     const L = Dim.Length;
@@ -41,10 +53,13 @@ describe("Parser basic — atomic & aliases", () => {
 });
 
 describe("Parser prefixes", () => {
-  it.each(["km", "mm", "µm", "mg", "µg", "MHz"] as const)("resolves %s via prefix", (sym) => {
-    const u = parseUnit(sym);
-    expect(u.symbol).toBe(sym);
-  });
+  it.each(["km", "mm", "µm", "mg", "µg", "MHz"] as const)(
+    "resolves %s via prefix",
+    (sym) => {
+      const u = parseUnit(sym);
+      expect(u.symbol).toBe(sym);
+    },
+  );
   it("km dimension L, conversion 1000", () => {
     expect(parseUnit("km").dimension).toEqual(Dim.Length);
     expect(parseUnit("km").toBaseFactor).toBe(1000);
@@ -172,10 +187,13 @@ describe("Parser whitespace", () => {
 // ---------------------------------------------------------------------------
 
 describe("Parser dimensionless symbols", () => {
-  it.each(["%", "‰", "ppm", "ppb", "ppt", "fraction"] as const)("parses %s", (sym) => {
-    expect(isDimensionless(parseUnit(sym).dimension)).toBe(true);
-    expect(parseUnit(sym).symbol).toBe(sym);
-  });
+  it.each(["%", "‰", "ppm", "ppb", "ppt", "fraction"] as const)(
+    "parses %s",
+    (sym) => {
+      expect(isDimensionless(parseUnit(sym).dimension)).toBe(true);
+      expect(parseUnit(sym).symbol).toBe(sym);
+    },
+  );
   it("does not confuse % with punctuation", () => {
     expect(() => parseUnit("%;")).toThrow(InvalidUnitExpressionError);
   });
@@ -223,7 +241,14 @@ describe("Parser cache", () => {
   });
   it("different registries have separate cache keys", () => {
     const r = new UnitRegistry([]);
-    r.register(makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1, label: "meter" }));
+    r.register(
+      makeUnit({
+        symbol: "m",
+        dimension: Dim.Length,
+        toBaseFactor: 1,
+        label: "meter",
+      }),
+    );
     // "m" in custom registry vs default: different cache key but both resolve
     expect(parseUnit("m").symbol).toBe("m");
     expect(parseUnit("m", r).symbol).toBe("m");
@@ -247,14 +272,23 @@ describe("Parser security", () => {
     },
   );
   it("kg || something is rejected", () => {
-    expect(() => parseUnit("kg || something")).toThrow(InvalidUnitExpressionError);
+    expect(() => parseUnit("kg || something")).toThrow(
+      InvalidUnitExpressionError,
+    );
   });
   it("new Function style is rejected", () => {
     expect(() => parseUnit("new Function(...)")).toThrow();
   });
   it("does not mutate registry", () => {
     const reg = new UnitRegistry([]);
-    reg.register(makeUnit({ symbol: "m", dimension: Dim.Length, toBaseFactor: 1, label: "m" }));
+    reg.register(
+      makeUnit({
+        symbol: "m",
+        dimension: Dim.Length,
+        toBaseFactor: 1,
+        label: "m",
+      }),
+    );
     const before = reg.size;
     try {
       parseUnit("__proto__", reg);
@@ -383,7 +417,9 @@ describe("UnitParser class API", () => {
     expect(p.parse("kg/m").symbol).toBe(parseUnit("kg/m").symbol);
   });
   it("static UnitParser.parse", () => {
-    expect(UnitParser.parse("m/s").dimension).toEqual(parseUnit("m/s").dimension);
+    expect(UnitParser.parse("m/s").dimension).toEqual(
+      parseUnit("m/s").dimension,
+    );
   });
   it("does not expose tokenizer/parser internals", () => {
     const p = new UnitParser();

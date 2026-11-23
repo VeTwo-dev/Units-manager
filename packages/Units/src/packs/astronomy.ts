@@ -46,7 +46,11 @@ export const ASTRONOMY_PACK: UnitPack = Object.freeze({
       dimension: Dim.Length,
       toBaseFactor: AU_PER_M,
       label: "astronomical unit",
-      metadata: { system: "astronomical", standard: "IAU 2012", category: "distance" },
+      metadata: {
+        system: "astronomical",
+        standard: "IAU 2012",
+        category: "distance",
+      },
     } as AtomicUnitDef,
     {
       symbol: "lyr",

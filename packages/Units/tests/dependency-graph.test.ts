@@ -16,9 +16,20 @@ import {
   SI_PACK,
   type Formula,
 } from "../src/index.js";
-import { CyclicDependencyError, ExpressionLimitError, FormulaError } from "../src/errors/index.js";
+import {
+  CyclicDependencyError,
+  ExpressionLimitError,
+  FormulaError,
+} from "../src/errors/index.js";
 
-const { variable: v, literal: lit, add, multiply: mul, divide: div, power: pow } = Expression;
+const {
+  variable: v,
+  literal: lit,
+  add,
+  multiply: mul,
+  divide: div,
+  power: pow,
+} = Expression;
 
 const siReg = createRegistry({ packs: [SI_PACK] });
 const O = { registry: siReg };
@@ -60,7 +71,11 @@ describe("graph construction and ordering", () => {
     const { velocity, energy } = physicsFormulas();
     const g = createDependencyGraph([energy, velocity]); // input order irrelevant
     expect(g.evaluationOrder()).toEqual(["velocity", "kinetic_energy"]);
-    expect(g.diagnostics().requiredInputs).toEqual(["distance", "mass", "time"]);
+    expect(g.diagnostics().requiredInputs).toEqual([
+      "distance",
+      "mass",
+      "time",
+    ]);
     expect(g.diagnostics().outputNames).toEqual(["energy", "velocity"]);
     expect(g.diagnostics().edgeCount).toBe(1);
   });
@@ -84,7 +99,10 @@ describe("graph construction and ordering", () => {
       },
       O,
     );
-    expect(createDependencyGraph([a, b]).evaluationOrder()).toEqual(["a_formula", "b_formula"]);
+    expect(createDependencyGraph([a, b]).evaluationOrder()).toEqual([
+      "a_formula",
+      "b_formula",
+    ]);
   });
 
   it("cycles fail with the cycle path (2-cycle and self-loop)", () => {
@@ -98,20 +116,24 @@ describe("graph construction and ordering", () => {
         },
         O,
       );
-    expect(() => createDependencyGraph([mk("a", "b", "a"), mk("b", "a", "b")])).toThrow(
-      CyclicDependencyError,
-    );
+    expect(() =>
+      createDependencyGraph([mk("a", "b", "a"), mk("b", "a", "b")]),
+    ).toThrow(CyclicDependencyError);
     try {
       createDependencyGraph([mk("a", "b", "a"), mk("b", "a", "b")]);
     } catch (error) {
       expect((error as Error).message).toContain("a -> b -> a");
     }
-    expect(() => createDependencyGraph([mk("s", "s", "s")])).toThrow(CyclicDependencyError);
+    expect(() => createDependencyGraph([mk("s", "s", "s")])).toThrow(
+      CyclicDependencyError,
+    );
   });
 
   it("duplicate ids/outputs and empty graphs fail", () => {
     const { velocity } = physicsFormulas();
-    expect(() => createDependencyGraph([velocity, velocity])).toThrow(FormulaError);
+    expect(() => createDependencyGraph([velocity, velocity])).toThrow(
+      FormulaError,
+    );
     const clone = defineFormula(
       {
         id: "velocity2",
@@ -121,15 +143,21 @@ describe("graph construction and ordering", () => {
       },
       O,
     );
-    expect(() => createDependencyGraph([velocity, clone])).toThrow(FormulaError);
+    expect(() => createDependencyGraph([velocity, clone])).toThrow(
+      FormulaError,
+    );
     expect(() => createDependencyGraph([])).toThrow(FormulaError);
   });
 
   it("missing dependencies and unexpected inputs fail at evaluation", () => {
     const { velocity, energy } = physicsFormulas();
     const g = createDependencyGraph([velocity, energy]);
-    expect(() => g.evaluate({ distance: baseInputs.distance })).toThrow(FormulaError);
-    expect(() => g.evaluate({ ...baseInputs, ghost: Quantity.of(1, "kg") })).toThrow(FormulaError);
+    expect(() => g.evaluate({ distance: baseInputs.distance })).toThrow(
+      FormulaError,
+    );
+    expect(() =>
+      g.evaluate({ ...baseInputs, ghost: Quantity.of(1, "kg") }),
+    ).toThrow(FormulaError);
   });
 });
 
@@ -183,10 +211,13 @@ describe("incremental recomputation", () => {
   it("unknown recomputation inputs throw", () => {
     const { velocity } = physicsFormulas();
     const g = createDependencyGraph([velocity]);
-    const first = g.evaluate({ distance: baseInputs.distance, time: baseInputs.time });
-    expect(() => g.reevaluate(first, { nope: Quantity.of(1, "kg") } as never)).toThrow(
-      FormulaError,
-    );
+    const first = g.evaluate({
+      distance: baseInputs.distance,
+      time: baseInputs.time,
+    });
+    expect(() =>
+      g.reevaluate(first, { nope: Quantity.of(1, "kg") } as never),
+    ).toThrow(FormulaError);
   });
 });
 
@@ -200,7 +231,10 @@ describe("pipelines", () => {
     const pipeline = createPipeline([velocity, energy]);
     expect(pipeline.stages).toEqual(["velocity", "kinetic_energy"]);
     const run = pipeline.run(baseInputs);
-    expect(run.stages.map((s) => s.formula)).toEqual(["velocity", "kinetic_energy"]);
+    expect(run.stages.map((s) => s.formula)).toEqual([
+      "velocity",
+      "kinetic_energy",
+    ]);
     expect(run.stages[0]!.output).toBe("velocity");
     expect(run.stages[1]!.output).toBe("energy");
     expect(run.outputs["velocity"]!.to("m/s").value).toBeCloseTo(10, 9);
@@ -222,7 +256,9 @@ describe("graph serialization", () => {
   it("round-trips structure and revalidates formulas", () => {
     const { velocity, energy } = physicsFormulas();
     const g = createDependencyGraph([velocity, energy]);
-    const restored = deserializeDependencyGraph(JSON.parse(JSON.stringify(g.serialize())));
+    const restored = deserializeDependencyGraph(
+      JSON.parse(JSON.stringify(g.serialize())),
+    );
     expect(restored.evaluationOrder()).toEqual(["velocity", "kinetic_energy"]);
     const r = restored.evaluate(baseInputs);
     expect(r.outputs["velocity"]!.to("m/s").value).toBeCloseTo(10, 9);
@@ -231,13 +267,25 @@ describe("graph serialization", () => {
   it("rejects malformed payloads", () => {
     expect(() => deserializeDependencyGraph(null)).toThrow(FormulaError);
     expect(() =>
-      deserializeDependencyGraph({ version: 2, type: "dependency-graph", formulas: [] }),
+      deserializeDependencyGraph({
+        version: 2,
+        type: "dependency-graph",
+        formulas: [],
+      }),
     ).toThrow(FormulaError);
     expect(() =>
-      deserializeDependencyGraph({ version: 1, type: "dependency-graph", formulas: [] }),
+      deserializeDependencyGraph({
+        version: 1,
+        type: "dependency-graph",
+        formulas: [],
+      }),
     ).toThrow(FormulaError);
     expect(() =>
-      deserializeDependencyGraph({ version: 1, type: "dependency-graph", formulas: [{ nope: 1 }] }),
+      deserializeDependencyGraph({
+        version: 1,
+        type: "dependency-graph",
+        formulas: [{ nope: 1 }],
+      }),
     ).toThrow();
   });
 });
@@ -259,9 +307,9 @@ describe("graph limits and measurement flow", () => {
         }),
       );
     }
-    expect(() => createDependencyGraph(formulas, { limits: { maxGraphNodes: 2 } })).toThrow(
-      ExpressionLimitError,
-    );
+    expect(() =>
+      createDependencyGraph(formulas, { limits: { maxGraphNodes: 2 } }),
+    ).toThrow(ExpressionLimitError);
     const wideInputs: Record<string, { dimension: string }> = {};
     let expr = v("a0");
     for (let i = 1; i < 10; i++) {
@@ -275,9 +323,9 @@ describe("graph limits and measurement flow", () => {
       inputs: wideInputs,
       outputName: "w",
     });
-    expect(() => createDependencyGraph([wide], { limits: { maxDependencies: 2 } })).toThrow(
-      ExpressionLimitError,
-    );
+    expect(() =>
+      createDependencyGraph([wide], { limits: { maxDependencies: 2 } }),
+    ).toThrow(ExpressionLimitError);
   });
 
   it("measurements flow through graphs with uncertainty", () => {
@@ -285,7 +333,10 @@ describe("graph limits and measurement flow", () => {
       {
         id: "force",
         expression: mul(v("mass"), v("accel")),
-        inputs: { mass: { dimension: Dim.Mass }, accel: { dimension: "m/s^2" } },
+        inputs: {
+          mass: { dimension: Dim.Mass },
+          accel: { dimension: "m/s^2" },
+        },
         outputName: "force",
       },
       O,
@@ -294,7 +345,8 @@ describe("graph limits and measurement flow", () => {
     const m = Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.2, "kg"));
     const r = g.evaluate({ mass: m, accel: Quantity.of(10, "m/s^2") });
     const forceOut = r.outputs["force"];
-    if (!(forceOut instanceof Measurement)) throw new Error("expected Measurement");
+    if (!(forceOut instanceof Measurement))
+      throw new Error("expected Measurement");
     expect(forceOut.relativeUncertainty()).toBeCloseTo(0.02, 9);
   });
 });

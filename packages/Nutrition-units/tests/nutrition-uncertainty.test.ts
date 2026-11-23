@@ -7,12 +7,19 @@ import { NutritionMeasurement, createNutritionContext } from "../src/index.js";
 
 describe("phase9 — uncertainty construction", () => {
   it("without uncertainty (exact)", () => {
-    const m = NutritionMeasurement.of(Measurement.exact(Quantity.of(100, "mg/kg")), "ca", "asFed");
+    const m = NutritionMeasurement.of(
+      Measurement.exact(Quantity.of(100, "mg/kg")),
+      "ca",
+      "asFed",
+    );
     expect(m.uncertainty.value).toBe(0);
   });
 
   it("with absolute uncertainty", () => {
-    const meas = Measurement.of(Quantity.of(100, "mg/kg"), Quantity.of(5, "mg/kg"));
+    const meas = Measurement.of(
+      Quantity.of(100, "mg/kg"),
+      Quantity.of(5, "mg/kg"),
+    );
     const nm = NutritionMeasurement.of(meas, "ca", "asFed");
     expect(nm.uncertainty.value).toBe(5);
     expect(nm.value.value).toBe(100);
@@ -25,12 +32,21 @@ describe("phase9 — uncertainty construction", () => {
   });
 
   it("rejects negative, NaN, Infinity uncertainty via core", () => {
-    expect(() => Measurement.of(Quantity.of(100, "mg/kg"), Quantity.of(-5, "mg/kg"))).toThrow();
-    expect(() => Measurement.of(Quantity.of(100, "mg/kg"), NaN as never)).toThrow();
-    expect(() => Measurement.of(Quantity.of(100, "mg/kg"), Infinity as never)).toThrow();
+    expect(() =>
+      Measurement.of(Quantity.of(100, "mg/kg"), Quantity.of(-5, "mg/kg")),
+    ).toThrow();
+    expect(() =>
+      Measurement.of(Quantity.of(100, "mg/kg"), NaN as never),
+    ).toThrow();
+    expect(() =>
+      Measurement.of(Quantity.of(100, "mg/kg"), Infinity as never),
+    ).toThrow();
     expect(() =>
       NutritionMeasurement.of(
-        Measurement.of(Quantity.of(100, "mg/kg"), Quantity.of(-1, "mg/kg")) as never,
+        Measurement.of(
+          Quantity.of(100, "mg/kg"),
+          Quantity.of(-1, "mg/kg"),
+        ) as never,
         "ca",
         "asFed",
       ),
@@ -40,7 +56,10 @@ describe("phase9 — uncertainty construction", () => {
 
 describe("phase9 — uncertainty unit conversion", () => {
   it("mg/kg ± 50 → g/kg ± 0.05 preserves uncertainty", () => {
-    const meas = Measurement.of(Quantity.of(1000, "mg/kg"), Quantity.of(50, "mg/kg"));
+    const meas = Measurement.of(
+      Quantity.of(1000, "mg/kg"),
+      Quantity.of(50, "mg/kg"),
+    );
     const nm = NutritionMeasurement.of(meas, "ca", "asFed");
     const converted = nm.to("g/kg");
     expect(converted.value.value).toBeCloseTo(1, 9);
@@ -48,7 +67,10 @@ describe("phase9 — uncertainty unit conversion", () => {
   });
 
   it("round-trip preserves uncertainty", () => {
-    const meas = Measurement.of(Quantity.of(100, "mg/kg"), Quantity.of(5, "mg/kg"));
+    const meas = Measurement.of(
+      Quantity.of(100, "mg/kg"),
+      Quantity.of(5, "mg/kg"),
+    );
     const nm = NutritionMeasurement.of(meas, "ca", "asFed");
     const back = nm.to("g/kg").to("mg/kg");
     expect(back.value.value).toBeCloseTo(100, 9);
@@ -58,7 +80,10 @@ describe("phase9 — uncertainty unit conversion", () => {
 
 describe("phase9 — uncertainty + basis conversion", () => {
   it("scales uncertainty deterministically via DM fraction", () => {
-    const meas = Measurement.of(Quantity.of(100, "g/kg"), Quantity.of(5, "g/kg"));
+    const meas = Measurement.of(
+      Quantity.of(100, "g/kg"),
+      Quantity.of(5, "g/kg"),
+    );
     const nm = NutritionMeasurement.of(meas, "cp", "asFed");
     const ctx = createNutritionContext({ dryMatterFraction: 0.5 });
     const dm = nm.convertBasis("dryMatter", ctx);
@@ -71,7 +96,10 @@ describe("phase9 — uncertainty + basis conversion", () => {
   it("uncertain DM fraction currently handled as exact (documented limitation) — does not silently include DM uncertainty", () => {
     // If DM itself had uncertainty, our current convertBasis uses exact DM fraction (number)
     // So it scales but does not propagate DM uncertainty — we document this
-    const meas = Measurement.of(Quantity.of(100, "g/kg"), Quantity.of(5, "g/kg"));
+    const meas = Measurement.of(
+      Quantity.of(100, "g/kg"),
+      Quantity.of(5, "g/kg"),
+    );
     const nm = NutritionMeasurement.of(meas, "cp", "asFed");
     // Create context with DM 0.88 exact, not uncertain Measurement
     const ctx = createNutritionContext({ dryMatterFraction: 0.88 });
@@ -103,7 +131,11 @@ describe("phase9 — comparison safety with uncertainty", () => {
       "ca",
       "asFed",
     );
-    const p = NutritionMeasurement.of(Measurement.exact(Quantity.of(100, "mg/kg")), "p", "asFed");
+    const p = NutritionMeasurement.of(
+      Measurement.exact(Quantity.of(100, "mg/kg")),
+      "p",
+      "asFed",
+    );
     expect(() => ca.compare(p)).toThrow();
   });
 });
@@ -124,7 +156,10 @@ describe("phase9 — metadata + uncertainty coexistence", () => {
 
 describe("phase9 — serialization preserves uncertainty", () => {
   it("round-trip preserves value, unit, nutrient, basis, uncertainty", () => {
-    const meas = Measurement.of(Quantity.of(250, "mg/kg"), Quantity.of(10, "mg/kg"));
+    const meas = Measurement.of(
+      Quantity.of(250, "mg/kg"),
+      Quantity.of(10, "mg/kg"),
+    );
     const nm = NutritionMeasurement.of(meas, "ca", "asFed");
     const json = JSON.stringify(nm.toJSON());
     const back = NutritionMeasurement.fromJSON(JSON.parse(json));

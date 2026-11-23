@@ -36,7 +36,8 @@ import type { UnitPack } from "../unit-system.js";
 
 const SECOND_PER_DAY = (() => {
   const def = ATOMIC_UNITS.find((d) => d.symbol === "s");
-  if (!def) throw new Error('RADIATION pack: expected atomic unit "s" in ATOMIC_UNITS');
+  if (!def)
+    throw new Error('RADIATION pack: expected atomic unit "s" in ATOMIC_UNITS');
   return def.toBaseFactor;
 })();
 
@@ -97,7 +98,11 @@ export const RADIATION_PACK: UnitPack = Object.freeze({
       dimension: DOSE_DIM,
       toBaseFactor: GY_PER_BASE / 100, // exact: 1 rd = 0.01 Gy
       label: "rad (radiation absorbed dose)",
-      metadata: { system: "general", category: "absorbed dose", kind: "absorbed-dose" },
+      metadata: {
+        system: "general",
+        category: "absorbed dose",
+        kind: "absorbed-dose",
+      },
     } as AtomicUnitDef,
     {
       symbol: "Sv",
@@ -117,7 +122,11 @@ export const RADIATION_PACK: UnitPack = Object.freeze({
       dimension: DOSE_DIM,
       toBaseFactor: GY_PER_BASE / 100, // exact: 1 rem = 0.01 Sv
       label: "rem",
-      metadata: { system: "general", category: "equivalent dose", kind: "equivalent-dose" },
+      metadata: {
+        system: "general",
+        category: "equivalent dose",
+        kind: "equivalent-dose",
+      },
     } as AtomicUnitDef,
   ]),
   aliases: Object.freeze({

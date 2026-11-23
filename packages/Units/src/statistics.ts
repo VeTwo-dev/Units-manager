@@ -24,11 +24,19 @@
  * typed extension point that fails explicitly.
  */
 import { Quantity } from "./quantity.js";
-import { Measurement, serializeMeasurement, deserializeMeasurement } from "./measurement.js";
+import {
+  Measurement,
+  serializeMeasurement,
+  deserializeMeasurement,
+} from "./measurement.js";
 import type { Unit } from "./unit.js";
 import { defaultUnitRegistry, type UnitRegistry } from "./unit-registry.js";
 import { convert } from "./conversion-engine.js";
-import { dimensionKey, dimensionsEqual, type DimensionVector } from "./dimension.js";
+import {
+  dimensionKey,
+  dimensionsEqual,
+  type DimensionVector,
+} from "./dimension.js";
 import { parseUnit } from "./unit-parser.js";
 import {
   InvalidMeasurementError,
@@ -74,13 +82,18 @@ function resolveLimits(limits?: StatisticsLimits): {
   const r = {
     maxObservations: limits?.maxObservations ?? DEFAULT_LIMITS.maxObservations,
     maxVariables: limits?.maxVariables ?? DEFAULT_LIMITS.maxVariables,
-    maxMatrixDimension: limits?.maxMatrixDimension ?? DEFAULT_LIMITS.maxMatrixDimension,
-    maxSerializedChars: limits?.maxSerializedChars ?? DEFAULT_LIMITS.maxSerializedChars,
-    maxMetadataDepth: limits?.maxMetadataDepth ?? DEFAULT_LIMITS.maxMetadataDepth,
+    maxMatrixDimension:
+      limits?.maxMatrixDimension ?? DEFAULT_LIMITS.maxMatrixDimension,
+    maxSerializedChars:
+      limits?.maxSerializedChars ?? DEFAULT_LIMITS.maxSerializedChars,
+    maxMetadataDepth:
+      limits?.maxMetadataDepth ?? DEFAULT_LIMITS.maxMetadataDepth,
   };
   for (const [k, v] of Object.entries(r)) {
     if (!Number.isInteger(v) || v < 1) {
-      throw new UnitEngineError(`Statistics limit ${k} must be a positive integer.`);
+      throw new UnitEngineError(
+        `Statistics limit ${k} must be a positive integer.`,
+      );
     }
   }
   return r;
@@ -94,12 +107,17 @@ function hasPollutionKeys(obj: Record<string, unknown>): boolean {
   );
 }
 
-function assertPlainRecord(value: unknown, what: string): asserts value is Record<string, unknown> {
+function assertPlainRecord(
+  value: unknown,
+  what: string,
+): asserts value is Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new InvalidMeasurementError(`${what} must be a plain object`);
   }
   if (hasPollutionKeys(value as Record<string, unknown>)) {
-    throw new InvalidMeasurementError(`${what} contains forbidden prototype keys`);
+    throw new InvalidMeasurementError(
+      `${what} contains forbidden prototype keys`,
+    );
   }
 }
 
@@ -108,7 +126,12 @@ function assertPlainRecord(value: unknown, what: string): asserts value is Recor
 // ---------------------------------------------------------------------------
 
 export type UncertaintyComponentType = "A" | "B" | "combined";
-export type UncertaintyDistribution = "normal" | "t" | "uniform" | "rectangular" | "triangular";
+export type UncertaintyDistribution =
+  | "normal"
+  | "t"
+  | "uniform"
+  | "rectangular"
+  | "triangular";
 
 /**
  * One uncertainty component: a standard (1σ) uncertainty with explicit
@@ -138,7 +161,9 @@ const COMPONENT_ID_RE = /^[A-Za-z][A-Za-z0-9_.-]*$/;
 
 function assertValidComponent(c: UncertaintyComponent, owner: string): void {
   if (c === null || typeof c !== "object" || Array.isArray(c)) {
-    throw new InvalidMeasurementError(`${owner} component must be a plain object`);
+    throw new InvalidMeasurementError(
+      `${owner} component must be a plain object`,
+    );
   }
   if (typeof c.id !== "string" || !COMPONENT_ID_RE.test(c.id)) {
     throw new InvalidMeasurementError(
@@ -156,7 +181,12 @@ function assertValidComponent(c: UncertaintyComponent, owner: string): void {
       `${owner} component "${c.id}" standardUncertainty must be finite and ≥ 0`,
     );
   }
-  if (c.type !== undefined && c.type !== "A" && c.type !== "B" && c.type !== "combined") {
+  if (
+    c.type !== undefined &&
+    c.type !== "A" &&
+    c.type !== "B" &&
+    c.type !== "combined"
+  ) {
     throw new InvalidMeasurementError(
       `${owner} component "${c.id}" type must be "A", "B" or "combined"`,
     );
@@ -169,7 +199,9 @@ function assertValidComponent(c: UncertaintyComponent, owner: string): void {
     c.distribution !== "rectangular" &&
     c.distribution !== "triangular"
   ) {
-    throw new InvalidMeasurementError(`${owner} component "${c.id}" has an unknown distribution`);
+    throw new InvalidMeasurementError(
+      `${owner} component "${c.id}" has an unknown distribution`,
+    );
   }
   if (
     c.degreesOfFreedom !== undefined &&
@@ -191,16 +223,23 @@ function assertValidComponent(c: UncertaintyComponent, owner: string): void {
  */
 export function combineUncertainties(
   components: readonly UncertaintyComponent[],
-  opts: { correlations?: readonly ComponentCorrelation[]; registry?: UnitRegistry } = {},
+  opts: {
+    correlations?: readonly ComponentCorrelation[];
+    registry?: UnitRegistry;
+  } = {},
 ): Quantity {
   if (!Array.isArray(components) || components.length === 0) {
-    throw new InvalidMeasurementError("combineUncertainties needs at least one component");
+    throw new InvalidMeasurementError(
+      "combineUncertainties needs at least one component",
+    );
   }
   const seen = new Set<string>();
   for (const c of components) {
     assertValidComponent(c, "combineUncertainties");
     if (seen.has(c.id)) {
-      throw new InvalidMeasurementError(`Duplicate uncertainty component id "${c.id}"`);
+      throw new InvalidMeasurementError(
+        `Duplicate uncertainty component id "${c.id}"`,
+      );
     }
     seen.add(c.id);
   }
@@ -215,12 +254,15 @@ export function combineUncertainties(
   }
   // Work in base units so mixed representations (g vs kg) combine physically.
   const base = new Map<string, number>();
-  for (const c of components) base.set(c.id, c.standardUncertainty.toBase().value);
+  for (const c of components)
+    base.set(c.id, c.standardUncertainty.toBase().value);
   let sumSq = 0;
   for (const v of base.values()) sumSq += v * v;
   for (const corr of opts.correlations ?? []) {
     if (corr === null || typeof corr !== "object") {
-      throw new InvalidMeasurementError("Correlation entry must be a plain object");
+      throw new InvalidMeasurementError(
+        "Correlation entry must be a plain object",
+      );
     }
     const { idA, idB, coefficient } = corr;
     if (!base.has(idA) || !base.has(idB)) {
@@ -228,7 +270,10 @@ export function combineUncertainties(
         `Correlation references unknown component "${!base.has(idA) ? idA : idB}"`,
       );
     }
-    if (typeof coefficient !== "number" || !(coefficient >= -1 && coefficient <= 1)) {
+    if (
+      typeof coefficient !== "number" ||
+      !(coefficient >= -1 && coefficient <= 1)
+    ) {
       throw new InvalidMeasurementError(
         `Correlation coefficient for "${idA}"/"${idB}" must satisfy -1 ≤ ρ ≤ 1`,
       );
@@ -288,7 +333,9 @@ export class CovarianceMatrix {
   /** Covariance Cov(i,j) as a Quantity in the matrix unit squared. */
   covariance(labelA: string, labelB: string): Quantity {
     const [i, j] = this.indicesOf(labelA, labelB);
-    const unitSq = Quantity.of(1, this.unit).multiply(Quantity.of(1, this.unit)).unit;
+    const unitSq = Quantity.of(1, this.unit).multiply(
+      Quantity.of(1, this.unit),
+    ).unit;
     return Quantity.of(this.values[i]![j]!, unitSq);
   }
 
@@ -335,7 +382,10 @@ export class CovarianceMatrix {
 
   private indexOf(label: string): number {
     const i = this.labels.indexOf(label);
-    if (i < 0) throw new InvalidMeasurementError(`Unknown covariance variable "${label}"`);
+    if (i < 0)
+      throw new InvalidMeasurementError(
+        `Unknown covariance variable "${label}"`,
+      );
     return i;
   }
 
@@ -352,7 +402,9 @@ export class CovarianceMatrix {
     const limits = resolveLimits(opts.limits);
     const registry = opts.registry ?? defaultUnitRegistry;
     if (!Array.isArray(labels) || labels.length === 0) {
-      throw new InvalidMeasurementError("CovarianceMatrix needs at least one label");
+      throw new InvalidMeasurementError(
+        "CovarianceMatrix needs at least one label",
+      );
     }
     if (labels.length > limits.maxMatrixDimension) {
       throw new InvalidMeasurementError(
@@ -367,7 +419,9 @@ export class CovarianceMatrix {
         );
       }
       if (seen.has(label))
-        throw new InvalidMeasurementError(`Duplicate covariance label "${label}"`);
+        throw new InvalidMeasurementError(
+          `Duplicate covariance label "${label}"`,
+        );
       seen.add(label);
     }
     let unit: Unit;
@@ -399,7 +453,9 @@ export class CovarianceMatrix {
       const out: number[] = [];
       for (const v of row) {
         if (typeof v !== "number" || !Number.isFinite(v)) {
-          throw new InvalidMeasurementError("CovarianceMatrix values must all be finite numbers");
+          throw new InvalidMeasurementError(
+            "CovarianceMatrix values must all be finite numbers",
+          );
         }
         out.push(v);
       }
@@ -431,7 +487,9 @@ export class CovarianceMatrix {
 
   /** Build from Measurements + explicit pairwise correlations (diagonal = σ²). */
   static fromMeasurements(
-    measurements: Readonly<Record<string, Measurement>> | readonly Measurement[],
+    measurements:
+      | Readonly<Record<string, Measurement>>
+      | readonly Measurement[],
     opts: CovarianceMatrixOptions & {
       correlations?: readonly ComponentCorrelation[];
       unit?: string;
@@ -455,7 +513,9 @@ export class CovarianceMatrix {
     }
     const names = opts.labels ?? entries.map(([name]) => name);
     if (names.length !== entries.length) {
-      throw new InvalidMeasurementError("CovarianceMatrix labels must match measurement count");
+      throw new InvalidMeasurementError(
+        "CovarianceMatrix labels must match measurement count",
+      );
     }
     const first = entries[0]![1];
     if (!(first instanceof Measurement)) {
@@ -474,7 +534,9 @@ export class CovarianceMatrix {
       );
     }
     if (!dimensionsEqual(unit.dimension, dim)) {
-      throw new InvalidMeasurementError("CovarianceMatrix unit must match measurement dimension");
+      throw new InvalidMeasurementError(
+        "CovarianceMatrix unit must match measurement dimension",
+      );
     }
     // Variances in the matrix unit: σ_unit².
     const sigmas = entries.map(([, m]) => {
@@ -492,7 +554,9 @@ export class CovarianceMatrix {
     });
     const n = entries.length;
     const values: number[][] = Array.from({ length: n }, (_, i) =>
-      Array.from({ length: n }, (_, j) => (i === j ? sigmas[i]! * sigmas[i]! : 0)),
+      Array.from({ length: n }, (_, j) =>
+        i === j ? sigmas[i]! * sigmas[i]! : 0,
+      ),
     );
     for (const corr of opts.correlations ?? []) {
       const i = names.indexOf(corr.idA);
@@ -506,14 +570,19 @@ export class CovarianceMatrix {
         typeof corr.coefficient !== "number" ||
         !(corr.coefficient >= -1 && corr.coefficient <= 1)
       ) {
-        throw new InvalidMeasurementError("Correlation coefficient must satisfy -1 ≤ ρ ≤ 1");
+        throw new InvalidMeasurementError(
+          "Correlation coefficient must satisfy -1 ≤ ρ ≤ 1",
+        );
       }
       if (i === j) continue;
       const cov = corr.coefficient * sigmas[i]! * sigmas[j]!;
       values[i]![j] = cov;
       values[j]![i] = cov;
     }
-    return CovarianceMatrix.fromData(names, unit.symbol, values, { registry, limits: opts.limits });
+    return CovarianceMatrix.fromData(names, unit.symbol, values, {
+      registry,
+      limits: opts.limits,
+    });
   }
 
   serialize(): SerializedCovarianceMatrix {
@@ -526,7 +595,10 @@ export class CovarianceMatrix {
     });
   }
 
-  static deserialize(data: unknown, opts: CovarianceMatrixOptions = {}): CovarianceMatrix {
+  static deserialize(
+    data: unknown,
+    opts: CovarianceMatrixOptions = {},
+  ): CovarianceMatrix {
     if (typeof data === "string") {
       const limits = resolveLimits(opts.limits);
       if (data.length > limits.maxSerializedChars) {
@@ -538,14 +610,18 @@ export class CovarianceMatrix {
       try {
         parsed = JSON.parse(data);
       } catch {
-        throw new InvalidMeasurementError("Malformed serialized covariance matrix: invalid JSON");
+        throw new InvalidMeasurementError(
+          "Malformed serialized covariance matrix: invalid JSON",
+        );
       }
       return CovarianceMatrix.deserialize(parsed, opts);
     }
     assertPlainRecord(data, "Serialized covariance matrix");
     if (data.version !== 1) {
       if (data.version === undefined)
-        throw new InvalidMeasurementError("Serialized covariance matrix missing version");
+        throw new InvalidMeasurementError(
+          "Serialized covariance matrix missing version",
+        );
       throw new InvalidMeasurementError(
         `Unsupported covariance matrix version ${String(data.version)}`,
       );
@@ -561,7 +637,9 @@ export class CovarianceMatrix {
       );
     }
     if (typeof data.unit !== "string") {
-      throw new InvalidMeasurementError("Serialized covariance matrix needs a unit string");
+      throw new InvalidMeasurementError(
+        "Serialized covariance matrix needs a unit string",
+      );
     }
     return CovarianceMatrix.fromData(
       data.labels as string[],
@@ -586,7 +664,10 @@ export interface SerializedCovarianceMatrix {
  * maxMatrixDimension. Approximate PSD within 1e-9 relative tolerance passes;
  * anything else throws.
  */
-function assertPositiveSemidefinite(rows: number[][], labels: readonly string[]): void {
+function assertPositiveSemidefinite(
+  rows: number[][],
+  labels: readonly string[],
+): void {
   const n = rows.length;
   // Build correlation matrix; drop exactly-zero-variance rows (must be uncorrelated).
   const active: number[] = [];
@@ -676,7 +757,9 @@ export class MeasurementSeries {
     const limits = resolveLimits(opts.limits);
     const registry = opts.registry ?? defaultUnitRegistry;
     if (!Array.isArray(observations) || observations.length === 0) {
-      throw new InvalidMeasurementError("MeasurementSeries needs at least one observation");
+      throw new InvalidMeasurementError(
+        "MeasurementSeries needs at least one observation",
+      );
     }
     if (observations.length > limits.maxObservations) {
       throw new InvalidMeasurementError(
@@ -685,7 +768,9 @@ export class MeasurementSeries {
     }
     for (const [i, o] of observations.entries()) {
       if (!(o instanceof Measurement)) {
-        throw new InvalidMeasurementError(`Observation ${i} is not a Measurement`);
+        throw new InvalidMeasurementError(
+          `Observation ${i} is not a Measurement`,
+        );
       }
     }
     const dim = observations[0]!.dimension;
@@ -708,7 +793,9 @@ export class MeasurementSeries {
       );
     }
     if (!dimensionsEqual(unit.dimension, dim)) {
-      throw new InvalidMeasurementError("MeasurementSeries target unit dimension mismatch");
+      throw new InvalidMeasurementError(
+        "MeasurementSeries target unit dimension mismatch",
+      );
     }
     if (unit.conversion.kind !== "linear") {
       throw new InvalidMeasurementError(
@@ -761,10 +848,14 @@ export class MeasurementSeries {
       );
     }
     if (!dimensionsEqual(unit.dimension, this.dimension)) {
-      throw new InvalidMeasurementError("MeasurementSeries target unit dimension mismatch");
+      throw new InvalidMeasurementError(
+        "MeasurementSeries target unit dimension mismatch",
+      );
     }
     if (unit.conversion.kind !== "linear") {
-      throw new InvalidMeasurementError("MeasurementSeries target unit must be linear");
+      throw new InvalidMeasurementError(
+        "MeasurementSeries target unit must be linear",
+      );
     }
     return new MeasurementSeries(this.observations, this.originals, unit);
   }
@@ -786,7 +877,10 @@ export class MeasurementSeries {
     const combined = Math.sqrt(sem * sem + meanSigma * meanSigma);
     checkFiniteResult(mean, "MeasurementSeries.mean value");
     checkFiniteResult(combined, "MeasurementSeries.mean uncertainty");
-    return Measurement.of(Quantity.of(mean, this.unit), Quantity.of(combined, this.unit));
+    return Measurement.of(
+      Quantity.of(mean, this.unit),
+      Quantity.of(combined, this.unit),
+    );
   }
 
   /**
@@ -817,7 +911,9 @@ export class MeasurementSeries {
       }
       w = weights.map((x, i) => {
         if (typeof x !== "number" || !Number.isFinite(x) || x < 0) {
-          throw new InvalidMeasurementError(`Weight ${i} must be a finite number ≥ 0`);
+          throw new InvalidMeasurementError(
+            `Weight ${i} must be a finite number ≥ 0`,
+          );
         }
         return x;
       });
@@ -836,7 +932,10 @@ export class MeasurementSeries {
     }
     checkFiniteResult(mean, "MeasurementSeries.weightedMean value");
     checkFiniteResult(unc, "MeasurementSeries.weightedMean uncertainty");
-    return Measurement.of(Quantity.of(mean, this.unit), Quantity.of(unc, this.unit));
+    return Measurement.of(
+      Quantity.of(mean, this.unit),
+      Quantity.of(unc, this.unit),
+    );
   }
 
   /** Observation with the smallest nominal value (original preserved). */
@@ -864,7 +963,9 @@ export class MeasurementSeries {
     const xs = this.nominals();
     const v = xs.length > 1 ? sampleVariance(xs) : 0;
     checkFiniteResult(v, "MeasurementSeries.variance");
-    const unitSq = Quantity.of(1, this.unit).multiply(Quantity.of(1, this.unit)).unit;
+    const unitSq = Quantity.of(1, this.unit).multiply(
+      Quantity.of(1, this.unit),
+    ).unit;
     return Quantity.of(v, unitSq);
   }
 
@@ -876,7 +977,10 @@ export class MeasurementSeries {
   /** Standard error of the mean (s/√n) in the common unit. */
   standardError(): Quantity {
     const n = this.count;
-    return Quantity.of(n > 1 ? this.stddev().value / Math.sqrt(n) : 0, this.unit);
+    return Quantity.of(
+      n > 1 ? this.stddev().value / Math.sqrt(n) : 0,
+      this.unit,
+    );
   }
 
   /** Deterministic summary object (frozen). */
@@ -900,17 +1004,24 @@ export class MeasurementSeries {
       type: "measurement-series" as const,
       unit: this.unit.symbol,
       observations: Object.freeze(
-        this.originals.map((o) => serializeMeasurement(o) as unknown as Record<string, unknown>),
+        this.originals.map(
+          (o) => serializeMeasurement(o) as unknown as Record<string, unknown>,
+        ),
       ),
     });
   }
 
-  static deserialize(data: unknown, opts: MeasurementSeriesOptions = {}): MeasurementSeries {
+  static deserialize(
+    data: unknown,
+    opts: MeasurementSeriesOptions = {},
+  ): MeasurementSeries {
     const limits = resolveLimits(opts.limits);
     assertPlainRecord(data, "Serialized measurement series");
     if (data.version !== 1) {
       if (data.version === undefined)
-        throw new InvalidMeasurementError("Serialized measurement series missing version");
+        throw new InvalidMeasurementError(
+          "Serialized measurement series missing version",
+        );
       throw new InvalidMeasurementError(
         `Unsupported measurement series version ${String(data.version)}`,
       );
@@ -931,7 +1042,9 @@ export class MeasurementSeries {
       );
     }
     if (typeof data.unit !== "string") {
-      throw new InvalidMeasurementError("Serialized measurement series needs a unit string");
+      throw new InvalidMeasurementError(
+        "Serialized measurement series needs a unit string",
+      );
     }
     const registry = opts.registry ?? defaultUnitRegistry;
     const observations = (data.observations as unknown[]).map((o) =>
@@ -978,12 +1091,19 @@ function sampleVariance(xs: readonly number[]): number {
  * Expanded uncertainty U = k·u_c. Returns the expanded Quantity in the
  * input's unit. No confidence level is claimed — k alone just scales.
  */
-export function expandUncertainty(standardUncertainty: Quantity, k: number): Quantity {
+export function expandUncertainty(
+  standardUncertainty: Quantity,
+  k: number,
+): Quantity {
   if (!(standardUncertainty instanceof Quantity)) {
-    throw new InvalidMeasurementError("expandUncertainty needs a Quantity standard uncertainty");
+    throw new InvalidMeasurementError(
+      "expandUncertainty needs a Quantity standard uncertainty",
+    );
   }
   if (typeof k !== "number" || !Number.isFinite(k) || k <= 0) {
-    throw new InvalidMeasurementError(`Coverage factor k must be finite and > 0, got ${String(k)}`);
+    throw new InvalidMeasurementError(
+      `Coverage factor k must be finite and > 0, got ${String(k)}`,
+    );
   }
   if (standardUncertainty.value < 0) {
     throw new InvalidMeasurementError("Standard uncertainty must be ≥ 0");
@@ -1001,15 +1121,24 @@ export interface MeasurementInterval {
   readonly upper: Quantity;
 }
 
-export function makeMeasurementInterval(lower: Quantity, upper: Quantity): MeasurementInterval {
+export function makeMeasurementInterval(
+  lower: Quantity,
+  upper: Quantity,
+): MeasurementInterval {
   if (!(lower instanceof Quantity) || !(upper instanceof Quantity)) {
-    throw new InvalidMeasurementError("MeasurementInterval bounds must be Quantities");
+    throw new InvalidMeasurementError(
+      "MeasurementInterval bounds must be Quantities",
+    );
   }
   if (!dimensionsEqual(lower.dimension, upper.dimension)) {
-    throw new InvalidMeasurementError("MeasurementInterval bounds must share one dimension");
+    throw new InvalidMeasurementError(
+      "MeasurementInterval bounds must share one dimension",
+    );
   }
   if (lower.toBase().value > upper.toBase().value) {
-    throw new InvalidMeasurementError("MeasurementInterval lower must not exceed upper");
+    throw new InvalidMeasurementError(
+      "MeasurementInterval lower must not exceed upper",
+    );
   }
   return Object.freeze({ lower, upper });
 }
@@ -1037,23 +1166,41 @@ export function makeConfidenceBounds(args: {
   distribution?: UncertaintyDistribution;
   degreesOfFreedom?: number;
 }): ConfidenceBounds {
-  const { lower, upper, level, coverageFactor, distribution, degreesOfFreedom } = args;
+  const {
+    lower,
+    upper,
+    level,
+    coverageFactor,
+    distribution,
+    degreesOfFreedom,
+  } = args;
   if (!(lower instanceof Quantity) || !(upper instanceof Quantity)) {
-    throw new InvalidMeasurementError("ConfidenceBounds bounds must be Quantities");
+    throw new InvalidMeasurementError(
+      "ConfidenceBounds bounds must be Quantities",
+    );
   }
   if (!dimensionsEqual(lower.dimension, upper.dimension)) {
-    throw new InvalidMeasurementError("ConfidenceBounds bounds must share one dimension");
+    throw new InvalidMeasurementError(
+      "ConfidenceBounds bounds must share one dimension",
+    );
   }
   if (lower.toBase().value > upper.toBase().value) {
-    throw new InvalidMeasurementError("ConfidenceBounds lower must not exceed upper");
+    throw new InvalidMeasurementError(
+      "ConfidenceBounds lower must not exceed upper",
+    );
   }
   if (typeof level !== "number" || !(level > 0 && level < 1)) {
     throw new InvalidMeasurementError(
       `ConfidenceBounds level must be in (0, 1), got ${String(level)}`,
     );
   }
-  if (coverageFactor !== undefined && (!Number.isFinite(coverageFactor) || coverageFactor <= 0)) {
-    throw new InvalidMeasurementError("ConfidenceBounds coverageFactor must be finite and > 0");
+  if (
+    coverageFactor !== undefined &&
+    (!Number.isFinite(coverageFactor) || coverageFactor <= 0)
+  ) {
+    throw new InvalidMeasurementError(
+      "ConfidenceBounds coverageFactor must be finite and > 0",
+    );
   }
   if (
     distribution !== undefined &&
@@ -1063,7 +1210,9 @@ export function makeConfidenceBounds(args: {
     distribution !== "rectangular" &&
     distribution !== "triangular"
   ) {
-    throw new InvalidMeasurementError("ConfidenceBounds has an unknown distribution");
+    throw new InvalidMeasurementError(
+      "ConfidenceBounds has an unknown distribution",
+    );
   }
   if (
     degreesOfFreedom !== undefined &&
@@ -1073,7 +1222,14 @@ export function makeConfidenceBounds(args: {
       "ConfidenceBounds degreesOfFreedom must be a positive integer",
     );
   }
-  return Object.freeze({ lower, upper, level, coverageFactor, distribution, degreesOfFreedom });
+  return Object.freeze({
+    lower,
+    upper,
+    level,
+    coverageFactor,
+    distribution,
+    degreesOfFreedom,
+  });
 }
 
 /**
@@ -1085,15 +1241,32 @@ export function confidenceBoundsOf(
   m: Measurement,
   k: number,
   level: number,
-  opts: { distribution?: UncertaintyDistribution; degreesOfFreedom?: number } = {},
+  opts: {
+    distribution?: UncertaintyDistribution;
+    degreesOfFreedom?: number;
+  } = {},
 ): ConfidenceBounds {
   if (!(m instanceof Measurement)) {
-    throw new InvalidMeasurementError("confidenceIntervalOf needs a Measurement");
+    throw new InvalidMeasurementError(
+      "confidenceIntervalOf needs a Measurement",
+    );
   }
   const expanded = expandUncertainty(m.uncertainty, k);
-  const lower = Quantity.of(m.value.value - expanded.to(m.value.unit).value, m.value.unit);
-  const upper = Quantity.of(m.value.value + expanded.to(m.value.unit).value, m.value.unit);
-  return makeConfidenceBounds({ lower, upper, level, coverageFactor: k, ...opts });
+  const lower = Quantity.of(
+    m.value.value - expanded.to(m.value.unit).value,
+    m.value.unit,
+  );
+  const upper = Quantity.of(
+    m.value.value + expanded.to(m.value.unit).value,
+    m.value.unit,
+  );
+  return makeConfidenceBounds({
+    lower,
+    upper,
+    level,
+    coverageFactor: k,
+    ...opts,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1149,11 +1322,19 @@ export function propagateWithCovariance(
   opts: CovariancePropagationOptions = {},
 ): Measurement {
   const registry = opts.registry ?? defaultUnitRegistry;
-  if (bindings === null || typeof bindings !== "object" || Array.isArray(bindings)) {
-    throw new InvalidMeasurementError("propagateWithCovariance bindings must be a plain object");
+  if (
+    bindings === null ||
+    typeof bindings !== "object" ||
+    Array.isArray(bindings)
+  ) {
+    throw new InvalidMeasurementError(
+      "propagateWithCovariance bindings must be a plain object",
+    );
   }
   if (!(cov instanceof CovarianceMatrix)) {
-    throw new InvalidMeasurementError("propagateWithCovariance needs a CovarianceMatrix");
+    throw new InvalidMeasurementError(
+      "propagateWithCovariance needs a CovarianceMatrix",
+    );
   }
   const { value, grad } = propagateNode(expr, bindings, registry, cov, 0);
   let variance = 0;
@@ -1173,7 +1354,8 @@ export function propagateWithCovariance(
   // Express the base-unit uncertainty in the nominal result's unit using the
   // scale-only delta (affine-safe: same technique as Measurement.to).
   const baseUnit = value.toBase().unit;
-  const perUnit = convert(1, value.unit, baseUnit) - convert(0, value.unit, baseUnit);
+  const perUnit =
+    convert(1, value.unit, baseUnit) - convert(0, value.unit, baseUnit);
   return Measurement.of(value, Quantity.of(uncBase / perUnit, value.unit));
 }
 
@@ -1185,7 +1367,8 @@ export function propagateWithCovariance(
 function covEntryBase(cov: CovarianceMatrix, a: string, b: string): number {
   const stored = cov.covariance(a, b).value;
   const baseUnit = Quantity.of(1, cov.unit).toBase().unit;
-  const perStored = convert(1, cov.unit, baseUnit) - convert(0, cov.unit, baseUnit);
+  const perStored =
+    convert(1, cov.unit, baseUnit) - convert(0, cov.unit, baseUnit);
   return stored * perStored * perStored;
 }
 
@@ -1207,11 +1390,16 @@ function propagateNode(
   depth: number,
 ): PropagatedNode {
   if (depth > 64) {
-    throw new InvalidMeasurementError("propagateWithCovariance exceeded depth 64");
+    throw new InvalidMeasurementError(
+      "propagateWithCovariance exceeded depth 64",
+    );
   }
   switch (expr.kind) {
     case "literal": {
-      return { value: Quantity.of(expr.value, expr.unit, registry), grad: new Map() };
+      return {
+        value: Quantity.of(expr.value, expr.unit, registry),
+        grad: new Map(),
+      };
     }
     case "variable": {
       if (!Object.prototype.hasOwnProperty.call(bindings, expr.name)) {
@@ -1237,30 +1425,56 @@ function propagateNode(
     case "add":
     case "subtract": {
       const left = propagateNode(expr.left, bindings, registry, cov, depth + 1);
-      const right = propagateNode(expr.right, bindings, registry, cov, depth + 1);
+      const right = propagateNode(
+        expr.right,
+        bindings,
+        registry,
+        cov,
+        depth + 1,
+      );
       const value =
-        expr.kind === "add" ? left.value.add(right.value) : left.value.subtract(right.value);
-      return { value, grad: mergeGrads(left.grad, right.grad, expr.kind === "add" ? 1 : -1) };
+        expr.kind === "add"
+          ? left.value.add(right.value)
+          : left.value.subtract(right.value);
+      return {
+        value,
+        grad: mergeGrads(left.grad, right.grad, expr.kind === "add" ? 1 : -1),
+      };
     }
     case "multiply": {
       const left = propagateNode(expr.left, bindings, registry, cov, depth + 1);
-      const right = propagateNode(expr.right, bindings, registry, cov, depth + 1);
+      const right = propagateNode(
+        expr.right,
+        bindings,
+        registry,
+        cov,
+        depth + 1,
+      );
       const value = left.value.multiply(right.value);
       const lBase = baseValueOf(left.value);
       const rBase = baseValueOf(right.value);
       const grad = new Map<string, number>();
-      for (const [k, g] of left.grad) grad.set(k, (grad.get(k) ?? 0) + rBase * g);
-      for (const [k, g] of right.grad) grad.set(k, (grad.get(k) ?? 0) + lBase * g);
+      for (const [k, g] of left.grad)
+        grad.set(k, (grad.get(k) ?? 0) + rBase * g);
+      for (const [k, g] of right.grad)
+        grad.set(k, (grad.get(k) ?? 0) + lBase * g);
       return { value, grad };
     }
     case "divide": {
       const left = propagateNode(expr.left, bindings, registry, cov, depth + 1);
-      const right = propagateNode(expr.right, bindings, registry, cov, depth + 1);
+      const right = propagateNode(
+        expr.right,
+        bindings,
+        registry,
+        cov,
+        depth + 1,
+      );
       const value = left.value.divide(right.value); // throws on zero divisor
       const lBase = baseValueOf(left.value);
       const rBase = baseValueOf(right.value);
       const grad = new Map<string, number>();
-      for (const [k, g] of left.grad) grad.set(k, (grad.get(k) ?? 0) + g / rBase);
+      for (const [k, g] of left.grad)
+        grad.set(k, (grad.get(k) ?? 0) + g / rBase);
       for (const [k, g] of right.grad)
         grad.set(k, (grad.get(k) ?? 0) + (-lBase / (rBase * rBase)) * g);
       return { value, grad };
@@ -1275,7 +1489,13 @@ function propagateNode(
       return { value, grad };
     }
     case "convert": {
-      const inner = propagateNode(expr.expr, bindings, registry, cov, depth + 1);
+      const inner = propagateNode(
+        expr.expr,
+        bindings,
+        registry,
+        cov,
+        depth + 1,
+      );
       const value = inner.value.to(expr.unit, registry);
       // Base-unit values (and hence base-unit gradients) are invariant
       // under conversion, so gradients pass through unchanged.
@@ -1342,19 +1562,31 @@ export class MeasurementDataset {
   }
 
   static of(
-    variables: Readonly<Record<string, MeasurementSeries | readonly Measurement[]>>,
+    variables: Readonly<
+      Record<string, MeasurementSeries | readonly Measurement[]>
+    >,
     opts: MeasurementDatasetOptions = {},
   ): MeasurementDataset {
     const limits = resolveLimits(opts.limits);
-    if (variables === null || typeof variables !== "object" || Array.isArray(variables)) {
-      throw new InvalidMeasurementError("MeasurementDataset variables must be a plain object");
+    if (
+      variables === null ||
+      typeof variables !== "object" ||
+      Array.isArray(variables)
+    ) {
+      throw new InvalidMeasurementError(
+        "MeasurementDataset variables must be a plain object",
+      );
     }
     if (hasPollutionKeys(variables as Record<string, unknown>)) {
-      throw new InvalidMeasurementError("MeasurementDataset variables contain forbidden keys");
+      throw new InvalidMeasurementError(
+        "MeasurementDataset variables contain forbidden keys",
+      );
     }
     const names = Object.keys(variables);
     if (names.length === 0) {
-      throw new InvalidMeasurementError("MeasurementDataset needs at least one variable");
+      throw new InvalidMeasurementError(
+        "MeasurementDataset needs at least one variable",
+      );
     }
     if (names.length > limits.maxVariables) {
       throw new InvalidMeasurementError(
@@ -1368,9 +1600,9 @@ export class MeasurementDataset {
           `Dataset variable name must match /^[A-Za-z][A-Za-z0-9_.-]*$/`,
         );
       }
-      const entry = (variables as Record<string, MeasurementSeries | readonly Measurement[]>)[
-        name
-      ]!;
+      const entry = (
+        variables as Record<string, MeasurementSeries | readonly Measurement[]>
+      )[name]!;
       built[name] =
         entry instanceof MeasurementSeries
           ? entry
@@ -1400,16 +1632,22 @@ export class MeasurementDataset {
 
   /** Keep observations where predicate holds (all variables filtered jointly). */
   filter(
-    predicate: (row: Readonly<Record<string, Measurement>>, index: number) => boolean,
+    predicate: (
+      row: Readonly<Record<string, Measurement>>,
+      index: number,
+    ) => boolean,
   ): MeasurementDataset {
     if (typeof predicate !== "function") {
-      throw new InvalidMeasurementError("MeasurementDataset.filter needs a predicate function");
+      throw new InvalidMeasurementError(
+        "MeasurementDataset.filter needs a predicate function",
+      );
     }
     const names = this.variableNames;
     const kept: number[] = [];
     for (let i = 0; i < this.observationCount; i++) {
       const row: Record<string, Measurement> = {};
-      for (const name of names) row[name] = this.variables[name]!.observations[i]!;
+      for (const name of names)
+        row[name] = this.variables[name]!.observations[i]!;
       if (predicate(Object.freeze(row), i)) kept.push(i);
     }
     const variables: Record<string, MeasurementSeries> = {};
@@ -1426,7 +1664,8 @@ export class MeasurementDataset {
     const variables: Record<string, MeasurementSeries> = {};
     for (const name of names) {
       const series = this.variables[name];
-      if (!series) throw new InvalidMeasurementError(`Unknown dataset variable "${name}"`);
+      if (!series)
+        throw new InvalidMeasurementError(`Unknown dataset variable "${name}"`);
       variables[name] = series;
     }
     return new MeasurementDataset(Object.freeze(variables), this.context);
@@ -1438,7 +1677,9 @@ export class MeasurementDataset {
     for (const name of this.variableNames) {
       const target = (units as Record<string, string>)[name];
       variables[name] =
-        target === undefined ? this.variables[name]! : this.variables[name]!.toUnit(target);
+        target === undefined
+          ? this.variables[name]!
+          : this.variables[name]!.toUnit(target);
     }
     return new MeasurementDataset(Object.freeze(variables), this.context);
   }
@@ -1446,7 +1687,8 @@ export class MeasurementDataset {
   /** Per-variable statistical summaries (deterministic key order). */
   summarize(): Readonly<Record<string, SeriesSummary>> {
     const out: Record<string, SeriesSummary> = {};
-    for (const name of this.variableNames) out[name] = this.variables[name]!.summarize();
+    for (const name of this.variableNames)
+      out[name] = this.variables[name]!.summarize();
     return Object.freeze(out);
   }
 
@@ -1466,7 +1708,9 @@ export class MeasurementDataset {
     } = {},
   ): MeasurementSeries {
     if (formula === null || typeof formula !== "object") {
-      throw new InvalidMeasurementError("applyFormula needs a Formula definition");
+      throw new InvalidMeasurementError(
+        "applyFormula needs a Formula definition",
+      );
     }
     const mapping = opts.mapping ?? {};
     const mode = opts.provenance ?? "shallow";
@@ -1494,7 +1738,9 @@ export class MeasurementDataset {
         }
         bindings[name] = series.observations[i]!;
       }
-      const out = evaluateFormula(formula, bindings, { registry: opts.registry });
+      const out = evaluateFormula(formula, bindings, {
+        registry: opts.registry,
+      });
       if (!(out instanceof Measurement)) {
         throw new InvalidMeasurementError(
           `Formula "${formula.id}" did not produce a Measurement for row ${i}`,
@@ -1529,27 +1775,38 @@ export class MeasurementDataset {
     });
   }
 
-  static deserialize(data: unknown, opts: MeasurementDatasetOptions = {}): MeasurementDataset {
+  static deserialize(
+    data: unknown,
+    opts: MeasurementDatasetOptions = {},
+  ): MeasurementDataset {
     const limits = resolveLimits(opts.limits);
     assertPlainRecord(data, "Serialized measurement dataset");
     if (data.version !== 1) {
       if (data.version === undefined)
         throw new InvalidMeasurementError("Serialized dataset missing version");
-      throw new InvalidMeasurementError(`Unsupported dataset version ${String(data.version)}`);
+      throw new InvalidMeasurementError(
+        `Unsupported dataset version ${String(data.version)}`,
+      );
     }
     if (data.type !== "measurement-dataset") {
-      throw new InvalidMeasurementError(`Serialized dataset has wrong type "${String(data.type)}"`);
+      throw new InvalidMeasurementError(
+        `Serialized dataset has wrong type "${String(data.type)}"`,
+      );
     }
     if (
       data.variables === null ||
       typeof data.variables !== "object" ||
       Array.isArray(data.variables)
     ) {
-      throw new InvalidMeasurementError("Serialized dataset variables must be an object");
+      throw new InvalidMeasurementError(
+        "Serialized dataset variables must be an object",
+      );
     }
     const rawVars = data.variables as Record<string, unknown>;
     if (hasPollutionKeys(rawVars)) {
-      throw new InvalidMeasurementError("Serialized dataset variables contain forbidden keys");
+      throw new InvalidMeasurementError(
+        "Serialized dataset variables contain forbidden keys",
+      );
     }
     if (Object.keys(rawVars).length > limits.maxVariables) {
       throw new InvalidMeasurementError(
@@ -1567,10 +1824,14 @@ export class MeasurementDataset {
         typeof data.context !== "object" ||
         Array.isArray(data.context)
       ) {
-        throw new InvalidMeasurementError("Serialized dataset context must be an object");
+        throw new InvalidMeasurementError(
+          "Serialized dataset context must be an object",
+        );
       }
       if (hasPollutionKeys(data.context as Record<string, unknown>)) {
-        throw new InvalidMeasurementError("Serialized dataset context contains forbidden keys");
+        throw new InvalidMeasurementError(
+          "Serialized dataset context contains forbidden keys",
+        );
       }
       context = data.context as DatasetContext;
     }
@@ -1625,10 +1886,14 @@ function decodeNumber(v: unknown, what: string): number {
   if (v === "Infinity") return Infinity;
   if (v === "-Infinity") return -Infinity;
   if (v === "-0") return -0;
-  throw new InvalidMeasurementError(`${what} must be a number or special encoding`);
+  throw new InvalidMeasurementError(
+    `${what} must be a number or special encoding`,
+  );
 }
 
-export function serializeInterval(interval: MeasurementInterval): SerializedMeasurementInterval {
+export function serializeInterval(
+  interval: MeasurementInterval,
+): SerializedMeasurementInterval {
   return Object.freeze({
     version: 1 as const,
     type: "measurement-interval" as const,
@@ -1649,17 +1914,26 @@ export function deserializeInterval(
 ): MeasurementInterval {
   assertPlainRecord(data, "Serialized measurement interval");
   if (data.version !== 1)
-    throw new InvalidMeasurementError("Unsupported measurement interval version");
-  if (data.type !== "measurement-interval" && data.type !== "confidence-interval") {
+    throw new InvalidMeasurementError(
+      "Unsupported measurement interval version",
+    );
+  if (
+    data.type !== "measurement-interval" &&
+    data.type !== "confidence-interval"
+  ) {
     throw new InvalidMeasurementError("Serialized interval has wrong type");
   }
   const lowerRaw = data.lower as Record<string, unknown>;
   const upperRaw = data.upper as Record<string, unknown>;
   if (!isRecord(lowerRaw) || !isRecord(upperRaw)) {
-    throw new InvalidMeasurementError("Serialized interval needs lower/upper objects");
+    throw new InvalidMeasurementError(
+      "Serialized interval needs lower/upper objects",
+    );
   }
   if (typeof lowerRaw.unit !== "string" || typeof upperRaw.unit !== "string") {
-    throw new InvalidMeasurementError("Serialized interval bounds need unit strings");
+    throw new InvalidMeasurementError(
+      "Serialized interval bounds need unit strings",
+    );
   }
   return makeMeasurementInterval(
     Quantity.of(decodeNumber(lowerRaw.value, "lower"), lowerRaw.unit, registry),
@@ -1671,14 +1945,20 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
-export function serializeConfidenceBounds(ci: ConfidenceBounds): SerializedConfidenceBounds {
+export function serializeConfidenceBounds(
+  ci: ConfidenceBounds,
+): SerializedConfidenceBounds {
   return Object.freeze({
     ...serializeInterval(ci),
     type: "confidence-interval" as const,
     level: ci.level,
-    ...(ci.coverageFactor !== undefined ? { coverageFactor: ci.coverageFactor } : {}),
+    ...(ci.coverageFactor !== undefined
+      ? { coverageFactor: ci.coverageFactor }
+      : {}),
     ...(ci.distribution !== undefined ? { distribution: ci.distribution } : {}),
-    ...(ci.degreesOfFreedom !== undefined ? { degreesOfFreedom: ci.degreesOfFreedom } : {}),
+    ...(ci.degreesOfFreedom !== undefined
+      ? { degreesOfFreedom: ci.degreesOfFreedom }
+      : {}),
   });
 }
 
@@ -1688,21 +1968,29 @@ export function deserializeConfidenceBounds(
 ): ConfidenceBounds {
   assertPlainRecord(data, "Serialized confidence interval");
   if (data.version !== 1)
-    throw new InvalidMeasurementError("Unsupported confidence interval version");
+    throw new InvalidMeasurementError(
+      "Unsupported confidence interval version",
+    );
   if (data.type !== "confidence-interval") {
-    throw new InvalidMeasurementError("Serialized confidence interval has wrong type");
+    throw new InvalidMeasurementError(
+      "Serialized confidence interval has wrong type",
+    );
   }
   const base = deserializeInterval(data, registry);
   const level = (data as Record<string, unknown>).level;
   if (typeof level !== "number") {
-    throw new InvalidMeasurementError("Serialized confidence interval needs a level");
+    throw new InvalidMeasurementError(
+      "Serialized confidence interval needs a level",
+    );
   }
   const extra = data as Record<string, unknown>;
   return makeConfidenceBounds({
     lower: base.lower,
     upper: base.upper,
     level,
-    ...(typeof extra.coverageFactor === "number" ? { coverageFactor: extra.coverageFactor } : {}),
+    ...(typeof extra.coverageFactor === "number"
+      ? { coverageFactor: extra.coverageFactor }
+      : {}),
     ...(typeof extra.distribution === "string"
       ? { distribution: extra.distribution as UncertaintyDistribution }
       : {}),

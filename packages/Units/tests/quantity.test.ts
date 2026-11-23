@@ -135,7 +135,9 @@ describe("Quantity conversion", () => {
   });
 
   it("delegates to ConversionEngine and rejects incompatible dimensions", () => {
-    expect(() => Quantity.of(1, "kg").to("m")).toThrow(ImpossibleConversionError);
+    expect(() => Quantity.of(1, "kg").to("m")).toThrow(
+      ImpossibleConversionError,
+    );
   });
 
   it("does not duplicate conversion formulas (Quantity has no scale arithmetic)", () => {
@@ -158,8 +160,12 @@ describe("Quantity addition", () => {
   });
 
   it("1 m + 50 cm = 1.5 m", () => {
-    expect(Quantity.of(1, "m").add(Quantity.of(50, "cm")).value).toBeCloseTo(1.5);
-    expect(Quantity.of(1, "m").add(Quantity.of(50, "cm")).unit.symbol).toBe("m");
+    expect(Quantity.of(1, "m").add(Quantity.of(50, "cm")).value).toBeCloseTo(
+      1.5,
+    );
+    expect(Quantity.of(1, "m").add(Quantity.of(50, "cm")).unit.symbol).toBe(
+      "m",
+    );
   });
 
   it("commutative in physical value (a+b ≈ b+a after conversion)", () => {
@@ -171,11 +177,15 @@ describe("Quantity addition", () => {
   });
 
   it("rejects 1 kg + 1 m", () => {
-    expect(() => Quantity.of(1, "kg").add(Quantity.of(1, "m"))).toThrow(UnitMismatchError);
+    expect(() => Quantity.of(1, "kg").add(Quantity.of(1, "m"))).toThrow(
+      UnitMismatchError,
+    );
   });
 
   it("rejects 1 kg + 1 Mcal", () => {
-    expect(() => Quantity.of(1, "kg").add(Quantity.of(1, "Mcal"))).toThrow(UnitMismatchError);
+    expect(() => Quantity.of(1, "kg").add(Quantity.of(1, "Mcal"))).toThrow(
+      UnitMismatchError,
+    );
   });
 });
 
@@ -185,16 +195,24 @@ describe("Quantity addition", () => {
 
 describe("Quantity subtraction", () => {
   it("2 kg - 500 g = 1.5 kg", () => {
-    expect(Quantity.of(2, "kg").subtract(Quantity.of(500, "g")).value).toBeCloseTo(1.5);
+    expect(
+      Quantity.of(2, "kg").subtract(Quantity.of(500, "g")).value,
+    ).toBeCloseTo(1.5);
   });
 
   it("rejects incompatible dimensions", () => {
-    expect(() => Quantity.of(2, "kg").subtract(Quantity.of(3, "m"))).toThrow(UnitMismatchError);
+    expect(() => Quantity.of(2, "kg").subtract(Quantity.of(3, "m"))).toThrow(
+      UnitMismatchError,
+    );
   });
 
   it("allows negative results", () => {
-    expect(Quantity.of(1, "kg").subtract(Quantity.of(2, "kg")).value).toBeCloseTo(-1);
-    expect(Quantity.of(1, "kg").subtract(Quantity.of(1500, "g")).value).toBeCloseTo(-0.5);
+    expect(
+      Quantity.of(1, "kg").subtract(Quantity.of(2, "kg")).value,
+    ).toBeCloseTo(-1);
+    expect(
+      Quantity.of(1, "kg").subtract(Quantity.of(1500, "g")).value,
+    ).toBeCloseTo(-0.5);
   });
 });
 
@@ -218,7 +236,9 @@ describe("Quantity multiplication", () => {
   });
 
   it("10 kg × 2 (scalar) = 20 kg via multiply(number)", () => {
-    expect(Quantity.of(10, "kg").multiply(2 as unknown as never).value).toBeCloseTo(20);
+    expect(
+      Quantity.of(10, "kg").multiply(2 as unknown as never).value,
+    ).toBeCloseTo(20);
     // Also scale
     expect(Quantity.of(10, "kg").scale(2).value).toBeCloseTo(20);
   });
@@ -268,8 +288,12 @@ describe("Quantity division", () => {
   });
 
   it("Quantity ÷ scalar preserves unit", () => {
-    expect(Quantity.of(10, "kg").divide(2 as unknown as never).value).toBeCloseTo(5);
-    expect(Quantity.of(10, "kg").divide(2 as unknown as never).unit.symbol).toBe("kg");
+    expect(
+      Quantity.of(10, "kg").divide(2 as unknown as never).value,
+    ).toBeCloseTo(5);
+    expect(
+      Quantity.of(10, "kg").divide(2 as unknown as never).unit.symbol,
+    ).toBe("kg");
   });
 
   it("10 kg / 2,5? division by 1 ≈ original", () => {
@@ -406,10 +430,15 @@ describe("Quantity comparison", () => {
   });
 
   it("approximatelyEquals with epsilon", () => {
-    expect(Quantity.of(1, "kg").approximatelyEquals(Quantity.of(1000.0000001, "g"), 1e-6)).toBe(
-      true,
-    );
-    expect(Quantity.of(1, "kg").approximatelyEquals(Quantity.of(1001, "g"), 1e-6)).toBe(false);
+    expect(
+      Quantity.of(1, "kg").approximatelyEquals(
+        Quantity.of(1000.0000001, "g"),
+        1e-6,
+      ),
+    ).toBe(true);
+    expect(
+      Quantity.of(1, "kg").approximatelyEquals(Quantity.of(1001, "g"), 1e-6),
+    ).toBe(false);
   });
 
   it("equals returns false for dimensionally incompatible (not throw)", () => {
@@ -431,21 +460,33 @@ describe("Quantity comparison", () => {
   });
 
   it("lessThanOrEqual / greaterThanOrEqual", () => {
-    expect(Quantity.of(1, "kg").lessThanOrEqual(Quantity.of(1000, "g"))).toBe(true);
-    expect(Quantity.of(1, "kg").greaterThanOrEqual(Quantity.of(1000, "g"))).toBe(true);
-    expect(Quantity.of(1, "kg").lessThanOrEqual(Quantity.of(2, "kg"))).toBe(true);
-    expect(Quantity.of(2, "kg").greaterThanOrEqual(Quantity.of(1, "kg"))).toBe(true);
+    expect(Quantity.of(1, "kg").lessThanOrEqual(Quantity.of(1000, "g"))).toBe(
+      true,
+    );
+    expect(
+      Quantity.of(1, "kg").greaterThanOrEqual(Quantity.of(1000, "g")),
+    ).toBe(true);
+    expect(Quantity.of(1, "kg").lessThanOrEqual(Quantity.of(2, "kg"))).toBe(
+      true,
+    );
+    expect(Quantity.of(2, "kg").greaterThanOrEqual(Quantity.of(1, "kg"))).toBe(
+      true,
+    );
   });
 
   it("comparisons reject incompatible dimensions", () => {
-    expect(() => Quantity.of(1, "kg").lessThan(Quantity.of(1, "m"))).toThrow(UnitMismatchError);
-    expect(() => Quantity.of(1, "kg").greaterThan(Quantity.of(1, "m"))).toThrow(UnitMismatchError);
-    expect(() => Quantity.of(1, "kg").lessThanOrEqual(Quantity.of(1, "m"))).toThrow(
+    expect(() => Quantity.of(1, "kg").lessThan(Quantity.of(1, "m"))).toThrow(
       UnitMismatchError,
     );
-    expect(() => Quantity.of(1, "kg").greaterThanOrEqual(Quantity.of(1, "m"))).toThrow(
+    expect(() => Quantity.of(1, "kg").greaterThan(Quantity.of(1, "m"))).toThrow(
       UnitMismatchError,
     );
+    expect(() =>
+      Quantity.of(1, "kg").lessThanOrEqual(Quantity.of(1, "m")),
+    ).toThrow(UnitMismatchError);
+    expect(() =>
+      Quantity.of(1, "kg").greaterThanOrEqual(Quantity.of(1, "m")),
+    ).toThrow(UnitMismatchError);
   });
 
   it("comparisons with prefixed units and cross-unit", () => {
@@ -613,7 +654,9 @@ describe("Quantity property-based invariants", () => {
 
   it("q.multiply(1 in same unit's fraction) ≈ q", () => {
     const q = Quantity.of(5, "kg");
-    expect(q.multiply(Quantity.of(1, "fraction")).to("kg").value).toBeCloseTo(5);
+    expect(q.multiply(Quantity.of(1, "fraction")).to("kg").value).toBeCloseTo(
+      5,
+    );
   });
 
   it("negate/negate round-trip", () => {

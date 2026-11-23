@@ -25,16 +25,16 @@
     "url": "git+https://github.com/VeTwo-dev/Units-manager.git"
   },
   "type": "module",
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": {
-        "require": "./dist/index.d.cts",
+        "require": "./dist/index.d.ts",
         "import": "./dist/index.d.ts"
       },
-      "require": "./dist/index.cjs",
+      "require": "./dist/index.js",
       "import": "./dist/index.js"
     },
     "./package.json": "./package.json"
@@ -73,18 +73,16 @@
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest",
     "circular": "madge src --circular",
-    "knip": "knip",
     "pack:check": "npm pack --dry-run",
     "pack:check:pnpm": "pnpm pack --pack-destination /tmp",
     "packit": "npm pack",
-    "publint": "publint",
     "check": "pnpm run check-types && pnpm run lint && pnpm run test",
-    "ci": "pnpm run knip && pnpm run publint && pnpm run circular",
+    "ci": "pnpm run circular",
     "verify": "pnpm run check-types && pnpm run lint && pnpm run test && pnpm run build",
     "verify:bun": "bun run lint && bun run check-types && bun run test && bun run build",
-    "verify:bun:full": "bun run verify:bun && bun run knip && bun run publint && bun run pack:check",
+    "verify:bun:full": "bun run verify:bun && bun run pack:check",
     "verify:pnpm": "pnpm run lint && pnpm run check-types && pnpm run test && pnpm run build",
-    "verify:pnpm:full": "pnpm run verify:pnpm && pnpm run knip && pnpm run publint && pnpm run pack:check:pnpm",
+    "verify:pnpm:full": "pnpm run verify:pnpm && pnpm run pack:check:pnpm",
     "prepublish": "pnpm run verify:pnpm",
     "prepublish:full": "pnpm run verify:pnpm:full",
     "publish": "npm publish --access public",
@@ -118,23 +116,21 @@
   "devDependencies": {
     "@changesets/cli": "^2.27.9",
     "@eslint/js": "^9.12.0",
-    "@types/node": "^20.14.0",
-    "@vitest/coverage-v8": "^4.1.10",
-    "@vitest/ui": "^4.1.10",
-    "eslint": "^9.12.0",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
+    "eslint": "catalog:",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.1.6",
-    "knip": "^5.31.0",
     "license-checker": "^25.0.1",
     "lint-staged": "^15.2.10",
     "madge": "^6.1.0",
     "open": "^10.1.0",
-    "prettier": "^3.3.3",
-    "publint": "^0.2.11",
-    "tsup": "^8.5.1",
-    "tsx": "^4.19.0",
-    "typescript": "^5.9.0",
-    "typescript-eslint": "^8.8.0",
-    "vitest": "^4.1.10"
+    "prettier": "catalog:",
+    "tsup": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   }
 }

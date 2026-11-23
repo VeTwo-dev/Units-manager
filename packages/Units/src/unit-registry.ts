@@ -72,7 +72,9 @@ export class UnitRegistry {
         Object.prototype.hasOwnProperty.call(def, "constructor") ||
         Object.prototype.hasOwnProperty.call(def, "prototype"))
     ) {
-      throw new UnitRegistrationError("Unit definition contains forbidden prototype keys.");
+      throw new UnitRegistrationError(
+        "Unit definition contains forbidden prototype keys.",
+      );
     }
     const metadata = (def as unknown as { metadata?: unknown }).metadata;
     if (
@@ -87,7 +89,8 @@ export class UnitRegistry {
         "Unit definition metadata contains forbidden prototype keys.",
       );
     }
-    const aliases = options?.aliases ?? (def as unknown as { aliases?: string[] }).aliases;
+    const aliases =
+      options?.aliases ?? (def as unknown as { aliases?: string[] }).aliases;
     const unit = makeUnit({
       symbol: def.symbol,
       name: def.label,
@@ -283,7 +286,8 @@ export class UnitRegistry {
           system: base.metadata?.system ?? "SI",
           docs: `Derived: ${prefix.symbol} + ${base.symbol}`,
         };
-        if (base.metadata?.kind !== undefined) derivedMetadata.kind = base.metadata.kind;
+        if (base.metadata?.kind !== undefined)
+          derivedMetadata.kind = base.metadata.kind;
         if (base.metadata?.category !== undefined)
           derivedMetadata.category = base.metadata.category;
         return makeUnit({

@@ -106,5 +106,8 @@ export const INFORMATION_PACK: UnitPack = Object.freeze({
     // (kB = k + B, MB, GB, …); binary KiB/MiB/GiB stay explicit units.
     B: "byte",
   } as Record<string, string>),
-  metadata: Object.freeze({ standard: "IEC 80000-13", source: "1 byte = 8 bit (conventional)" }),
+  metadata: Object.freeze({
+    standard: "IEC 80000-13",
+    source: "1 byte = 8 bit (conventional)",
+  }),
 });

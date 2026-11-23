@@ -83,7 +83,10 @@ export interface CustomConversion {
 }
 
 export type ConversionDef =
-  LinearConversion | AffineConversion | LogarithmicConversion | CustomConversion;
+  | LinearConversion
+  | AffineConversion
+  | LogarithmicConversion
+  | CustomConversion;
 
 /** Conversion kinds the engine can execute numerically. */
 export type ExecutableConversionKind = "linear" | "affine";
@@ -181,7 +184,11 @@ export interface MakeUnitOptions {
  * `name` from `label` if not provided.
  */
 export function makeUnit(opts: MakeUnitOptions): Unit {
-  if (!opts.symbol || typeof opts.symbol !== "string" || opts.symbol.trim().length === 0) {
+  if (
+    !opts.symbol ||
+    typeof opts.symbol !== "string" ||
+    opts.symbol.trim().length === 0
+  ) {
     throw new InvalidUnitError("Unit symbol must be a non-empty string");
   }
   if (!opts.dimension || typeof opts.dimension !== "object") {
@@ -213,7 +220,9 @@ export function makeUnit(opts: MakeUnitOptions): Unit {
   // linear scale — NaN marks "not convertible by the numeric engine"
   // (every numeric path rejects such units explicitly before reading it).
   const toBaseFactor =
-    conversion.kind === "linear" || conversion.kind === "affine" ? conversion.scale : NaN;
+    conversion.kind === "linear" || conversion.kind === "affine"
+      ? conversion.scale
+      : NaN;
 
   return Object.freeze({
     id,
@@ -255,7 +264,9 @@ function validateConversionDef(conv: ConversionDef): void {
   }
   if (conv.kind === "custom") {
     if (typeof conv.id !== "string" || conv.id.trim().length === 0) {
-      throw new InvalidUnitError("Custom conversion id must be a non-empty string");
+      throw new InvalidUnitError(
+        "Custom conversion id must be a non-empty string",
+      );
     }
     return;
   }
@@ -265,7 +276,9 @@ function validateConversionDef(conv: ConversionDef): void {
     );
   }
   if (conv.kind === "affine" && !Number.isFinite(conv.offset)) {
-    throw new InvalidUnitError(`Conversion offset must be a finite number, got ${conv.offset}`);
+    throw new InvalidUnitError(
+      `Conversion offset must be a finite number, got ${conv.offset}`,
+    );
   }
 }
 

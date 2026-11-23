@@ -69,17 +69,25 @@ describe("nutrient-kind registry", () => {
   it("collision detection — duplicate id or alias throws", () => {
     const reg = new NutrientKindRegistry([]);
     reg.register({ id: "testKind", name: "Test", aliases: ["aliasOne"] });
-    expect(() => reg.register({ id: "testKind", name: "Dup" })).toThrow(InvalidNutrientKindError);
-    expect(() => reg.register({ id: "other", name: "Other", aliases: ["aliasOne"] })).toThrow(
+    expect(() => reg.register({ id: "testKind", name: "Dup" })).toThrow(
       InvalidNutrientKindError,
     );
-    expect(() => reg.register({ id: "bad id", name: "Bad" })).toThrow(InvalidNutrientKindError);
-    expect(() => reg.register({ id: "ok", name: "" })).toThrow(InvalidNutrientKindError);
+    expect(() =>
+      reg.register({ id: "other", name: "Other", aliases: ["aliasOne"] }),
+    ).toThrow(InvalidNutrientKindError);
+    expect(() => reg.register({ id: "bad id", name: "Bad" })).toThrow(
+      InvalidNutrientKindError,
+    );
+    expect(() => reg.register({ id: "ok", name: "" })).toThrow(
+      InvalidNutrientKindError,
+    );
   });
 
   it("forbidden keys and prototype pollution rejected", () => {
     const reg = new NutrientKindRegistry([]);
-    const evil = JSON.parse('{"id":"evil","name":"Evil","metadata":{"__proto__":{}}}');
+    const evil = JSON.parse(
+      '{"id":"evil","name":"Evil","metadata":{"__proto__":{}}}',
+    );
     expect(() => reg.register(evil)).toThrow(UnitEngineError);
   });
 
@@ -123,7 +131,11 @@ describe("basis registry", () => {
 
   it("basis is semantic metadata, not a dimension", () => {
     const asFed = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
-    const dm = NutritionQuantity.of(Quantity.of(100, "g/kg DM"), "cp", "dryMatter");
+    const dm = NutritionQuantity.of(
+      Quantity.of(100, "g/kg DM"),
+      "cp",
+      "dryMatter",
+    );
     expect(asFed.quantity.hasSameDimension(dm.quantity)).toBe(true);
     // same nutrient, different basis must not silently mix
     expect(() => asFed.add(dm)).toThrow(InvalidNutritionBasisError);
@@ -134,14 +146,22 @@ describe("basis registry", () => {
 
   it("100 g/kg vs 100 g/kg DM vs 100 g/kg as-fed are distinct", () => {
     const a = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
-    const b = NutritionQuantity.of(Quantity.of(100, "g/kg DM"), "cp", "dryMatter");
+    const b = NutritionQuantity.of(
+      Quantity.of(100, "g/kg DM"),
+      "cp",
+      "dryMatter",
+    );
     expect(a.basis.id).not.toBe(b.basis.id);
     expect(a.quantity.unit.basis).toBeUndefined();
     expect(b.quantity.unit.basis).toBe("DM");
   });
 
   it("withBasis converts asFed ↔ dryMatter via DM%", () => {
-    const dm = NutritionQuantity.of(Quantity.of(100, "g/kg DM"), "cp", "dryMatter");
+    const dm = NutritionQuantity.of(
+      Quantity.of(100, "g/kg DM"),
+      "cp",
+      "dryMatter",
+    );
     const asFed = dm.withBasis("asFed", Quantity.of(88, "%"));
     expect(asFed.basis.id).toBe("asfed");
     expect(asFed.quantity.value).toBeCloseTo(88, 9);
@@ -198,10 +218,18 @@ describe("semantic compatibility", () => {
     expect(a.add(b).quantity.value).toBe(150);
     expect(a.subtract(b).quantity.value).toBe(50);
 
-    const diffNutrient = NutritionQuantity.of(Quantity.of(50, "g"), "ca", "asFed");
+    const diffNutrient = NutritionQuantity.of(
+      Quantity.of(50, "g"),
+      "ca",
+      "asFed",
+    );
     expect(() => a.add(diffNutrient)).toThrow(NutrientSemanticMismatchError);
 
-    const diffBasis = NutritionQuantity.of(Quantity.of(50, "g DM"), "cp", "dryMatter");
+    const diffBasis = NutritionQuantity.of(
+      Quantity.of(50, "g DM"),
+      "cp",
+      "dryMatter",
+    );
     expect(() => a.add(diffBasis)).toThrow(InvalidNutritionBasisError);
   });
 
@@ -214,7 +242,11 @@ describe("semantic compatibility", () => {
   it("equals / exactEquals consider nutrient + basis + quantity", () => {
     const a = NutritionQuantity.of(Quantity.of(100, "g"), "cp", "asFed");
     const b = NutritionQuantity.of(Quantity.of(100, "g"), "cp", "asFed");
-    const diffNutrient = NutritionQuantity.of(Quantity.of(100, "g"), "ca", "asFed");
+    const diffNutrient = NutritionQuantity.of(
+      Quantity.of(100, "g"),
+      "ca",
+      "asFed",
+    );
     expect(a.equals(b)).toBe(true);
     expect(a.exactEquals(b)).toBe(true);
     expect(a.equals(diffNutrient)).toBe(false);
@@ -225,21 +257,27 @@ describe("semantic compatibility", () => {
       InvalidNutritionQuantityError,
     );
     expect(() =>
-      NutritionQuantity.of(Quantity.of(10, "g"), "unknownNutrient_xyz", "asFed"),
+      NutritionQuantity.of(
+        Quantity.of(10, "g"),
+        "unknownNutrient_xyz",
+        "asFed",
+      ),
     ).toThrow(InvalidNutrientKindError);
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g"), "cp", "unknownBasis_xyz")).toThrow(
-      InvalidNutritionBasisError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g"), "cp", "unknownBasis_xyz"),
+    ).toThrow(InvalidNutritionBasisError);
     // tagged mismatch: DM tag with asFed basis → throw
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g DM"), "cp", "asFed")).toThrow(
-      InvalidNutritionBasisError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g DM"), "cp", "asFed"),
+    ).toThrow(InvalidNutritionBasisError);
     // bare unit with dryMatter basis is allowed (basis is semantic, not forced into unit tag)
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g"), "cp", "dryMatter")).not.toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g"), "cp", "dryMatter"),
+    ).not.toThrow();
     // mismatched tags: DM unit vs freshMatter basis → throw
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g DM"), "cp", "freshMatter")).toThrow(
-      InvalidNutritionBasisError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g DM"), "cp", "freshMatter"),
+    ).toThrow(InvalidNutritionBasisError);
   });
 });
 
@@ -249,9 +287,14 @@ describe("semantic compatibility", () => {
 
 describe("serialization", () => {
   it("round-trip preserves physical quantity + nutrient + basis + metadata", () => {
-    const nq = NutritionQuantity.of(Quantity.of(100, "g/kg DM"), "cp", "dryMatter", {
-      metadata: { source: "lab" },
-    });
+    const nq = NutritionQuantity.of(
+      Quantity.of(100, "g/kg DM"),
+      "cp",
+      "dryMatter",
+      {
+        metadata: { source: "lab" },
+      },
+    );
     const serialized = serializeNutritionQuantity(nq);
     expect(serialized.version).toBe(1);
     expect(serialized.nutrient).toBe("cp");
@@ -260,11 +303,15 @@ describe("serialization", () => {
     expect(back.equals(nq)).toBe(true);
     expect(back.metadata).toEqual({ source: "lab" });
     // JSON string deterministic
-    expect(JSON.stringify(serializeNutritionQuantity(back))).toBe(JSON.stringify(serialized));
+    expect(JSON.stringify(serializeNutritionQuantity(back))).toBe(
+      JSON.stringify(serialized),
+    );
   });
 
   it("rejects malformed / unknown schema version / pollution", () => {
-    expect(() => deserializeNutritionQuantity(null)).toThrow(InvalidNutritionQuantityError);
+    expect(() => deserializeNutritionQuantity(null)).toThrow(
+      InvalidNutritionQuantityError,
+    );
     expect(() =>
       deserializeNutritionQuantity({
         version: 99,
@@ -385,7 +432,9 @@ describe("property-based invariants (seeded)", () => {
       if (kind.aliases && kind.aliases.length > 0) {
         const alias = kind.aliases[Math.floor(rand() * kind.aliases.length)]!;
         expect(defaultNutrientKindRegistry.require(alias).id).toBe(kind.id);
-        expect(defaultNutrientKindRegistry.require(alias.toUpperCase()).id).toBe(kind.id);
+        expect(
+          defaultNutrientKindRegistry.require(alias.toUpperCase()).id,
+        ).toBe(kind.id);
       }
     }
   });
@@ -406,12 +455,17 @@ describe("property-based invariants (seeded)", () => {
       const kind = defaultNutrientKindRegistry.require(nut);
       let unitPool: string[];
       if (kind.category === "energy") unitPool = energyUnits;
-      else if (kind.category === "vitamin" && (kind.defaultUnit?.includes("IU") ?? false))
+      else if (
+        kind.category === "vitamin" &&
+        (kind.defaultUnit?.includes("IU") ?? false)
+      )
         unitPool = iuUnits;
       else unitPool = massUnits;
       const unit = unitPool[Math.floor(rand() * unitPool.length)]!;
       const basisDef = defaultBasisRegistry.require(basis);
-      const unitWithBasis = basisDef.unitBasis ? `${unit} ${basisDef.unitBasis}` : unit;
+      const unitWithBasis = basisDef.unitBasis
+        ? `${unit} ${basisDef.unitBasis}`
+        : unit;
       let q: Quantity;
       try {
         q = Quantity.of(Math.round(rand() * 10000) / 100, unitWithBasis);
@@ -425,7 +479,11 @@ describe("property-based invariants (seeded)", () => {
   });
 
   it("basis conversion is deterministic", () => {
-    const nq = NutritionQuantity.of(Quantity.of(100, "g/kg DM"), "cp", "dryMatter");
+    const nq = NutritionQuantity.of(
+      Quantity.of(100, "g/kg DM"),
+      "cp",
+      "dryMatter",
+    );
     const a = nq.withBasis("asFed", Quantity.of(88, "%"));
     const b = nq.withBasis("asFed", Quantity.of(88, "%"));
     expect(a.equals(b)).toBe(true);
@@ -438,19 +496,30 @@ describe("property-based invariants (seeded)", () => {
 
 describe("backward compatibility — existing nutrition-math still works", () => {
   it("NutritionMath.calculate still delegates to core Quantity.multiply", () => {
-    const result = nutritionMath.calculate(Quantity.of(10, "kg/day"), Quantity.of(12, "%"), "cp");
+    const result = nutritionMath.calculate(
+      Quantity.of(10, "kg/day"),
+      Quantity.of(12, "%"),
+      "cp",
+    );
     expect(result.to("g/day").value).toBeCloseTo(1200, 6);
   });
 
   it("BasisConverter still works via Unit.basis tag", async () => {
     const { BasisConverter } = await import("../src/basis-converter.js");
-    const asFed = BasisConverter.toAsFed(Quantity.of(15, "% DM"), Quantity.of(88, "%"));
+    const asFed = BasisConverter.toAsFed(
+      Quantity.of(15, "% DM"),
+      Quantity.of(88, "%"),
+    );
     expect(asFed.value).toBeCloseTo(13.2, 9);
   });
 
   it("coefficientResolver still strips to plain numbers", () => {
     expect(
-      coefficientResolver.getCoefficient(Quantity.of(10, "kg/day"), Quantity.of(12, "%"), "cp"),
+      coefficientResolver.getCoefficient(
+        Quantity.of(10, "kg/day"),
+        Quantity.of(12, "%"),
+        "cp",
+      ),
     ).toBeCloseTo(1200, 6);
   });
 });

@@ -72,7 +72,9 @@ describe("parser fuzz (seeded)", () => {
       // Canonical stability: re-parsing the canonical symbol is identical.
       const again = parseUnit(unit.symbol);
       expect(again.symbol).toBe(unit.symbol);
-      expect(JSON.stringify(again.dimension)).toBe(JSON.stringify(unit.dimension));
+      expect(JSON.stringify(again.dimension)).toBe(
+        JSON.stringify(unit.dimension),
+      );
     }
     // Sanity: the soup must contain both valid and invalid inputs.
     expect(valid).toBeGreaterThan(50);
@@ -105,15 +107,19 @@ describe("serialized-input fuzz (seeded)", () => {
     }
     if (Array.isArray(value)) {
       const copy = [...value];
-      if (copy.length > 0 && rand() < 0.5) copy.splice(Math.floor(rand() * copy.length), 1);
+      if (copy.length > 0 && rand() < 0.5)
+        copy.splice(Math.floor(rand() * copy.length), 1);
       if (rand() < 0.3) copy.push(mutate(rand, {}, depth + 1));
       return copy;
     }
     if (value !== null && typeof value === "object") {
-      const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+      const copy: Record<string, unknown> = {
+        ...(value as Record<string, unknown>),
+      };
       const keys = Object.keys(copy);
       if (keys.length > 0 && rand() < 0.5) delete copy[pick(rand, keys)!];
-      if (rand() < 0.3) copy[`fuzz${Math.floor(rand() * 100)}`] = mutate(rand, {}, depth + 1);
+      if (rand() < 0.3)
+        copy[`fuzz${Math.floor(rand() * 100)}`] = mutate(rand, {}, depth + 1);
       if (rand() < 0.2) copy["__proto__"] = {};
       return copy;
     }
@@ -189,7 +195,14 @@ describe("registry-definition fuzz (seeded)", () => {
   it("unit registry rejects malformed definitions with typed errors", () => {
     const rand = mulberry32(0x77aa);
     const symbols = ["qx", "qy", "m", "", "a b", "__proto__"];
-    const dims = [{ L: 1 }, { M: 1 }, "nope", null, { L: 1.5 }, { __proto__: 1 }];
+    const dims = [
+      { L: 1 },
+      { M: 1 },
+      "nope",
+      null,
+      { L: 1.5 },
+      { __proto__: 1 },
+    ];
     for (let i = 0; i < 500; i++) {
       const def = {
         symbol: pick(rand, symbols),
@@ -228,7 +241,14 @@ describe("registry-definition fuzz (seeded)", () => {
     // registers fine.
     expect(rejected).toBeGreaterThan(200);
     const reg = new ConstantRegistry();
-    reg.register({ id: "ok", symbol: "q", value: 1, unit: "m", exact: true, source: "s" });
+    reg.register({
+      id: "ok",
+      symbol: "q",
+      value: 1,
+      unit: "m",
+      exact: true,
+      source: "s",
+    });
     expect(reg.require("ok").quantity.value).toBe(1);
   });
 });

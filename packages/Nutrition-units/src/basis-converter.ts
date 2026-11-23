@@ -29,7 +29,10 @@ export class BasisConverter {
     return result.to(targetSymbol);
   }
 
-  static toDryMatterBasis(asFedQuantity: Quantity, dryMatterPercent: Quantity): Quantity {
+  static toDryMatterBasis(
+    asFedQuantity: Quantity,
+    dryMatterPercent: Quantity,
+  ): Quantity {
     BasisConverter.assertIsPercent(dryMatterPercent);
     const dmBase = dryMatterPercent.toBase().value;
     if (!Number.isFinite(dmBase) || Math.abs(dmBase) < 1e-12) {
@@ -55,10 +58,18 @@ export class BasisConverter {
 
   private static assertIsPercent(q: Quantity): void {
     if (q.unit.symbol !== "%") {
-      throw new ConversionError(q.unit.symbol, "%", "dry matter must be expressed as a percent");
+      throw new ConversionError(
+        q.unit.symbol,
+        "%",
+        "dry matter must be expressed as a percent",
+      );
     }
     if (!Number.isFinite(q.value) || !Number.isFinite(q.toBase().value)) {
-      throw new ConversionError(q.unit.symbol, "%", "dry matter percent must be finite");
+      throw new ConversionError(
+        q.unit.symbol,
+        "%",
+        "dry matter percent must be finite",
+      );
     }
     if (q.value <= 0 || q.value > 100) {
       throw new ConversionError(

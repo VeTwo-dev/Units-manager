@@ -40,9 +40,13 @@ export class NutritionSample {
 
   constructor(opts: NutritionSampleOptions) {
     if (!opts || typeof opts !== "object" || Array.isArray(opts))
-      throw new InvalidNutritionQuantityError("NutritionSample opts must be plain object");
+      throw new InvalidNutritionQuantityError(
+        "NutritionSample opts must be plain object",
+      );
     if (typeof opts.id !== "string" || !SAMPLE_ID_RE.test(opts.id))
-      throw new InvalidNutritionQuantityError(`sample id must match ${SAMPLE_ID_RE}`);
+      throw new InvalidNutritionQuantityError(
+        `sample id must match ${SAMPLE_ID_RE}`,
+      );
     if (opts.measurements) {
       for (const m of opts.measurements) {
         if (!(m instanceof NutritionMeasurement))
@@ -60,7 +64,9 @@ export class NutritionSample {
 
   withMeasurement(m: NutritionMeasurement): NutritionSample {
     if (!(m instanceof NutritionMeasurement))
-      throw new InvalidNutritionQuantityError("measurement must be NutritionMeasurement");
+      throw new InvalidNutritionQuantityError(
+        "measurement must be NutritionMeasurement",
+      );
     return new NutritionSample({
       id: this.id,
       metadata: this.metadata,
@@ -82,12 +88,20 @@ export class NutritionSample {
 
   static fromJSON(data: unknown): NutritionSample {
     if (!data || typeof data !== "object" || Array.isArray(data))
-      throw new InvalidNutritionQuantityError("sample JSON must be plain object");
+      throw new InvalidNutritionQuantityError(
+        "sample JSON must be plain object",
+      );
     const r = data as Record<string, unknown>;
-    if (r.version !== 1 || r.type !== "nutrition-sample" || typeof r.id !== "string")
+    if (
+      r.version !== 1 ||
+      r.type !== "nutrition-sample" ||
+      typeof r.id !== "string"
+    )
       throw new InvalidNutritionQuantityError("invalid sample serialization");
     const measurements = Array.isArray(r.measurements)
-      ? (r.measurements as unknown[]).map((m) => NutritionMeasurement.fromJSON(m as never))
+      ? (r.measurements as unknown[]).map((m) =>
+          NutritionMeasurement.fromJSON(m as never),
+        )
       : [];
     return new NutritionSample({
       id: r.id as string,
@@ -117,7 +131,10 @@ export interface SerializedNutritionSample {
 
 export class NutritionMeasurementSet implements Iterable<NutritionMeasurement> {
   private readonly list: readonly NutritionMeasurement[];
-  private readonly byNutrient: ReadonlyMap<string, readonly NutritionMeasurement[]>;
+  private readonly byNutrient: ReadonlyMap<
+    string,
+    readonly NutritionMeasurement[]
+  >;
   private readonly byKey: ReadonlyMap<string, NutritionMeasurement>;
 
   constructor(measurements: readonly NutritionMeasurement[] = []) {
@@ -126,7 +143,9 @@ export class NutritionMeasurementSet implements Iterable<NutritionMeasurement> {
     const list = [...measurements];
     for (const m of list) {
       if (!(m instanceof NutritionMeasurement))
-        throw new InvalidNutritionQuantityError("all entries must be NutritionMeasurement");
+        throw new InvalidNutritionQuantityError(
+          "all entries must be NutritionMeasurement",
+        );
     }
     // Validate duplicate handling: allow duplicates but key is nutrient+basis+unit — we keep first
     const byNutrient = new Map<string, NutritionMeasurement[]>();
@@ -187,7 +206,9 @@ export class NutritionMeasurementSet implements Iterable<NutritionMeasurement> {
 
   add(m: NutritionMeasurement): NutritionMeasurementSet {
     if (!(m instanceof NutritionMeasurement))
-      throw new InvalidNutritionQuantityError("add requires NutritionMeasurement");
+      throw new InvalidNutritionQuantityError(
+        "add requires NutritionMeasurement",
+      );
     // Allow duplicates — just append
     return new NutritionMeasurementSet([...this.list, m]);
   }
@@ -199,10 +220,14 @@ export class NutritionMeasurementSet implements Iterable<NutritionMeasurement> {
       return true;
     });
     if (toRemove.length === 0) return this;
-    return new NutritionMeasurementSet(this.list.filter((m) => !toRemove.includes(m)));
+    return new NutritionMeasurementSet(
+      this.list.filter((m) => !toRemove.includes(m)),
+    );
   }
 
-  filter(predicate: (m: NutritionMeasurement) => boolean): NutritionMeasurementSet {
+  filter(
+    predicate: (m: NutritionMeasurement) => boolean,
+  ): NutritionMeasurementSet {
     return new NutritionMeasurementSet(this.list.filter(predicate));
   }
 
@@ -214,7 +239,9 @@ export class NutritionMeasurementSet implements Iterable<NutritionMeasurement> {
     return this.filter((m) => m.basis.id === basisId.toLowerCase());
   }
 
-  map(mapper: (m: NutritionMeasurement) => NutritionMeasurement): NutritionMeasurementSet {
+  map(
+    mapper: (m: NutritionMeasurement) => NutritionMeasurement,
+  ): NutritionMeasurementSet {
     return new NutritionMeasurementSet(this.list.map(mapper));
   }
 
@@ -224,18 +251,27 @@ export class NutritionMeasurementSet implements Iterable<NutritionMeasurement> {
       try {
         return m.to(targetUnit);
       } catch (e) {
-        throw new CollectionConversionError(m.nutrient.id, (e as Error).message);
+        throw new CollectionConversionError(
+          m.nutrient.id,
+          (e as Error).message,
+        );
       }
     });
     return new NutritionMeasurementSet(converted);
   }
 
-  convertBasis(targetBasisId: string, context: NutritionContext): NutritionMeasurementSet {
+  convertBasis(
+    targetBasisId: string,
+    context: NutritionContext,
+  ): NutritionMeasurementSet {
     const converted = this.list.map((m) => {
       try {
         return m.convertBasis(targetBasisId, context);
       } catch (e) {
-        throw new CollectionConversionError(m.nutrient.id, (e as Error).message);
+        throw new CollectionConversionError(
+          m.nutrient.id,
+          (e as Error).message,
+        );
       }
     });
     return new NutritionMeasurementSet(converted);
@@ -253,7 +289,11 @@ export class NutritionMeasurementSet implements Iterable<NutritionMeasurement> {
     if (!data || typeof data !== "object" || Array.isArray(data))
       throw new InvalidNutritionQuantityError("set JSON must be plain object");
     const r = data as Record<string, unknown>;
-    if (r.version !== 1 || r.type !== "nutrition-measurement-set" || !Array.isArray(r.measurements))
+    if (
+      r.version !== 1 ||
+      r.type !== "nutrition-measurement-set" ||
+      !Array.isArray(r.measurements)
+    )
       throw new InvalidNutritionQuantityError("invalid set serialization");
     const list = (r.measurements as unknown[]).map((m) =>
       NutritionMeasurement.fromJSON(m as never),
@@ -281,21 +321,33 @@ export class NutritionMeasurementSeries implements Iterable<SeriesPoint> {
   readonly points: readonly SeriesPoint[];
 
   constructor(points: readonly SeriesPoint[] = []) {
-    if (!Array.isArray(points)) throw new InvalidSeriesError("series points must be array");
+    if (!Array.isArray(points))
+      throw new InvalidSeriesError("series points must be array");
     const validated: SeriesPoint[] = [];
     let lastTime = -Infinity;
     for (const p of points) {
       if (!p || typeof p !== "object" || Array.isArray(p))
         throw new InvalidSeriesError("series point must be object");
-      if (typeof p.timestamp !== "string" || Number.isNaN(Date.parse(p.timestamp)))
-        throw new InvalidSeriesError(`invalid timestamp "${String(p.timestamp)}"`);
+      if (
+        typeof p.timestamp !== "string" ||
+        Number.isNaN(Date.parse(p.timestamp))
+      )
+        throw new InvalidSeriesError(
+          `invalid timestamp "${String(p.timestamp)}"`,
+        );
       if (!(p.measurement instanceof NutritionMeasurement))
-        throw new InvalidSeriesError("series point measurement must be NutritionMeasurement");
+        throw new InvalidSeriesError(
+          "series point measurement must be NutritionMeasurement",
+        );
       const t = Date.parse(p.timestamp);
       if (t < lastTime)
-        throw new InvalidSeriesError("series timestamps must be in non-decreasing order");
+        throw new InvalidSeriesError(
+          "series timestamps must be in non-decreasing order",
+        );
       lastTime = t;
-      validated.push(Object.freeze({ timestamp: p.timestamp, measurement: p.measurement }));
+      validated.push(
+        Object.freeze({ timestamp: p.timestamp, measurement: p.measurement }),
+      );
     }
     this.points = Object.freeze(validated);
     Object.freeze(this);
@@ -330,9 +382,15 @@ export class NutritionMeasurementSeries implements Iterable<SeriesPoint> {
 
   static fromJSON(data: unknown): NutritionMeasurementSeries {
     if (!data || typeof data !== "object" || Array.isArray(data))
-      throw new InvalidNutritionQuantityError("series JSON must be plain object");
+      throw new InvalidNutritionQuantityError(
+        "series JSON must be plain object",
+      );
     const r = data as Record<string, unknown>;
-    if (r.version !== 1 || r.type !== "nutrition-measurement-series" || !Array.isArray(r.points))
+    if (
+      r.version !== 1 ||
+      r.type !== "nutrition-measurement-series" ||
+      !Array.isArray(r.points)
+    )
       throw new InvalidNutritionQuantityError("invalid series serialization");
     const points = (r.points as unknown[]).map((p) => {
       const rec = p as Record<string, unknown>;
@@ -348,5 +406,8 @@ export class NutritionMeasurementSeries implements Iterable<SeriesPoint> {
 export interface SerializedNutritionMeasurementSeries {
   readonly version: 1;
   readonly type: "nutrition-measurement-series";
-  readonly points: readonly { timestamp: string; measurement: SerializedNutritionMeasurement }[];
+  readonly points: readonly {
+    timestamp: string;
+    measurement: SerializedNutritionMeasurement;
+  }[];
 }

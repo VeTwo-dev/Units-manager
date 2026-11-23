@@ -102,26 +102,38 @@ describe("Quantity reciprocal and sign", () => {
 
 describe("Quantity clamp and modulo", () => {
   it("clamps into range, keeping this unit", () => {
-    expect(Quantity.of(5, "kg").clamp(Quantity.of(1, "kg"), Quantity.of(3, "kg")).value).toBe(3);
-    expect(Quantity.of(0.5, "kg").clamp(Quantity.of(1, "kg"), Quantity.of(3, "kg")).value).toBe(1);
-    const inside = Quantity.of(2, "kg").clamp(Quantity.of(1, "kg"), Quantity.of(3, "kg"));
+    expect(
+      Quantity.of(5, "kg").clamp(Quantity.of(1, "kg"), Quantity.of(3, "kg"))
+        .value,
+    ).toBe(3);
+    expect(
+      Quantity.of(0.5, "kg").clamp(Quantity.of(1, "kg"), Quantity.of(3, "kg"))
+        .value,
+    ).toBe(1);
+    const inside = Quantity.of(2, "kg").clamp(
+      Quantity.of(1, "kg"),
+      Quantity.of(3, "kg"),
+    );
     expect(inside.value).toBe(2);
     expect(inside.unit.symbol).toBe("kg");
   });
 
   it("clamp converts bounds and keeps this unit", () => {
-    const r = Quantity.of(5, "kg").clamp(Quantity.of(500, "g"), Quantity.of(6000, "g"));
+    const r = Quantity.of(5, "kg").clamp(
+      Quantity.of(500, "g"),
+      Quantity.of(6000, "g"),
+    );
     expect(r.value).toBe(5);
     expect(r.unit.symbol).toBe("kg");
   });
 
   it("clamp rejects dimension mismatch and inverted bounds", () => {
-    expect(() => Quantity.of(1, "kg").clamp(Quantity.of(1, "m"), Quantity.of(2, "m"))).toThrow(
-      UnitMismatchError,
-    );
-    expect(() => Quantity.of(1, "kg").clamp(Quantity.of(3, "kg"), Quantity.of(1, "kg"))).toThrow(
-      NumericalError,
-    );
+    expect(() =>
+      Quantity.of(1, "kg").clamp(Quantity.of(1, "m"), Quantity.of(2, "m")),
+    ).toThrow(UnitMismatchError);
+    expect(() =>
+      Quantity.of(1, "kg").clamp(Quantity.of(3, "kg"), Quantity.of(1, "kg")),
+    ).toThrow(NumericalError);
   });
 
   it("modulo follows truncated semantics: 10 m mod 3 m = 1 m", () => {
@@ -135,7 +147,9 @@ describe("Quantity clamp and modulo", () => {
   });
 
   it("modulo by zero throws; affine throws", () => {
-    expect(() => Quantity.of(1, "m").modulo(Quantity.of(0, "m"))).toThrow(DivisionByZeroError);
+    expect(() => Quantity.of(1, "m").modulo(Quantity.of(0, "m"))).toThrow(
+      DivisionByZeroError,
+    );
     expect(() => Quantity.of(1, "m").modulo(Quantity.of(0, "°C"))).toThrow();
     expect(() => Quantity.of(10, "°C").modulo(Quantity.of(2, "K"))).toThrow();
   });
@@ -158,7 +172,9 @@ describe("Quantity roundTo", () => {
 
   it("roundTo honors decimals and mode", () => {
     expect(Quantity.of(1.234, "kg").roundTo("kg", 2).value).toBe(1.23);
-    expect(Quantity.of(1.235, "kg").roundTo("kg", 2, "half-even").value).toBe(1.24);
+    expect(Quantity.of(1.235, "kg").roundTo("kg", 2, "half-even").value).toBe(
+      1.24,
+    );
   });
 
   it("roundTo rejects incompatible dimensions", () => {
@@ -210,7 +226,9 @@ describe("Quantity transcendental functions", () => {
 
 describe("Quantity zero policy", () => {
   it("0 kg + 0 m throws (strict dimensional safety)", () => {
-    expect(() => Quantity.of(0, "kg").add(Quantity.of(0, "m"))).toThrow(UnitMismatchError);
+    expect(() => Quantity.of(0, "kg").add(Quantity.of(0, "m"))).toThrow(
+      UnitMismatchError,
+    );
   });
 
   it("0 kg compared with 0 m is false, not throw, for equals", () => {
@@ -236,8 +254,12 @@ describe("Quantity zero policy", () => {
 
 describe("Quantity result-unit policy", () => {
   it("add/subtract preserve the left operand unit", () => {
-    expect(Quantity.of(1, "kg").add(Quantity.of(500, "g")).unit.symbol).toBe("kg");
-    expect(Quantity.of(1, "kg").subtract(Quantity.of(500, "g")).unit.symbol).toBe("kg");
+    expect(Quantity.of(1, "kg").add(Quantity.of(500, "g")).unit.symbol).toBe(
+      "kg",
+    );
+    expect(
+      Quantity.of(1, "kg").subtract(Quantity.of(500, "g")).unit.symbol,
+    ).toBe("kg");
   });
 
   it("scale preserves the unit", () => {
@@ -288,12 +310,18 @@ describe("Quantity new-operation immutability", () => {
 describe("Quantity algebraic identities", () => {
   it("a × 1 = a", () => {
     const a = Quantity.of(5, "kg");
-    expect(a.multiply(Quantity.of(1, "fraction")).to("kg").value).toBeCloseTo(5, 12);
+    expect(a.multiply(Quantity.of(1, "fraction")).to("kg").value).toBeCloseTo(
+      5,
+      12,
+    );
   });
 
   it("a / 1 = a", () => {
     const a = Quantity.of(5, "kg");
-    expect(a.divide(Quantity.of(1, "fraction")).to("kg").value).toBeCloseTo(5, 12);
+    expect(a.divide(Quantity.of(1, "fraction")).to("kg").value).toBeCloseTo(
+      5,
+      12,
+    );
   });
 
   it("a × reciprocal(a) = 1 for nonzero a", () => {

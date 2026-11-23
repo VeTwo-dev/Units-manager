@@ -72,11 +72,15 @@ export interface ExternalUnitIdentifier {
 
 function validateNamespace(ns: string, field: string): void {
   if (!NAMESPACE_RE.test(ns))
-    throw new NutritionContextError(`${field} must match ${NAMESPACE_RE}, got "${ns}"`);
+    throw new NutritionContextError(
+      `${field} must match ${NAMESPACE_RE}, got "${ns}"`,
+    );
 }
 function validateExternalId(id: string, field: string): void {
   if (!EXTERNAL_ID_RE.test(id))
-    throw new NutritionContextError(`${field} must match ${EXTERNAL_ID_RE}, got "${id}"`);
+    throw new NutritionContextError(
+      `${field} must match ${EXTERNAL_ID_RE}, got "${id}"`,
+    );
 }
 
 export function createExternalNutrientIdentifier(
@@ -95,8 +99,13 @@ export function createExternalUnitIdentifier(
 ): ExternalUnitIdentifier {
   validateNamespace(namespace, "namespace");
   validateExternalId(id, "id");
-  if (symbol !== undefined && (typeof symbol !== "string" || symbol.trim().length === 0)) {
-    throw new NutritionContextError("symbol must be non-empty string if provided");
+  if (
+    symbol !== undefined &&
+    (typeof symbol !== "string" || symbol.trim().length === 0)
+  ) {
+    throw new NutritionContextError(
+      "symbol must be non-empty string if provided",
+    );
   }
   return Object.freeze({ namespace, id, ...(symbol ? { symbol } : {}) });
 }
@@ -110,13 +119,17 @@ export function registerExternalNutrientMapping(
 ): void {
   const key = `${external.namespace}:${external.id}`;
   if (externalNutrientMap.has(key))
-    throw new NutritionContextError(`external nutrient mapping already exists for "${key}"`);
+    throw new NutritionContextError(
+      `external nutrient mapping already exists for "${key}"`,
+    );
   // Validate canonical exists
   defaultNutrientKindRegistry.require(canonicalId);
   externalNutrientMap.set(key, canonicalId.toLowerCase());
 }
 
-export function resolveExternalNutrient(external: ExternalNutrientIdentifier): string | undefined {
+export function resolveExternalNutrient(
+  external: ExternalNutrientIdentifier,
+): string | undefined {
   return externalNutrientMap.get(`${external.namespace}:${external.id}`);
 }
 
@@ -151,7 +164,8 @@ export function migrateSerializedNutritionMeasurement(
   if (fromVersion === toVersion) return data;
   const key = `${fromVersion}->${toVersion}`;
   const fn = migrations.get(key);
-  if (!fn) throw new NutritionContextError(`no migration registered for ${key}`);
+  if (!fn)
+    throw new NutritionContextError(`no migration registered for ${key}`);
   return fn(data);
 }
 
@@ -169,7 +183,12 @@ registerMigration(0, 1, (data: unknown) => {
       version: 1,
       type: "measurement",
       value: r.value,
-      uncertainty: { version: 1, type: "quantity", value: 0, unit: r.unit as string },
+      uncertainty: {
+        version: 1,
+        type: "quantity",
+        value: 0,
+        unit: r.unit as string,
+      },
       method: "linearized",
     },
     nutrient: r.nutrient ?? r.nutrientId ?? "unknown",
@@ -199,12 +218,18 @@ export interface CanonicalNutritionMeasurement {
 export function serializeNutritionMeasurementCanonical(
   nm: NutritionMeasurement,
 ): Record<string, unknown> {
-  const base = serializeNutritionMeasurement(nm) as unknown as Record<string, unknown>;
+  const base = serializeNutritionMeasurement(nm) as unknown as Record<
+    string,
+    unknown
+  >;
   return Object.freeze({ schemaVersion: SCHEMA_VERSION, ...base });
 }
 
 export function toCanonicalJson(nm: NutritionMeasurement): string {
-  const data = serializeNutritionMeasurement(nm) as unknown as Record<string, unknown>;
+  const data = serializeNutritionMeasurement(nm) as unknown as Record<
+    string,
+    unknown
+  >;
   const canonical = { schemaVersion: SCHEMA_VERSION, ...data };
   return canonicalJsonStringify(canonical);
 }
@@ -212,10 +237,15 @@ export function toCanonicalJson(nm: NutritionMeasurement): string {
 export function fromCanonicalJson(json: string): NutritionMeasurement {
   const data = JSON.parse(json) as Record<string, unknown>;
   // Support both schemaVersion and version
-  const version = (data.schemaVersion as number) ?? (data.version as number) ?? 1;
+  const version =
+    (data.schemaVersion as number) ?? (data.version as number) ?? 1;
   if (version !== SCHEMA_VERSION) {
     // Try migration
-    const migrated = migrateSerializedNutritionMeasurement(data, version, SCHEMA_VERSION);
+    const migrated = migrateSerializedNutritionMeasurement(
+      data,
+      version,
+      SCHEMA_VERSION,
+    );
     return deserializeNutritionMeasurement(migrated as never);
   }
   // If canonical has schemaVersion wrapper, unwrap to inner measurement
@@ -261,7 +291,14 @@ export interface TabularFieldMapping {
   readonly externalField: string;
   /** Canonical field name (value, unit, nutrient, basis, sample, timestamp) */
   readonly canonicalField:
-    "value" | "unit" | "nutrient" | "basis" | "sample" | "timestamp" | "uncertainty" | "metadata";
+    | "value"
+    | "unit"
+    | "nutrient"
+    | "basis"
+    | "sample"
+    | "timestamp"
+    | "uncertainty"
+    | "metadata";
   /** Optional transform */
   readonly transform?: (value: unknown) => unknown;
 }
@@ -284,7 +321,9 @@ export function mapTabularRowToNutritionMeasurement(
     const allowed = new Set(mapping.fields.map((f) => f.externalField));
     for (const key of Object.keys(row)) {
       if (!allowed.has(key))
-        throw new InvalidNutritionQuantityError(`unknown field "${key}" in strict mode`);
+        throw new InvalidNutritionQuantityError(
+          `unknown field "${key}" in strict mode`,
+        );
     }
   }
   // Prototype pollution guard
@@ -309,9 +348,13 @@ export function mapTabularRowToNutritionMeasurement(
   const basis = (canonical.basis as string) ?? "asFed";
 
   if (typeof value !== "number" || !Number.isFinite(value))
-    throw new InvalidNutritionQuantityError(`value must be finite number, got ${String(value)}`);
+    throw new InvalidNutritionQuantityError(
+      `value must be finite number, got ${String(value)}`,
+    );
   if (typeof unit !== "string" || (unit as string).trim().length === 0)
-    throw new InvalidNutritionQuantityError(`unit must be non-empty string, got ${String(unit)}`);
+    throw new InvalidNutritionQuantityError(
+      `unit must be non-empty string, got ${String(unit)}`,
+    );
   if (typeof nutrient !== "string" || (nutrient as string).trim().length === 0)
     throw new InvalidNutritionQuantityError(
       `nutrient must be non-empty string, got ${String(nutrient)}`,
@@ -320,7 +363,9 @@ export function mapTabularRowToNutritionMeasurement(
   // Resolve nutrient via registry or external mapping
   let canonicalNutrient: string;
   try {
-    canonicalNutrient = defaultNutrientKindRegistry.require(nutrient as string).id;
+    canonicalNutrient = defaultNutrientKindRegistry.require(
+      nutrient as string,
+    ).id;
   } catch {
     // Try external mapping if nutrient looks like namespace:id
     if ((nutrient as string).includes(":")) {
@@ -360,8 +405,14 @@ export function mapTabularRowToNutritionMeasurement(
       uncertainty as number,
     );
   } else {
-    measurement = Measurement.exact(Quantity.of(value as number, unit as string));
+    measurement = Measurement.exact(
+      Quantity.of(value as number, unit as string),
+    );
   }
 
-  return NutritionMeasurement.of(measurement, canonicalNutrient, basis as string);
+  return NutritionMeasurement.of(
+    measurement,
+    canonicalNutrient,
+    basis as string,
+  );
 }

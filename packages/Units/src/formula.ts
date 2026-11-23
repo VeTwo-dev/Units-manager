@@ -40,7 +40,10 @@ import { DIMENSIONLESS_UNIT } from "./unit.js";
 import { Quantity } from "./quantity.js";
 import { Measurement } from "./measurement.js";
 import { defaultUnitRegistry, type UnitRegistry } from "./unit-registry.js";
-import { defaultFunctionRegistry, type FunctionRegistry } from "./function-registry.js";
+import {
+  defaultFunctionRegistry,
+  type FunctionRegistry,
+} from "./function-registry.js";
 import {
   assertSemanticCompatible,
   defaultQuantityKindRegistry,
@@ -62,7 +65,11 @@ import {
   type VariableDimensions,
 } from "./expression.js";
 import { isDimension } from "./guards.js";
-import { ExpressionLimitError, FormulaError, UnknownVariableError } from "./errors/index.js";
+import {
+  ExpressionLimitError,
+  FormulaError,
+  UnknownVariableError,
+} from "./errors/index.js";
 import type { ConstantRegistry, ScientificConstant } from "./constants.js";
 
 // ---------------------------------------------------------------------------
@@ -206,19 +213,34 @@ function resolveDeclaredDimension(
       );
     }
   }
-  if (declared !== null && typeof declared === "object" && !Array.isArray(declared)) {
+  if (
+    declared !== null &&
+    typeof declared === "object" &&
+    !Array.isArray(declared)
+  ) {
     if (!isDimension(declared)) {
-      throw new FormulaError(id, `input "${name}" declares an invalid DimensionVector`);
+      throw new FormulaError(
+        id,
+        `input "${name}" declares an invalid DimensionVector`,
+      );
     }
     return declared as DimensionVector;
   }
-  throw new FormulaError(id, `input "${name}" dimension must be a DimensionVector or unit string`);
+  throw new FormulaError(
+    id,
+    `input "${name}" dimension must be a DimensionVector or unit string`,
+  );
 }
 
 function isScientificConstant(value: unknown): value is ScientificConstant {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    return false;
   const v = value as Record<string, unknown>;
-  return typeof v.id === "string" && v.quantity instanceof Quantity && typeof v.exact === "boolean";
+  return (
+    typeof v.id === "string" &&
+    v.quantity instanceof Quantity &&
+    typeof v.exact === "boolean"
+  );
 }
 
 function literalForConstant(
@@ -230,7 +252,8 @@ function literalForConstant(
     return lit(value, "1");
   }
   if (value instanceof Quantity) {
-    const symbol = value.unit.symbol + (value.unit.basis ? ` ${value.unit.basis}` : "");
+    const symbol =
+      value.unit.symbol + (value.unit.basis ? ` ${value.unit.basis}` : "");
     return lit(value.value, symbol);
   }
   if (isScientificConstant(value)) {
@@ -257,7 +280,9 @@ function literalForConstant(
  */
 function partitionConstants(
   id: string,
-  constants: Readonly<Record<string, Quantity | number | Measurement | ScientificConstant>>,
+  constants: Readonly<
+    Record<string, Quantity | number | Measurement | ScientificConstant>
+  >,
   declaredInputs: Readonly<Record<string, FormulaInputDeclaration>>,
 ): {
   literals: Record<string, Quantity | number>;
@@ -281,7 +306,9 @@ function partitionConstants(
       refs[name] = Object.freeze({
         id: value.id,
         version: value.version,
-        ...(value.namespace !== undefined ? { namespace: value.namespace } : {}),
+        ...(value.namespace !== undefined
+          ? { namespace: value.namespace }
+          : {}),
       });
       if (value.exact) {
         literals[name] = value.quantity;
@@ -357,17 +384,29 @@ function substituteVariables(
       case "power": {
         const base = rewrite(node.base);
         if (base === node.base) return node;
-        return Object.freeze({ kind: "power", base, exponent: node.exponent }) as Expression;
+        return Object.freeze({
+          kind: "power",
+          base,
+          exponent: node.exponent,
+        }) as Expression;
       }
       case "convert": {
         const inner = rewrite(node.expr);
         if (inner === node.expr) return node;
-        return Object.freeze({ kind: "convert", expr: inner, unit: node.unit }) as Expression;
+        return Object.freeze({
+          kind: "convert",
+          expr: inner,
+          unit: node.unit,
+        }) as Expression;
       }
       case "call": {
         const args = node.args.map(rewrite);
         if (args.every((arg, i) => arg === node.args[i])) return node;
-        return Object.freeze({ kind: "call", function: node.function, args }) as Expression;
+        return Object.freeze({
+          kind: "call",
+          function: node.function,
+          args,
+        }) as Expression;
       }
       default:
         return node;
@@ -413,7 +452,9 @@ function inferKinds(
         visit(node.right);
         return undefined; // compound kinds are not tracked
       case "power":
-        return node.exponent === 1 ? visit(node.base) : (visit(node.base), undefined);
+        return node.exponent === 1
+          ? visit(node.base)
+          : (visit(node.base), undefined);
       case "convert":
         visit(node.expr);
         return parseUnit(node.unit, registry).metadata?.kind;
@@ -446,7 +487,10 @@ function inferKinds(
  * constants → static dimensions → expected dimension/kind → output unit.
  * Nothing numeric executes here.
  */
-export function defineFormula(args: DefineFormulaArgs, opts: DefineFormulaOptions = {}): Formula {
+export function defineFormula(
+  args: DefineFormulaArgs,
+  opts: DefineFormulaOptions = {},
+): Formula {
   assertFormulaId(args.id);
   const registry = opts.registry ?? defaultUnitRegistry;
   const functions = opts.functions ?? defaultFunctionRegistry;
@@ -454,12 +498,20 @@ export function defineFormula(args: DefineFormulaArgs, opts: DefineFormulaOption
   const policy = opts.semanticPolicy ?? "dimensional-only";
   const { maxVariables } = resolveFormulaLimits(opts.limits);
 
-  let expression = resolveExpressionInput(args.id, args.expression, opts.limits);
+  let expression = resolveExpressionInput(
+    args.id,
+    args.expression,
+    opts.limits,
+  );
   // Structural validation up front (depth/nodes/kinds), so hostile
   // hand-built ASTs fail here instead of in later unguarded traversals.
   canonicalExpressionKey(expression, opts.limits);
   const constants = args.constants ?? {};
-  if (constants === null || typeof constants !== "object" || Array.isArray(constants)) {
+  if (
+    constants === null ||
+    typeof constants !== "object" ||
+    Array.isArray(constants)
+  ) {
     throw new FormulaError(args.id, "constants must be a plain object");
   }
   const declaredInputs = args.inputs ?? {};
@@ -478,13 +530,25 @@ export function defineFormula(args: DefineFormulaArgs, opts: DefineFormulaOption
     autoInputs,
     refs: constantRefs,
   } = partitionConstants(args.id, constants, declaredInputs);
-  expression = substituteConstants(expression, literals, args.id, registry, functions, opts.limits);
-  const inputs: Record<string, FormulaInputDeclaration> = { ...declaredInputs, ...autoInputs };
+  expression = substituteConstants(
+    expression,
+    literals,
+    args.id,
+    registry,
+    functions,
+    opts.limits,
+  );
+  const inputs: Record<string, FormulaInputDeclaration> = {
+    ...declaredInputs,
+    ...autoInputs,
+  };
 
   const free = [...collectVariables(expression)];
   const inputNames = Object.keys(inputs);
   if (free.length + inputNames.length > maxVariables) {
-    throw new ExpressionLimitError(`Formula "${args.id}" exceeds maxVariables ${maxVariables}.`);
+    throw new ExpressionLimitError(
+      `Formula "${args.id}" exceeds maxVariables ${maxVariables}.`,
+    );
   }
   for (const name of inputNames) {
     if (!FORMULA_ID_RE.test(name)) {
@@ -505,15 +569,29 @@ export function defineFormula(args: DefineFormulaArgs, opts: DefineFormulaOption
   const varKinds: Record<string, string | undefined> = {};
   for (const [name, decl] of Object.entries(inputs)) {
     if (decl === null || typeof decl !== "object" || Array.isArray(decl)) {
-      throw new FormulaError(args.id, `input "${name}" declaration must be an object`);
+      throw new FormulaError(
+        args.id,
+        `input "${name}" declaration must be an object`,
+      );
     }
-    varDimensions[name] = resolveDeclaredDimension(args.id, name, decl.dimension, registry);
+    varDimensions[name] = resolveDeclaredDimension(
+      args.id,
+      name,
+      decl.dimension,
+      registry,
+    );
     if (decl.kind !== undefined) {
       if (typeof decl.kind !== "string") {
-        throw new FormulaError(args.id, `input "${name}" kind must be a string`);
+        throw new FormulaError(
+          args.id,
+          `input "${name}" kind must be a string`,
+        );
       }
       if (!kinds.has(decl.kind)) {
-        throw new FormulaError(args.id, `input "${name}" declares unknown kind "${decl.kind}"`);
+        throw new FormulaError(
+          args.id,
+          `input "${name}" declares unknown kind "${decl.kind}"`,
+        );
       }
       varKinds[name] = decl.kind;
     } else {
@@ -531,7 +609,10 @@ export function defineFormula(args: DefineFormulaArgs, opts: DefineFormulaOption
     });
   } catch (error) {
     if (error instanceof ExpressionLimitError) throw error;
-    throw new FormulaError(args.id, `dimensional analysis failed (${(error as Error).message})`);
+    throw new FormulaError(
+      args.id,
+      `dimensional analysis failed (${(error as Error).message})`,
+    );
   }
 
   if (args.expectedDimension !== undefined) {
@@ -558,7 +639,10 @@ export function defineFormula(args: DefineFormulaArgs, opts: DefineFormulaOption
   );
   if (args.expectedKind !== undefined) {
     if (!kinds.has(args.expectedKind)) {
-      throw new FormulaError(args.id, `unknown expectedKind "${args.expectedKind}"`);
+      throw new FormulaError(
+        args.id,
+        `unknown expectedKind "${args.expectedKind}"`,
+      );
     }
     try {
       assertSemanticCompatible(inferredKind, args.expectedKind, policy, kinds);
@@ -603,7 +687,9 @@ export function defineFormula(args: DefineFormulaArgs, opts: DefineFormulaOption
     // cannot silently change validation/evaluation semantics. Unit-string
     // declarations resolve to registry-owned (frozen) dimensions already.
     const dimension =
-      typeof decl.dimension === "string" ? decl.dimension : Object.freeze({ ...decl.dimension });
+      typeof decl.dimension === "string"
+        ? decl.dimension
+        : Object.freeze({ ...decl.dimension });
     frozenInputs[name] = Object.freeze({ ...decl, dimension });
   }
   const frozenRefs: Record<string, FormulaConstantRef> = {};
@@ -659,12 +745,19 @@ export interface EvaluateFormulaOptions {
   readonly trace?: boolean;
 }
 
-function toQuantityBinding(name: string, id: string, binding: FormulaBinding): Quantity {
+function toQuantityBinding(
+  name: string,
+  id: string,
+  binding: FormulaBinding,
+): Quantity {
   if (typeof binding === "number") {
     return Quantity.of(binding, DIMENSIONLESS_UNIT);
   }
   if (binding instanceof Quantity) return binding;
-  throw new FormulaError(id, `binding "${name}" must be a Quantity, number or Measurement`);
+  throw new FormulaError(
+    id,
+    `binding "${name}" must be a Quantity, number or Measurement`,
+  );
 }
 
 function checkBindingAgainstDeclaration(
@@ -710,32 +803,64 @@ function evalMeasurementNode(
       return Measurement.exact(Quantity.of(expr.value, expr.unit, registry));
     case "variable": {
       const bound = bindings[expr.name];
-      if (bound === undefined) throw new FormulaError(id, `missing binding "${expr.name}"`);
+      if (bound === undefined)
+        throw new FormulaError(id, `missing binding "${expr.name}"`);
       return bound;
     }
     case "add":
-      return evalMeasurementNode(id, expr.left, bindings, registry, depth + 1).add(
-        evalMeasurementNode(id, expr.right, bindings, registry, depth + 1),
-      );
+      return evalMeasurementNode(
+        id,
+        expr.left,
+        bindings,
+        registry,
+        depth + 1,
+      ).add(evalMeasurementNode(id, expr.right, bindings, registry, depth + 1));
     case "subtract":
-      return evalMeasurementNode(id, expr.left, bindings, registry, depth + 1).subtract(
+      return evalMeasurementNode(
+        id,
+        expr.left,
+        bindings,
+        registry,
+        depth + 1,
+      ).subtract(
         evalMeasurementNode(id, expr.right, bindings, registry, depth + 1),
       );
     case "multiply":
-      return evalMeasurementNode(id, expr.left, bindings, registry, depth + 1).multiply(
+      return evalMeasurementNode(
+        id,
+        expr.left,
+        bindings,
+        registry,
+        depth + 1,
+      ).multiply(
         evalMeasurementNode(id, expr.right, bindings, registry, depth + 1),
       );
     case "divide":
-      return evalMeasurementNode(id, expr.left, bindings, registry, depth + 1).divide(
+      return evalMeasurementNode(
+        id,
+        expr.left,
+        bindings,
+        registry,
+        depth + 1,
+      ).divide(
         evalMeasurementNode(id, expr.right, bindings, registry, depth + 1),
       );
     case "power":
-      return evalMeasurementNode(id, expr.base, bindings, registry, depth + 1).pow(expr.exponent);
-    case "convert":
-      return evalMeasurementNode(id, expr.expr, bindings, registry, depth + 1).to(
-        expr.unit,
+      return evalMeasurementNode(
+        id,
+        expr.base,
+        bindings,
         registry,
-      );
+        depth + 1,
+      ).pow(expr.exponent);
+    case "convert":
+      return evalMeasurementNode(
+        id,
+        expr.expr,
+        bindings,
+        registry,
+        depth + 1,
+      ).to(expr.unit, registry);
     case "call":
       throw new FormulaError(
         id,
@@ -799,40 +924,65 @@ function evaluateWithTrace(
     case "subtract":
       return record(
         expr,
-        evaluateWithTrace(expr.left, context, registry, functions, steps).subtract(
+        evaluateWithTrace(
+          expr.left,
+          context,
+          registry,
+          functions,
+          steps,
+        ).subtract(
           evaluateWithTrace(expr.right, context, registry, functions, steps),
         ),
       );
     case "multiply":
       return record(
         expr,
-        evaluateWithTrace(expr.left, context, registry, functions, steps).multiply(
+        evaluateWithTrace(
+          expr.left,
+          context,
+          registry,
+          functions,
+          steps,
+        ).multiply(
           evaluateWithTrace(expr.right, context, registry, functions, steps),
         ),
       );
     case "divide":
       return record(
         expr,
-        evaluateWithTrace(expr.left, context, registry, functions, steps).divide(
+        evaluateWithTrace(
+          expr.left,
+          context,
+          registry,
+          functions,
+          steps,
+        ).divide(
           evaluateWithTrace(expr.right, context, registry, functions, steps),
         ),
       );
     case "power":
       return record(
         expr,
-        evaluateWithTrace(expr.base, context, registry, functions, steps).pow(expr.exponent),
+        evaluateWithTrace(expr.base, context, registry, functions, steps).pow(
+          expr.exponent,
+        ),
       );
     case "convert":
       return record(
         expr,
-        evaluateWithTrace(expr.expr, context, registry, functions, steps).to(expr.unit, registry),
+        evaluateWithTrace(expr.expr, context, registry, functions, steps).to(
+          expr.unit,
+          registry,
+        ),
       );
     case "call":
       return record(
         expr,
         functions.call(
           expr.function,
-          expr.args.map((arg) => evaluateWithTrace(arg, context, registry, functions, steps)),
+          expr.args.map((arg) =>
+            evaluateWithTrace(arg, context, registry, functions, steps),
+          ),
         ),
       );
   }
@@ -909,13 +1059,19 @@ export function compileFormula(
     functions,
     limits: opts.limits,
   });
-  const variables = Object.freeze([...collectVariables(definition.expression)].sort());
+  const variables = Object.freeze(
+    [...collectVariables(definition.expression)].sort(),
+  );
 
   const run = (
     inputs: FormulaBindings = {},
     evalOpts: EvaluateFormulaOptions = {},
   ): Quantity | Measurement | FormulaTrace => {
-    if (inputs === null || typeof inputs !== "object" || Array.isArray(inputs)) {
+    if (
+      inputs === null ||
+      typeof inputs !== "object" ||
+      Array.isArray(inputs)
+    ) {
       throw new FormulaError(definition.id, "inputs must be an object");
     }
     // Resolve bindings: declared defaults fill gaps; undeclared extras rejected.
@@ -940,7 +1096,14 @@ export function compileFormula(
         continue;
       }
       const quantity = toQuantityBinding(name, definition.id, binding);
-      if (decl) checkBindingAgainstDeclaration(definition.id, name, quantity, decl, registry);
+      if (decl)
+        checkBindingAgainstDeclaration(
+          definition.id,
+          name,
+          quantity,
+          decl,
+          registry,
+        );
       quantityContext[name] = quantity;
     }
     for (const name of Object.keys(inputs)) {
@@ -952,14 +1115,23 @@ export function compileFormula(
     const outputUnit = evalOpts.outputUnit ?? definition.outputUnit;
     if (hasMeasurement) {
       if (evalOpts.trace === true) {
-        throw new FormulaError(definition.id, "trace mode supports Quantity bindings only");
+        throw new FormulaError(
+          definition.id,
+          "trace mode supports Quantity bindings only",
+        );
       }
       // Promote Quantity bindings to exact measurements for a uniform walk.
       const uniform: Record<string, Measurement> = { ...measurementContext };
       for (const [name, q] of Object.entries(quantityContext)) {
         uniform[name] = Measurement.exact(q);
       }
-      let result = evalMeasurementNode(definition.id, plan.expression, uniform, registry, 1);
+      let result = evalMeasurementNode(
+        definition.id,
+        plan.expression,
+        uniform,
+        registry,
+        1,
+      );
       if (outputUnit !== undefined) result = result.to(outputUnit, registry);
       return result;
     }
@@ -973,9 +1145,13 @@ export function compileFormula(
         functions,
         steps,
       );
-      const converted = outputUnit !== undefined ? result.to(outputUnit, registry) : result;
+      const converted =
+        outputUnit !== undefined ? result.to(outputUnit, registry) : result;
       if (outputUnit !== undefined) {
-        steps.push({ expression: `convert to ${outputUnit}`, result: converted.toString() });
+        steps.push({
+          expression: `convert to ${outputUnit}`,
+          result: converted.toString(),
+        });
       }
       return { result: converted, steps: Object.freeze(steps) };
     }
@@ -1047,7 +1223,11 @@ export interface DimensionAnalysis {
 export function analyzeDimensions(
   expr: Expression,
   varDimensions: VariableDimensions = {},
-  opts: { registry?: UnitRegistry; functions?: FunctionRegistry; limits?: ExpressionLimits } = {},
+  opts: {
+    registry?: UnitRegistry;
+    functions?: FunctionRegistry;
+    limits?: ExpressionLimits;
+  } = {},
 ): DimensionAnalysis {
   try {
     const dimension = inferExpressionDimension(expr, varDimensions, opts);
@@ -1089,7 +1269,9 @@ export function inferUnknownDimensions(
   for (const [name, declared] of Object.entries(known)) {
     solved.set(
       name,
-      typeof declared === "string" ? parseUnit(declared, registry).dimension : declared,
+      typeof declared === "string"
+        ? parseUnit(declared, registry).dimension
+        : declared,
     );
   }
   // Node dimension environment: variable name → dimension (partial).
@@ -1115,7 +1297,10 @@ export function inferUnknownDimensions(
   return Object.freeze(Object.fromEntries(solved));
 }
 
-function dimOfVar(name: string, solved: Map<string, DimensionVector>): DimensionVector | undefined {
+function dimOfVar(
+  name: string,
+  solved: Map<string, DimensionVector>,
+): DimensionVector | undefined {
   if (solved.has(name)) return solved.get(name);
   return undefined;
 }
@@ -1138,8 +1323,24 @@ function propagate(
       return dimOfVar(expr.name, solved);
     case "add":
     case "subtract": {
-      const left = propagate(expr.left, solved, registry, functions, undefined, hooks, want);
-      const right = propagate(expr.right, solved, registry, functions, undefined, hooks, want);
+      const left = propagate(
+        expr.left,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+        want,
+      );
+      const right = propagate(
+        expr.right,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+        want,
+      );
       if (left && !right) {
         assignUnknown(expr.right, left, solved, hooks);
         return left;
@@ -1152,8 +1353,22 @@ function propagate(
       return want;
     }
     case "multiply": {
-      const left = propagate(expr.left, solved, registry, functions, undefined, hooks);
-      const right = propagate(expr.right, solved, registry, functions, undefined, hooks);
+      const left = propagate(
+        expr.left,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+      );
+      const right = propagate(
+        expr.right,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+      );
       if (left && right) return multiplyDim(left, right);
       if (want && left && !right) {
         assignUnknown(expr.right, divideDim(want, left), solved, hooks);
@@ -1166,8 +1381,22 @@ function propagate(
       return want && left ? multiplyDim(left, right ?? {}) : want;
     }
     case "divide": {
-      const left = propagate(expr.left, solved, registry, functions, undefined, hooks);
-      const right = propagate(expr.right, solved, registry, functions, undefined, hooks);
+      const left = propagate(
+        expr.left,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+      );
+      const right = propagate(
+        expr.right,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+      );
       if (left && right) return divideDim(left, right);
       if (want && left && !right) {
         assignUnknown(expr.right, divideDim(left, want), solved, hooks);
@@ -1180,7 +1409,14 @@ function propagate(
       return want;
     }
     case "power": {
-      const base = propagate(expr.base, solved, registry, functions, undefined, hooks);
+      const base = propagate(
+        expr.base,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+      );
       if (base) {
         try {
           return powDim(base, expr.exponent);
@@ -1192,11 +1428,20 @@ function propagate(
     }
     case "convert": {
       const targetDim = parseUnit(expr.unit, registry).dimension;
-      propagate(expr.expr, solved, registry, functions, undefined, hooks, targetDim);
+      propagate(
+        expr.expr,
+        solved,
+        registry,
+        functions,
+        undefined,
+        hooks,
+        targetDim,
+      );
       return targetDim;
     }
     case "call":
-      for (const arg of expr.args) propagate(arg, solved, registry, functions, undefined, hooks);
+      for (const arg of expr.args)
+        propagate(arg, solved, registry, functions, undefined, hooks);
       return undefined;
     default:
       return undefined;
@@ -1227,7 +1472,15 @@ export interface SerializedFormula {
   readonly id: string;
   readonly expression: unknown;
   readonly inputs: Readonly<
-    Record<string, { dimension: unknown; kind?: unknown; optional?: unknown; default?: unknown }>
+    Record<
+      string,
+      {
+        dimension: unknown;
+        kind?: unknown;
+        optional?: unknown;
+        default?: unknown;
+      }
+    >
   >;
   readonly outputName?: string;
   readonly outputUnit?: string;
@@ -1252,7 +1505,10 @@ function hasPollutionKey(obj: Record<string, unknown>): boolean {
 
 /** Serialize a formula definition (AST + declarations + constant refs; no functions, no code). */
 export function serializeFormula(definition: Formula): SerializedFormula {
-  const inputs: Record<string, { dimension: unknown; kind?: unknown; optional?: unknown }> = {};
+  const inputs: Record<
+    string,
+    { dimension: unknown; kind?: unknown; optional?: unknown }
+  > = {};
   for (const [name, decl] of Object.entries(definition.inputs)) {
     inputs[name] = {
       dimension: decl.dimension,
@@ -1260,7 +1516,10 @@ export function serializeFormula(definition: Formula): SerializedFormula {
       ...(decl.optional === true ? { optional: true } : {}),
     };
   }
-  const constantRefs: Record<string, { id: string; version: number; namespace?: string }> = {};
+  const constantRefs: Record<
+    string,
+    { id: string; version: number; namespace?: string }
+  > = {};
   for (const [name, ref] of Object.entries(definition.constantRefs)) {
     constantRefs[name] = {
       id: ref.id,
@@ -1272,16 +1531,28 @@ export function serializeFormula(definition: Formula): SerializedFormula {
     version: 1 as const,
     type: "formula" as const,
     id: definition.id,
-    expression: (serializeExpression(definition.expression) as { root: unknown }).root,
+    expression: (
+      serializeExpression(definition.expression) as { root: unknown }
+    ).root,
     inputs: Object.freeze(inputs),
-    ...(Object.keys(constantRefs).length > 0 ? { constantRefs: Object.freeze(constantRefs) } : {}),
-    ...(definition.outputName !== undefined ? { outputName: definition.outputName } : {}),
-    ...(definition.outputUnit !== undefined ? { outputUnit: definition.outputUnit } : {}),
+    ...(Object.keys(constantRefs).length > 0
+      ? { constantRefs: Object.freeze(constantRefs) }
+      : {}),
+    ...(definition.outputName !== undefined
+      ? { outputName: definition.outputName }
+      : {}),
+    ...(definition.outputUnit !== undefined
+      ? { outputUnit: definition.outputUnit }
+      : {}),
     ...(definition.expectedDimension !== undefined
       ? { expectedDimension: definition.expectedDimension }
       : {}),
-    ...(definition.expectedKind !== undefined ? { expectedKind: definition.expectedKind } : {}),
-    ...(definition.description !== undefined ? { description: definition.description } : {}),
+    ...(definition.expectedKind !== undefined
+      ? { expectedKind: definition.expectedKind }
+      : {}),
+    ...(definition.description !== undefined
+      ? { description: definition.description }
+      : {}),
     formulaVersion: definition.version,
   });
 }
@@ -1295,44 +1566,81 @@ export function serializeFormula(definition: Formula): SerializedFormula {
  * registry holding a different constant version fails explicitly instead
  * of silently computing with different data.
  */
-export function deserializeFormula(data: unknown, opts: DefineFormulaOptions = {}): Formula {
+export function deserializeFormula(
+  data: unknown,
+  opts: DefineFormulaOptions = {},
+): Formula {
   if (data === null || typeof data !== "object" || Array.isArray(data)) {
-    throw new FormulaError("?", "malformed serialized formula: expected an object");
+    throw new FormulaError(
+      "?",
+      "malformed serialized formula: expected an object",
+    );
   }
   const obj = data as Record<string, unknown>;
   if (hasPollutionKey(obj)) {
-    throw new FormulaError("?", "malformed serialized formula: forbidden prototype keys");
+    throw new FormulaError(
+      "?",
+      "malformed serialized formula: forbidden prototype keys",
+    );
   }
   if (obj.version !== 1) {
     if (obj.version === undefined)
       throw new FormulaError("?", "serialized formula missing version");
-    throw new FormulaError("?", `unsupported serialized formula version ${String(obj.version)}`);
+    throw new FormulaError(
+      "?",
+      `unsupported serialized formula version ${String(obj.version)}`,
+    );
   }
   if (obj.type !== "formula") {
-    throw new FormulaError("?", `serialized formula has wrong type "${String(obj.type)}"`);
+    throw new FormulaError(
+      "?",
+      `serialized formula has wrong type "${String(obj.type)}"`,
+    );
   }
   if (typeof obj.id !== "string") {
     throw new FormulaError("?", "serialized formula missing id");
   }
-  if (obj.inputs === null || typeof obj.inputs !== "object" || Array.isArray(obj.inputs)) {
-    throw new FormulaError(obj.id, "serialized formula inputs must be an object");
+  if (
+    obj.inputs === null ||
+    typeof obj.inputs !== "object" ||
+    Array.isArray(obj.inputs)
+  ) {
+    throw new FormulaError(
+      obj.id,
+      "serialized formula inputs must be an object",
+    );
   }
   const inputsRecord = obj.inputs as Record<string, unknown>;
   if (hasPollutionKey(inputsRecord)) {
-    throw new FormulaError(obj.id, "serialized formula inputs contain forbidden keys");
+    throw new FormulaError(
+      obj.id,
+      "serialized formula inputs contain forbidden keys",
+    );
   }
   const inputs: Record<string, FormulaInputDeclaration> = {};
   for (const [name, raw] of Object.entries(inputsRecord)) {
     if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
-      throw new FormulaError(obj.id, `serialized input "${name}" must be an object`);
+      throw new FormulaError(
+        obj.id,
+        `serialized input "${name}" must be an object`,
+      );
     }
     const decl = raw as Record<string, unknown>;
     if (hasPollutionKey(decl)) {
-      throw new FormulaError(obj.id, `serialized input "${name}" contains forbidden keys`);
+      throw new FormulaError(
+        obj.id,
+        `serialized input "${name}" contains forbidden keys`,
+      );
     }
     const dimension = decl.dimension;
-    if (typeof dimension !== "string" && (typeof dimension !== "object" || dimension === null)) {
-      throw new FormulaError(obj.id, `serialized input "${name}" needs a dimension`);
+    if (
+      typeof dimension !== "string" &&
+      (typeof dimension !== "object" || dimension === null)
+    ) {
+      throw new FormulaError(
+        obj.id,
+        `serialized input "${name}" needs a dimension`,
+      );
     }
     inputs[name] = {
       dimension: dimension as DimensionVector | string,
@@ -1348,11 +1656,17 @@ export function deserializeFormula(data: unknown, opts: DefineFormulaOptions = {
       typeof obj.constantRefs !== "object" ||
       Array.isArray(obj.constantRefs)
     ) {
-      throw new FormulaError(obj.id, "serialized formula constantRefs must be an object");
+      throw new FormulaError(
+        obj.id,
+        "serialized formula constantRefs must be an object",
+      );
     }
     const refsRecord = obj.constantRefs as Record<string, unknown>;
     if (hasPollutionKey(refsRecord)) {
-      throw new FormulaError(obj.id, "serialized formula constantRefs contains forbidden keys");
+      throw new FormulaError(
+        obj.id,
+        "serialized formula constantRefs contains forbidden keys",
+      );
     }
     if (opts.constantRegistry === undefined) {
       throw new FormulaError(
@@ -1362,13 +1676,22 @@ export function deserializeFormula(data: unknown, opts: DefineFormulaOptions = {
     }
     for (const [name, raw] of Object.entries(refsRecord)) {
       if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
-        throw new FormulaError(obj.id, `serialized constant ref "${name}" must be an object`);
+        throw new FormulaError(
+          obj.id,
+          `serialized constant ref "${name}" must be an object`,
+        );
       }
       const ref = raw as Record<string, unknown>;
       if (typeof ref.id !== "string") {
-        throw new FormulaError(obj.id, `serialized constant ref "${name}" needs an id string`);
+        throw new FormulaError(
+          obj.id,
+          `serialized constant ref "${name}" needs an id string`,
+        );
       }
-      const qualified = typeof ref.namespace === "string" ? `${ref.namespace}:${ref.id}` : ref.id;
+      const qualified =
+        typeof ref.namespace === "string"
+          ? `${ref.namespace}:${ref.id}`
+          : ref.id;
       let resolved: ScientificConstant;
       try {
         resolved = opts.constantRegistry.require(qualified);
@@ -1396,14 +1719,28 @@ export function deserializeFormula(data: unknown, opts: DefineFormulaOptions = {
       ),
       inputs,
       constants,
-      ...(typeof obj.outputName === "string" ? { outputName: obj.outputName } : {}),
-      ...(typeof obj.outputUnit === "string" ? { outputUnit: obj.outputUnit } : {}),
-      ...(obj.expectedDimension !== undefined
-        ? { expectedDimension: obj.expectedDimension as DimensionVector | string }
+      ...(typeof obj.outputName === "string"
+        ? { outputName: obj.outputName }
         : {}),
-      ...(typeof obj.expectedKind === "string" ? { expectedKind: obj.expectedKind } : {}),
-      ...(typeof obj.description === "string" ? { description: obj.description } : {}),
-      ...(typeof obj.formulaVersion === "number" ? { version: obj.formulaVersion } : {}),
+      ...(typeof obj.outputUnit === "string"
+        ? { outputUnit: obj.outputUnit }
+        : {}),
+      ...(obj.expectedDimension !== undefined
+        ? {
+            expectedDimension: obj.expectedDimension as
+              | DimensionVector
+              | string,
+          }
+        : {}),
+      ...(typeof obj.expectedKind === "string"
+        ? { expectedKind: obj.expectedKind }
+        : {}),
+      ...(typeof obj.description === "string"
+        ? { description: obj.description }
+        : {}),
+      ...(typeof obj.formulaVersion === "number"
+        ? { version: obj.formulaVersion }
+        : {}),
     },
     opts,
   );

@@ -73,12 +73,33 @@ describe("constant identity", () => {
 describe("registration conflicts", () => {
   it("rejects duplicate ids, symbols and aliases (no silent choice)", () => {
     const r = new ConstantRegistry({ name: "t", datasetVersion: "1" });
-    r.register({ id: "a", symbol: "a", value: 1, unit: "m", exact: true, source: "s" });
+    r.register({
+      id: "a",
+      symbol: "a",
+      value: 1,
+      unit: "m",
+      exact: true,
+      source: "s",
+    });
     expect(() =>
-      r.register({ id: "a", symbol: "b", value: 2, unit: "m", exact: true, source: "s" }),
+      r.register({
+        id: "a",
+        symbol: "b",
+        value: 2,
+        unit: "m",
+        exact: true,
+        source: "s",
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
-      r.register({ id: "b", symbol: "a", value: 2, unit: "m", exact: true, source: "s" }),
+      r.register({
+        id: "b",
+        symbol: "a",
+        value: 2,
+        unit: "m",
+        exact: true,
+        source: "s",
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
       r.register({
@@ -96,13 +117,34 @@ describe("registration conflicts", () => {
   it("rejects malformed definitions", () => {
     const r = new ConstantRegistry({ name: "t", datasetVersion: "1" });
     expect(() =>
-      r.register({ id: "bad id", symbol: "x", value: 1, unit: "m", exact: true, source: "s" }),
+      r.register({
+        id: "bad id",
+        symbol: "x",
+        value: 1,
+        unit: "m",
+        exact: true,
+        source: "s",
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
-      r.register({ id: "x", symbol: "x", value: 1, unit: "nope_xyz", exact: true, source: "s" }),
+      r.register({
+        id: "x",
+        symbol: "x",
+        value: 1,
+        unit: "nope_xyz",
+        exact: true,
+        source: "s",
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
-      r.register({ id: "x", symbol: "x", value: 1, unit: "m", exact: true, source: "" }),
+      r.register({
+        id: "x",
+        symbol: "x",
+        value: 1,
+        unit: "m",
+        exact: true,
+        source: "",
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
       r.register({
@@ -116,7 +158,14 @@ describe("registration conflicts", () => {
       }),
     ).toThrow(UnitEngineError); // exact + uncertainty
     expect(() =>
-      r.register({ id: "x", symbol: "x", value: 1, unit: "m", exact: false, source: "s" }),
+      r.register({
+        id: "x",
+        symbol: "x",
+        value: 1,
+        unit: "m",
+        exact: false,
+        source: "s",
+      }),
     ).toThrow(UnitEngineError); // inexact without uncertainty
     expect(() =>
       r.register({
@@ -130,7 +179,14 @@ describe("registration conflicts", () => {
       }),
     ).toThrow(UnitEngineError);
     expect(() =>
-      r.register({ id: "x", symbol: "x", value: NaN, unit: "m", exact: true, source: "s" }),
+      r.register({
+        id: "x",
+        symbol: "x",
+        value: NaN,
+        unit: "m",
+        exact: true,
+        source: "s",
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
       r.register({
@@ -147,10 +203,28 @@ describe("registration conflicts", () => {
   });
 
   it("enforces registry limits", () => {
-    const r = new ConstantRegistry({ name: "t", datasetVersion: "1", limits: { maxConstants: 1 } });
-    r.register({ id: "a", symbol: "a", value: 1, unit: "m", exact: true, source: "s" });
+    const r = new ConstantRegistry({
+      name: "t",
+      datasetVersion: "1",
+      limits: { maxConstants: 1 },
+    });
+    r.register({
+      id: "a",
+      symbol: "a",
+      value: 1,
+      unit: "m",
+      exact: true,
+      source: "s",
+    });
     expect(() =>
-      r.register({ id: "b", symbol: "b", value: 1, unit: "m", exact: true, source: "s" }),
+      r.register({
+        id: "b",
+        symbol: "b",
+        value: 1,
+        unit: "m",
+        exact: true,
+        source: "s",
+      }),
     ).toThrow(UnitEngineError);
   });
 });
@@ -161,8 +235,19 @@ describe("registration conflicts", () => {
 
 describe("namespaces and scopes", () => {
   it("namespaced lookup requires matching namespace", () => {
-    const r = new ConstantRegistry({ name: "t", namespace: "si", datasetVersion: "1" });
-    r.register({ id: "c", symbol: "c", value: 1, unit: "m/s", exact: true, source: "s" });
+    const r = new ConstantRegistry({
+      name: "t",
+      namespace: "si",
+      datasetVersion: "1",
+    });
+    r.register({
+      id: "c",
+      symbol: "c",
+      value: 1,
+      unit: "m/s",
+      exact: true,
+      source: "s",
+    });
     expect(r.require("si:c").id).toBe("c");
     expect(r.require("c").id).toBe("c");
     expect(() => r.require("other:c")).toThrow(UnitEngineError);
@@ -170,7 +255,11 @@ describe("namespaces and scopes", () => {
 
   it("child scopes shadow parents explicitly; snapshots detach", () => {
     const parent = testRegistry();
-    const child = new ConstantRegistry({ name: "app", datasetVersion: "app-1", parent });
+    const child = new ConstantRegistry({
+      name: "app",
+      datasetVersion: "app-1",
+      parent,
+    });
     // Child shadows c with an explicit override.
     child.register({
       id: "speedOfLight",
@@ -183,7 +272,9 @@ describe("namespaces and scopes", () => {
     expect(child.require("c").quantity.value).toBe(300000000);
     expect(parent.require("c").quantity.value).toBe(299792458);
     // Untouched names fall through to the parent.
-    expect(child.require("h").quantity.value).toBe(parent.require("h").quantity.value);
+    expect(child.require("h").quantity.value).toBe(
+      parent.require("h").quantity.value,
+    );
     // Snapshots detach: later parent changes are invisible.
     const snap = child.snapshot();
     expect(snap.require("c").quantity.value).toBe(300000000);
@@ -296,7 +387,9 @@ describe("serialization and versions", () => {
     const r = testRegistry();
     const json = JSON.stringify(serializeConstantRegistry(r));
     const siReg = createRegistry({ packs: [SI_PACK] });
-    const restored = deserializeConstantRegistry(JSON.parse(json), { units: siReg });
+    const restored = deserializeConstantRegistry(JSON.parse(json), {
+      units: siReg,
+    });
     expect(restored.size).toBe(r.size);
     expect(restored.require("c").quantity.value).toBe(299792458);
     expect(restored.datasetVersion).toBe(r.datasetVersion);
@@ -306,16 +399,18 @@ describe("serialization and versions", () => {
 
   it("rejects malformed registries and oversized payloads", () => {
     expect(() => deserializeConstantRegistry(null)).toThrow(UnitEngineError);
-    expect(() => deserializeConstantRegistry({ version: 2, type: "constant-registry" })).toThrow(
-      UnitEngineError,
-    );
+    expect(() =>
+      deserializeConstantRegistry({ version: 2, type: "constant-registry" }),
+    ).toThrow(UnitEngineError);
     expect(() =>
       deserializeConstantRegistry(
         JSON.parse('{"version":1,"type":"constant-registry","__proto__":{}}'),
       ),
     ).toThrow(UnitEngineError);
     expect(() =>
-      deserializeConstantRegistry("x".repeat(100), { limits: { maxSerializedChars: 10 } }),
+      deserializeConstantRegistry("x".repeat(100), {
+        limits: { maxSerializedChars: 10 },
+      }),
     ).toThrow(UnitEngineError);
     expect(() =>
       deserializeConstantRegistry({
@@ -323,7 +418,9 @@ describe("serialization and versions", () => {
         type: "constant-registry",
         name: "t",
         datasetVersion: "1",
-        constants: [{ version: 1, type: "scientific-constant", id: "a", symbol: "a" }],
+        constants: [
+          { version: 1, type: "scientific-constant", id: "a", symbol: "a" },
+        ],
       }),
     ).toThrow(UnitEngineError);
   });
@@ -343,7 +440,10 @@ describe("serialization and versions", () => {
     const payload = JSON.parse(JSON.stringify(serializeFormula(f)));
     expect(payload.constantRefs.c).toEqual({ id: "speedOfLight", version: 1 });
     // Same version resolves.
-    const ok = deserializeFormula(payload, { registry: siReg, constantRegistry: r });
+    const ok = deserializeFormula(payload, {
+      registry: siReg,
+      constantRegistry: r,
+    });
     expect(ok.id).toBe("emc2");
     // Newer registry version fails explicitly instead of silently recomputing.
     const newer = new ConstantRegistry({ name: "n", datasetVersion: "v2" });

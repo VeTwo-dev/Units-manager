@@ -6,7 +6,10 @@
  * A conversion is allowed only when BOTH layers permit it.
  */
 
-import { defaultNutrientKindRegistry, type NutrientKindRegistry } from "./nutrient-kind.js";
+import {
+  defaultNutrientKindRegistry,
+  type NutrientKindRegistry,
+} from "./nutrient-kind.js";
 import {
   IncompatibleNutrientError,
   UnknownNutrientError,
@@ -15,7 +18,11 @@ import {
 } from "./errors.js";
 
 export type SemanticMode = "strict" | "permissive";
-export type CompatibilityStatus = "compatible" | "incompatible" | "unknown" | "ambiguous";
+export type CompatibilityStatus =
+  | "compatible"
+  | "incompatible"
+  | "unknown"
+  | "ambiguous";
 
 export interface CompatibilityResult {
   readonly status: CompatibilityStatus;
@@ -82,7 +89,9 @@ export function checkNutrientCompatibility(
       mode,
       nutrientA,
       nutrientB,
-      reason: unknownA ? `unknown nutrient "${nutrientA}"` : `unknown nutrient "${nutrientB}"`,
+      reason: unknownA
+        ? `unknown nutrient "${nutrientA}"`
+        : `unknown nutrient "${nutrientB}"`,
       isCompatible: false,
     };
   }
@@ -105,7 +114,8 @@ export function checkNutrientCompatibility(
   // Different nutrients — check family membership is NOT equivalence
   const kindA = registry.require(nutrientA);
   const kindB = registry.require(nutrientB);
-  const sameFamily = kindA.family && kindB.family && kindA.family === kindB.family;
+  const sameFamily =
+    kindA.family && kindB.family && kindA.family === kindB.family;
   const reason = sameFamily
     ? `different nutrients "${canonicalA}" vs "${canonicalB}" (same family "${kindA.family}" but not interchangeable)`
     : `incompatible nutrients "${canonicalA}" vs "${canonicalB}"`;
@@ -139,7 +149,11 @@ export function assertNutrientCompatible(
       throw new UnknownNutrientError(result.nutrientA, result.reason);
     if (result.status === "ambiguous")
       throw new AmbiguousNutrientError(result.nutrientA, result.reason);
-    throw new IncompatibleNutrientError(result.nutrientA, result.nutrientB, result.reason);
+    throw new IncompatibleNutrientError(
+      result.nutrientA,
+      result.nutrientB,
+      result.reason,
+    );
   }
 }
 
@@ -168,6 +182,10 @@ export function assertCanConvert(
 ): void {
   const result = canConvert(fromNutrient, toNutrient, opts);
   if (!result.isCompatible) {
-    throw new UnsupportedSemanticConversionError(fromNutrient, toNutrient, result.reason);
+    throw new UnsupportedSemanticConversionError(
+      fromNutrient,
+      toNutrient,
+      result.reason,
+    );
   }
 }

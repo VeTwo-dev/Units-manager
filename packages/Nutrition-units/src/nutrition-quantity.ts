@@ -9,7 +9,11 @@
  */
 
 import { Quantity, type Unit } from "@vetwo/units";
-import { defaultBasisRegistry, type BasisRegistry, type BasisDefinition } from "./basis.js";
+import {
+  defaultBasisRegistry,
+  type BasisRegistry,
+  type BasisDefinition,
+} from "./basis.js";
 import {
   defaultNutrientKindRegistry,
   type NutrientKind,
@@ -77,7 +81,9 @@ export class NutritionQuantity {
     quantity: Quantity,
     nutrientId: string,
     basisId: string = "asFed",
-    opts: NutritionQuantityOptions & { metadata?: Readonly<Record<string, unknown>> } = {},
+    opts: NutritionQuantityOptions & {
+      metadata?: Readonly<Record<string, unknown>>;
+    } = {},
   ): NutritionQuantity {
     if (!(quantity instanceof Quantity)) {
       throw new InvalidNutritionQuantityError(
@@ -109,7 +115,9 @@ export class NutritionQuantity {
         opts.metadata === null ||
         Array.isArray(opts.metadata)
       ) {
-        throw new InvalidNutritionQuantityError("metadata must be a plain object if provided");
+        throw new InvalidNutritionQuantityError(
+          "metadata must be a plain object if provided",
+        );
       }
       const metaRecord = opts.metadata as Record<string, unknown>;
       if (
@@ -129,9 +137,16 @@ export class NutritionQuantity {
     unitSymbol: string,
     nutrientId: string,
     basisId: string = "asFed",
-    opts: NutritionQuantityOptions & { metadata?: Readonly<Record<string, unknown>> } = {},
+    opts: NutritionQuantityOptions & {
+      metadata?: Readonly<Record<string, unknown>>;
+    } = {},
   ): NutritionQuantity {
-    return NutritionQuantity.of(Quantity.of(value, unitSymbol), nutrientId, basisId, opts);
+    return NutritionQuantity.of(
+      Quantity.of(value, unitSymbol),
+      nutrientId,
+      basisId,
+      opts,
+    );
   }
 
   // -----------------------------------------------------------------------
@@ -144,7 +159,12 @@ export class NutritionQuantity {
     // basis stays the same semantic basis; unitBasis tag on the new unit
     // must still align (e.g. asFed stays bare, DM stays DM-tagged if present)
     validateBasisMatchesUnit(this.basis, converted.unit);
-    return new NutritionQuantity(converted, this.nutrient, this.basis, this.metadata);
+    return new NutritionQuantity(
+      converted,
+      this.nutrient,
+      this.basis,
+      this.metadata,
+    );
   }
 
   /** Change basis context (requires DM% — delegates to BasisConverter logic). */
@@ -170,8 +190,12 @@ export class NutritionQuantity {
    */
   convertBasis(
     targetBasisId: string,
-    context?: NutritionContext | { dryMatterFraction?: number; moistureFraction?: number },
-    opts: NutritionQuantityOptions & { metadata?: Readonly<Record<string, unknown>> } = {},
+    context?:
+      | NutritionContext
+      | { dryMatterFraction?: number; moistureFraction?: number },
+    opts: NutritionQuantityOptions & {
+      metadata?: Readonly<Record<string, unknown>>;
+    } = {},
   ): NutritionQuantity {
     const basisRegistry = opts.basisRegistry ?? defaultBasisRegistry;
     const targetBasis = basisRegistry.require(targetBasisId);
@@ -180,7 +204,8 @@ export class NutritionQuantity {
       !context ||
       (context.dryMatterFraction === undefined &&
         (context as NutritionContext).resolvedDryMatterFraction === undefined &&
-        (context as { moistureFraction?: number }).moistureFraction === undefined)
+        (context as { moistureFraction?: number }).moistureFraction ===
+          undefined)
     ) {
       throw new MissingNutritionContextError(targetBasisId);
     }
@@ -197,7 +222,10 @@ export class NutritionQuantity {
     // Supported conversions: asFed ↔ dryMatter, plus freshMatter/wet/normalized via DM logic
     const isDryLike = (id: string) => id === "drymatter";
     const isAsFedLike = (id: string) =>
-      id === "asfed" || id === "freshmatter" || id === "wet" || id === "normalized";
+      id === "asfed" ||
+      id === "freshmatter" ||
+      id === "wet" ||
+      id === "normalized";
 
     if (isDryLike(from) && isAsFedLike(to)) {
       newQuantity = this.quantity.scale(dmFraction);
@@ -212,9 +240,11 @@ export class NutritionQuantity {
         );
       }
     } else if (isAsFedLike(from) && isDryLike(to)) {
-      if (dmFraction === 0) throw new InvalidNutritionBasisError(targetBasisId, "dry matter is 0%");
+      if (dmFraction === 0)
+        throw new InvalidNutritionBasisError(targetBasisId, "dry matter is 0%");
       newQuantity = this.quantity.scale(1 / dmFraction);
-      const targetSymbol = `${stripBasisTag(this.quantity.unit.symbol, this.basis)} DM`.trim();
+      const targetSymbol =
+        `${stripBasisTag(this.quantity.unit.symbol, this.basis)} DM`.trim();
       try {
         newQuantity = newQuantity.to(targetSymbol);
       } catch {
@@ -247,7 +277,12 @@ export class NutritionQuantity {
       },
     };
 
-    return new NutritionQuantity(newQuantity, this.nutrient, targetBasis, Object.freeze(traceMeta));
+    return new NutritionQuantity(
+      newQuantity,
+      this.nutrient,
+      targetBasis,
+      Object.freeze(traceMeta),
+    );
   }
 
   /**
@@ -280,11 +315,17 @@ export class NutritionQuantity {
     });
   }
 
-  isCompatibleWith(other: NutritionQuantity, opts: { mode?: SemanticMode } = {}): boolean {
+  isCompatibleWith(
+    other: NutritionQuantity,
+    opts: { mode?: SemanticMode } = {},
+  ): boolean {
     return this.checkCompatibility(other, opts).isCompatible;
   }
 
-  canConvertTo(targetNutrientId: string, opts: { mode?: SemanticMode } = {}): CompatibilityResult {
+  canConvertTo(
+    targetNutrientId: string,
+    opts: { mode?: SemanticMode } = {},
+  ): CompatibilityResult {
     return checkNutrientCompatibility(this.nutrient.id, targetNutrientId, {
       mode: opts.mode ?? "strict",
     });
@@ -294,22 +335,40 @@ export class NutritionQuantity {
   // Arithmetic — semantic-aware (strict by default, permissive explicitly)
   // -----------------------------------------------------------------------
 
-  add(other: NutritionQuantity, opts: { mode?: SemanticMode } = {}): NutritionQuantity {
+  add(
+    other: NutritionQuantity,
+    opts: { mode?: SemanticMode } = {},
+  ): NutritionQuantity {
     assertSameNutrientAndBasis(this, other, "add", opts.mode);
     const result = this.quantity.add(other.quantity);
-    return new NutritionQuantity(result, this.nutrient, this.basis, this.metadata);
+    return new NutritionQuantity(
+      result,
+      this.nutrient,
+      this.basis,
+      this.metadata,
+    );
   }
 
-  subtract(other: NutritionQuantity, opts: { mode?: SemanticMode } = {}): NutritionQuantity {
+  subtract(
+    other: NutritionQuantity,
+    opts: { mode?: SemanticMode } = {},
+  ): NutritionQuantity {
     assertSameNutrientAndBasis(this, other, "subtract", opts.mode);
     const result = this.quantity.subtract(other.quantity);
-    return new NutritionQuantity(result, this.nutrient, this.basis, this.metadata);
+    return new NutritionQuantity(
+      result,
+      this.nutrient,
+      this.basis,
+      this.metadata,
+    );
   }
 
   /** Scale by a dimensionless factor (preserves semantics). */
   scale(factor: number): NutritionQuantity {
     if (!Number.isFinite(factor)) {
-      throw new InvalidNutritionQuantityError(`scale factor must be finite, got ${String(factor)}`);
+      throw new InvalidNutritionQuantityError(
+        `scale factor must be finite, got ${String(factor)}`,
+      );
     }
     return new NutritionQuantity(
       this.quantity.scale(factor),
@@ -320,7 +379,10 @@ export class NutritionQuantity {
   }
 
   /** Comparison safety — respects semantic identity. */
-  compare(other: NutritionQuantity, opts: { mode?: SemanticMode } = {}): number {
+  compare(
+    other: NutritionQuantity,
+    opts: { mode?: SemanticMode } = {},
+  ): number {
     assertSameNutrientAndBasis(this, other, "compare", opts.mode);
     // Use core Quantity comparison via base values
     const a = this.quantity.toBase().value;
@@ -356,7 +418,8 @@ export class NutritionQuantity {
     const basisSuffix = this.basis.unitBasis ? ` ${this.basis.unitBasis}` : "";
     // quantity unit already may include basis tag; avoid duplication
     const qStr = this.quantity.toString();
-    const needsBasis = this.basis.unitBasis && !qStr.includes(this.basis.unitBasis);
+    const needsBasis =
+      this.basis.unitBasis && !qStr.includes(this.basis.unitBasis);
     return `${qStr}${needsBasis ? basisSuffix : ""} [${this.nutrient.id}]`;
   }
 
@@ -368,7 +431,10 @@ export class NutritionQuantity {
   // Serialization
   // -----------------------------------------------------------------------
 
-  static fromJSON(data: unknown, opts: NutritionQuantityOptions = {}): NutritionQuantity {
+  static fromJSON(
+    data: unknown,
+    opts: NutritionQuantityOptions = {},
+  ): NutritionQuantity {
     return deserializeNutritionQuantity(data, opts);
   }
 }
@@ -386,7 +452,9 @@ export interface SerializedNutritionQuantity {
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
-export function serializeNutritionQuantity(nq: NutritionQuantity): SerializedNutritionQuantity {
+export function serializeNutritionQuantity(
+  nq: NutritionQuantity,
+): SerializedNutritionQuantity {
   if (!(nq instanceof NutritionQuantity)) {
     throw new InvalidNutritionQuantityError(
       "serializeNutritionQuantity expects a NutritionQuantity",
@@ -413,7 +481,9 @@ export function deserializeNutritionQuantity(
   opts: NutritionQuantityOptions = {},
 ): NutritionQuantity {
   if (!data || typeof data !== "object" || Array.isArray(data)) {
-    throw new InvalidNutritionQuantityError("serialized nutrition quantity must be a plain object");
+    throw new InvalidNutritionQuantityError(
+      "serialized nutrition quantity must be a plain object",
+    );
   }
   const record = data as Record<string, unknown>;
   if (
@@ -421,12 +491,18 @@ export function deserializeNutritionQuantity(
     Object.prototype.hasOwnProperty.call(record, "constructor") ||
     Object.prototype.hasOwnProperty.call(record, "prototype")
   ) {
-    throw new InvalidNutritionQuantityError("forbidden keys in serialized data");
+    throw new InvalidNutritionQuantityError(
+      "forbidden keys in serialized data",
+    );
   }
   if (record.version !== 1)
-    throw new InvalidNutritionQuantityError(`unsupported version ${String(record.version)}`);
+    throw new InvalidNutritionQuantityError(
+      `unsupported version ${String(record.version)}`,
+    );
   if (record.type !== "nutrition-quantity")
-    throw new InvalidNutritionQuantityError(`invalid type ${String(record.type)}`);
+    throw new InvalidNutritionQuantityError(
+      `invalid type ${String(record.type)}`,
+    );
   const q = record.quantity as { value?: unknown; unit?: unknown } | undefined;
   if (
     !q ||
@@ -434,10 +510,14 @@ export function deserializeNutritionQuantity(
     !Number.isFinite(q.value) ||
     typeof q.unit !== "string"
   ) {
-    throw new InvalidNutritionQuantityError("invalid quantity field in serialized data");
+    throw new InvalidNutritionQuantityError(
+      "invalid quantity field in serialized data",
+    );
   }
   if (typeof record.nutrient !== "string" || typeof record.basis !== "string") {
-    throw new InvalidNutritionQuantityError("nutrient and basis must be strings");
+    throw new InvalidNutritionQuantityError(
+      "nutrient and basis must be strings",
+    );
   }
   const kindRegistry = opts.kindRegistry ?? defaultNutrientKindRegistry;
   const basisRegistry = opts.basisRegistry ?? defaultBasisRegistry;
@@ -451,7 +531,9 @@ export function deserializeNutritionQuantity(
       record.metadata === null ||
       Array.isArray(record.metadata)
     ) {
-      throw new InvalidNutritionQuantityError("metadata must be a plain object if provided");
+      throw new InvalidNutritionQuantityError(
+        "metadata must be a plain object if provided",
+      );
     }
     const metaRecord = record.metadata as Record<string, unknown>;
     if (
@@ -481,7 +563,11 @@ function validateBasisMatchesUnit(basis: BasisDefinition, unit: Unit): void {
   // If the unit carries a basis tag, it must agree with the declared basis.
   // A bare unit (no tag) is accepted for any basis — the semantic context
   // is carried by NutritionQuantity.basis, not forced into the unit string.
-  if (actualTag !== undefined && expectedTag !== undefined && actualTag !== expectedTag) {
+  if (
+    actualTag !== undefined &&
+    expectedTag !== undefined &&
+    actualTag !== expectedTag
+  ) {
     throw new InvalidNutritionBasisError(
       basis.id,
       `quantity unit basis "${actualTag}" does not match NutritionQuantity basis "${basis.id}" (expected "${expectedTag}")`,
@@ -508,7 +594,9 @@ function assertSameNutrientAndBasis(
   op: string,
   mode: SemanticMode = "strict",
 ): void {
-  const result = checkNutrientCompatibility(a.nutrient.id, b.nutrient.id, { mode });
+  const result = checkNutrientCompatibility(a.nutrient.id, b.nutrient.id, {
+    mode,
+  });
   if (!result.isCompatible) {
     throw new IncompatibleNutrientError(
       a.nutrient.id,

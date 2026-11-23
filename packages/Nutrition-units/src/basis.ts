@@ -30,11 +30,14 @@ const BASIS_ID_PATTERN = /^[a-z][a-zA-Z0-9_-]*$/;
 const ALIAS_PATTERN = /^[a-zA-Z][a-zA-Z0-9._-]*$/;
 
 function assertDeclarative(value: unknown, owner: string, depth = 0): void {
-  if (depth > 4) throw new NutritionError(`${owner} metadata is nested too deeply`);
+  if (depth > 4)
+    throw new NutritionError(`${owner} metadata is nested too deeply`);
   if (value === null || value === undefined) return;
   const t = typeof value;
   if (t === "function" || t === "symbol")
-    throw new NutritionError(`${owner} metadata must not contain executable values`);
+    throw new NutritionError(
+      `${owner} metadata must not contain executable values`,
+    );
   if (t !== "object") return;
   if (Array.isArray(value)) {
     for (const item of value) assertDeclarative(item, owner, depth + 1);
@@ -76,10 +79,16 @@ export class BasisRegistry {
       Object.prototype.hasOwnProperty.call(record, "constructor") ||
       Object.prototype.hasOwnProperty.call(record, "prototype")
     ) {
-      throw new InvalidNutritionBasisError(String(def.id ?? "unknown"), "forbidden keys");
+      throw new InvalidNutritionBasisError(
+        String(def.id ?? "unknown"),
+        "forbidden keys",
+      );
     }
     if (typeof def.id !== "string" || !BASIS_ID_PATTERN.test(def.id)) {
-      throw new InvalidNutritionBasisError(String(def.id), `id must match ${BASIS_ID_PATTERN}`);
+      throw new InvalidNutritionBasisError(
+        String(def.id),
+        `id must match ${BASIS_ID_PATTERN}`,
+      );
     }
     const lowerId = def.id.toLowerCase();
     if (this.bases.has(lowerId)) {
@@ -90,19 +99,31 @@ export class BasisRegistry {
     }
     if (def.aliases !== undefined) {
       if (!Array.isArray(def.aliases))
-        throw new InvalidNutritionBasisError(def.id, "aliases must be an array");
+        throw new InvalidNutritionBasisError(
+          def.id,
+          "aliases must be an array",
+        );
       for (const alias of def.aliases) {
         if (typeof alias !== "string" || !ALIAS_PATTERN.test(alias)) {
-          throw new InvalidNutritionBasisError(def.id, `alias "${String(alias)}" invalid`);
+          throw new InvalidNutritionBasisError(
+            def.id,
+            `alias "${String(alias)}" invalid`,
+          );
         }
         const lowerAlias = alias.toLowerCase();
         if (this.aliasToId.has(lowerAlias) || this.bases.has(lowerAlias)) {
-          throw new InvalidNutritionBasisError(def.id, `alias "${alias}" collides`);
+          throw new InvalidNutritionBasisError(
+            def.id,
+            `alias "${alias}" collides`,
+          );
         }
       }
     }
     if (def.unitBasis !== undefined && typeof def.unitBasis !== "string") {
-      throw new InvalidNutritionBasisError(def.id, "unitBasis must be a string if provided");
+      throw new InvalidNutritionBasisError(
+        def.id,
+        "unitBasis must be a string if provided",
+      );
     }
     assertDeclarative(def.metadata, `Basis "${def.id}"`);
 
@@ -115,12 +136,14 @@ export class BasisRegistry {
     this.bases.set(lowerId, frozen);
     this.aliasToId.set(lowerId, lowerId);
     if (frozen.aliases) {
-      for (const alias of frozen.aliases) this.aliasToId.set(alias.toLowerCase(), lowerId);
+      for (const alias of frozen.aliases)
+        this.aliasToId.set(alias.toLowerCase(), lowerId);
     }
     // also map unitBasis tag if provided
     if (frozen.unitBasis) {
       const lowerUnitBasis = frozen.unitBasis.toLowerCase();
-      if (!this.aliasToId.has(lowerUnitBasis)) this.aliasToId.set(lowerUnitBasis, lowerId);
+      if (!this.aliasToId.has(lowerUnitBasis))
+        this.aliasToId.set(lowerUnitBasis, lowerId);
     }
   }
 
@@ -151,7 +174,8 @@ export class BasisRegistry {
   snapshot(): BasisRegistry {
     const snap = new BasisRegistry([]);
     for (const [id, def] of this.bases) snap.bases.set(id, def);
-    for (const [alias, canonical] of this.aliasToId) snap.aliasToId.set(alias, canonical);
+    for (const [alias, canonical] of this.aliasToId)
+      snap.aliasToId.set(alias, canonical);
     return snap;
   }
 

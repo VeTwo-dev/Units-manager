@@ -8,9 +8,17 @@
  */
 import { describe, expect, it } from "vitest";
 import { Quantity } from "@vetwo/units";
-import { renderDietReport, type DietLine } from "../src/examples/report-generator-example.js";
+import {
+  renderDietReport,
+  type DietLine,
+} from "../src/examples/report-generator-example.js";
 
-const line = (label: string, supplied: number, required: number, unit = "g/day"): DietLine => ({
+const line = (
+  label: string,
+  supplied: number,
+  required: number,
+  unit = "g/day",
+): DietLine => ({
   nutrientLabel: label,
   supplied: Quantity.of(supplied, unit),
   required: Quantity.of(required, unit),

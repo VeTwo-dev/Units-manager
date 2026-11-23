@@ -61,7 +61,11 @@ export const yardDef: AtomicUnitDef = {
   dimension: Dim.Length,
   toBaseFactor: YARD_PER_M,
   label: "yard",
-  metadata: { system: "Imperial", standard: "1959 agreement", category: "length" },
+  metadata: {
+    system: "Imperial",
+    standard: "1959 agreement",
+    category: "length",
+  },
 };
 
 export const mileDef: AtomicUnitDef = {
@@ -69,7 +73,11 @@ export const mileDef: AtomicUnitDef = {
   dimension: Dim.Length,
   toBaseFactor: MILE_PER_M,
   label: "mile",
-  metadata: { system: "Imperial", standard: "1959 agreement", category: "length" },
+  metadata: {
+    system: "Imperial",
+    standard: "1959 agreement",
+    category: "length",
+  },
 };
 
 export const ounceDef: AtomicUnitDef = {
@@ -77,7 +85,11 @@ export const ounceDef: AtomicUnitDef = {
   dimension: Dim.Mass,
   toBaseFactor: OUNCE_PER_KG,
   label: "ounce",
-  metadata: { system: "Imperial", standard: "1959 agreement", category: "mass" },
+  metadata: {
+    system: "Imperial",
+    standard: "1959 agreement",
+    category: "mass",
+  },
 };
 
 /** Shared speed/force/pressure definitions, identical in Imperial and US use. */
@@ -196,6 +208,7 @@ export const IMPERIAL_PACK: UnitPack = Object.freeze({
   } as Record<string, string>),
   metadata: Object.freeze({
     standard: "Imperial",
-    source: "International Yard and Pound Agreement (1959); UK Weights and Measures Act",
+    source:
+      "International Yard and Pound Agreement (1959); UK Weights and Measures Act",
   }),
 });

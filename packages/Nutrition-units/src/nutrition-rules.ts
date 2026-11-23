@@ -19,7 +19,10 @@ import {
   defaultCalculationRuleRegistry,
   type CalculationRuleRegistry,
 } from "@vetwo/units";
-import { defaultTargetUnitRegistry, type TargetUnitRegistry } from "./target-unit-registry.js";
+import {
+  defaultTargetUnitRegistry,
+  type TargetUnitRegistry,
+} from "./target-unit-registry.js";
 
 export const NUTRIENT_CONTRIBUTION_RULE = "nutrition.nutrientContribution";
 export const DIET_COST_RULE = "nutrition.dietCost";

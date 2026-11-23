@@ -8,7 +8,6 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@11.21.0",
   "dependencies": {
     "@vetwo/nutrition-units": "workspace:*",
     "@vetwo/units": "workspace:*"
@@ -22,9 +21,9 @@
     "verify": "pnpm run check-types && pnpm run lint && pnpm run test"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.9.0",
-    "vitest": "^4.1.10"
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -35,10 +35,12 @@ describe("validation example — validateRange", () => {
   });
 
   it("rejects dimension-mismatched bounds with a typed error", () => {
-    expect(() => validateRange(g(120), Quantity.of(100, "Mcal/day"), g(150))).toThrow(
-      DimensionError,
-    );
-    expect(() => validateRange(Quantity.of(5, "Mcal/day"), g(100), g(150))).toThrow(DimensionError);
+    expect(() =>
+      validateRange(g(120), Quantity.of(100, "Mcal/day"), g(150)),
+    ).toThrow(DimensionError);
+    expect(() =>
+      validateRange(Quantity.of(5, "Mcal/day"), g(100), g(150)),
+    ).toThrow(DimensionError);
   });
 
   it("boundary values are inclusive", () => {

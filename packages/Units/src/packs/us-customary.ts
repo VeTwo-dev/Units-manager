@@ -23,7 +23,15 @@
 import { defineDimension, Dim } from "../dimension.js";
 import type { AtomicUnitDef } from "../units/atomic-units.js";
 import type { UnitPack } from "../unit-system.js";
-import { yardDef, mileDef, ounceDef, mphDef, knotDef, lbfDef, psiDef } from "./imperial.js";
+import {
+  yardDef,
+  mileDef,
+  ounceDef,
+  mphDef,
+  knotDef,
+  lbfDef,
+  psiDef,
+} from "./imperial.js";
 
 // Exact: 1 US liquid gallon = 231 in³ = 231 × 0.0254³ m³ = 0.003785411784 m³
 const US_GALLON_PER_M3 = 0.003785411784;

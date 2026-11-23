@@ -189,7 +189,11 @@ describe("prompt18 §12: fluid mechanics", () => {
     const Q = Quantity.of(0.01, "m^2", r).multiply(Quantity.of(2, "m/s", r));
     close(Q.to("m^3/s", r).value, 0.02, 1e-12);
     // ṁ = ρQ = 20 kg/s.
-    close(Quantity.of(1000, "kg/m^3", r).multiply(Q).to("kg/s", r).value, 20, 1e-9);
+    close(
+      Quantity.of(1000, "kg/m^3", r).multiply(Q).to("kg/s", r).value,
+      20,
+      1e-9,
+    );
     // ΔP = ½ρv² = 0.5 × 1000 × 4 = 2000 Pa.
     const dP = Quantity.of(1000, "kg/m^3", r)
       .multiply(Quantity.of(2, "m/s", r).pow(2))
@@ -229,7 +233,11 @@ describe("prompt18 §12: optics, radiation, time, information", () => {
     close(act.to("MBq", rad2).value, 1000, 1e-12);
     // Time: 1 day = 86400 s; 2 h + 30 min = 9000 s.
     close(Quantity.of(1, "day").to("s").value, 86400, 1e-12);
-    close(Quantity.of(2, "h").add(Quantity.of(30, "min")).to("s").value, 9000, 1e-12);
+    close(
+      Quantity.of(2, "h").add(Quantity.of(30, "min")).to("s").value,
+      9000,
+      1e-12,
+    );
     // Information: 1 byte = 8 bit; 1 kB message = 8000 bit.
     const info = createRegistry({ packs: [INFORMATION_PACK] });
     close(Quantity.of(1, "byte", info).to("bit", info).value, 8, 1e-12);
@@ -246,12 +254,21 @@ describe("prompt18 §8: dimensionless identity parses", () => {
     const r = si();
     // The engine emits "(1)·(kg)"-style symbols (literal folding); they must
     // re-parse so serialization round-trips (Prompt-18 fix).
-    for (const text of ["1", "(1)", "1/m", "m/1", "1*m", "(1)·((kg)·((m/s)^2))"]) {
+    for (const text of [
+      "1",
+      "(1)",
+      "1/m",
+      "m/1",
+      "1*m",
+      "(1)·((kg)·((m/s)^2))",
+    ]) {
       const u = parseUnit(text, r);
       const again = parseUnit(u.symbol, r);
       expect(dimensionsEqual(again.dimension, u.dimension)).toBe(true);
     }
-    expect(dimensionsEqual(parseUnit("1", r).dimension, DIMENSIONLESS)).toBe(true);
+    expect(dimensionsEqual(parseUnit("1", r).dimension, DIMENSIONLESS)).toBe(
+      true,
+    );
     // Implicit multiplication applies uniformly: "1 m" is 1·m = m.
     expect(dimensionsEqual(parseUnit("1 m", r).dimension, { L: 1 })).toBe(true);
     // Anything else numeric still throws: no silent acceptance of "2/m",
@@ -275,7 +292,9 @@ describe("prompt18 §13: full subsystem chain", () => {
     const unit = parseUnit("kg*m/s^2", r);
     expect(dimensionsEqual(unit.dimension, { M: 1, L: 1, T: -2 })).toBe(true);
     // 2. Quantity → Conversion (weight = 9.8 m/s² × 10 kg = 98 N).
-    const weight = Quantity.of(9.8, "m/s^2", r).multiply(Quantity.of(10, "kg", r));
+    const weight = Quantity.of(9.8, "m/s^2", r).multiply(
+      Quantity.of(10, "kg", r),
+    );
     close(weight.to("N", r).value, 98, 1e-9);
     // 3. Formula with a standard constant.
     const E = Expression;
@@ -307,16 +326,24 @@ describe("prompt18 §13: full subsystem chain", () => {
     ]);
     close(series.mean().value.value, 9, 1e-12);
     // 6. Unit-system normalization preserves physics (10 m → 1000 cm).
-    const norm = normalizeToSystem(Quantity.of(10, "m", r), CGS_SYSTEM, { registry: r });
+    const norm = normalizeToSystem(Quantity.of(10, "m", r), CGS_SYSTEM, {
+      registry: r,
+    });
     expect(norm.unit.symbol).toBe("cm");
     close(norm.value, 1000, 1e-12);
     // 7. Serialization round-trip preserves value, unit and uncertainty
     // (decoders take the ambient registry explicitly — never ambient magic).
     const m = Measurement.of(ke, Quantity.of(0.5, "N*m", r));
-    const back = deserializeMeasurement(JSON.parse(JSON.stringify(serializeMeasurement(m))), r);
+    const back = deserializeMeasurement(
+      JSON.parse(JSON.stringify(serializeMeasurement(m))),
+      r,
+    );
     expect(back.value.exactEquals(m.value)).toBe(true);
     expect(back.uncertainty.exactEquals(m.uncertainty)).toBe(true);
-    const qback = deserializeQuantity(JSON.parse(JSON.stringify(serializeQuantity(ke))), r);
+    const qback = deserializeQuantity(
+      JSON.parse(JSON.stringify(serializeQuantity(ke))),
+      r,
+    );
     expect(qback.exactEquals(ke)).toBe(true);
   });
 });

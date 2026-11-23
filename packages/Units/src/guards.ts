@@ -6,7 +6,11 @@
  */
 import { Quantity } from "./quantity.js";
 import type { Unit } from "./unit.js";
-import { dimensionsEqual, isDimensionless, type DimensionVector } from "./dimension.js";
+import {
+  dimensionsEqual,
+  isDimensionless,
+  type DimensionVector,
+} from "./dimension.js";
 
 // ---------------------------------------------------------------------------
 // Helpers: plain object / pollution checks (local, no deps)
@@ -107,7 +111,8 @@ export function isSerializedQuantity(value: unknown): boolean {
   // Versioned shape: string values only allowed for special encodings
   const isValidValue =
     typeof obj.value === "number" ||
-    (typeof obj.value === "string" && ["NaN", "Infinity", "-Infinity", "-0"].includes(obj.value));
+    (typeof obj.value === "string" &&
+      ["NaN", "Infinity", "-Infinity", "-0"].includes(obj.value));
   return (
     obj.version === 1 &&
     obj.type === "quantity" &&
@@ -137,12 +142,18 @@ export function isRatioUnit(unit: Unit): boolean {
   return isDimensionless(unit.dimension);
 }
 
-export function isSameDimension(a: DimensionVector, b: DimensionVector): boolean {
+export function isSameDimension(
+  a: DimensionVector,
+  b: DimensionVector,
+): boolean {
   return dimensionsEqual(a, b);
 }
 
 export function isMoneyQuantity(q: Quantity): boolean {
-  return (q.unit.dimension.C ?? 0) !== 0 && Object.keys(q.unit.dimension).length === 1;
+  return (
+    (q.unit.dimension.C ?? 0) !== 0 &&
+    Object.keys(q.unit.dimension).length === 1
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +173,8 @@ const EXPRESSION_KINDS = new Set([
 
 /** Structural guard for Expression AST nodes (frozen or plain, any realm). */
 export function isExpression(value: unknown): boolean {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    return false;
   const obj = value as Record<string, unknown>;
   if (hasOwnPollutionKeys(obj)) return false;
   return typeof obj.kind === "string" && EXPRESSION_KINDS.has(obj.kind);
@@ -173,7 +185,9 @@ export function isSerializedExpression(value: unknown): boolean {
   if (!isPlainObject(value as Record<string, unknown>)) return false;
   const obj = value as Record<string, unknown>;
   if (hasOwnPollutionKeys(obj)) return false;
-  return obj.version === 1 && obj.type === "expression" && obj.root !== undefined;
+  return (
+    obj.version === 1 && obj.type === "expression" && obj.root !== undefined
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -186,11 +200,13 @@ export function isSerializedExpression(value: unknown): boolean {
  * shapes without trusting prototypes.
  */
 export function isMeasurement(value: unknown): boolean {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    return false;
   const obj = value as Record<string, unknown>;
   if (hasOwnPollutionKeys(obj)) return false;
   if (typeof obj.value !== "object" || obj.value === null) return false;
-  if (typeof obj.uncertainty !== "object" || obj.uncertainty === null) return false;
+  if (typeof obj.uncertainty !== "object" || obj.uncertainty === null)
+    return false;
   const v = obj.value as Record<string, unknown>;
   const u = obj.uncertainty as Record<string, unknown>;
   if (hasOwnPollutionKeys(v) || hasOwnPollutionKeys(u)) return false;
@@ -213,7 +229,8 @@ export function isSerializedMeasurement(value: unknown): boolean {
   const obj = value as Record<string, unknown>;
   if (hasOwnPollutionKeys(obj)) return false;
   if (obj.version !== 1 || obj.type !== "measurement") return false;
-  if (!isPlainObject(obj.value) || !isPlainObject(obj.uncertainty)) return false;
+  if (!isPlainObject(obj.value) || !isPlainObject(obj.uncertainty))
+    return false;
   if (
     hasOwnPollutionKeys(obj.value as Record<string, unknown>) ||
     hasOwnPollutionKeys(obj.uncertainty as Record<string, unknown>)

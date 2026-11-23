@@ -39,8 +39,16 @@ const m = (v: number, u: number): Measurement =>
 describe("combineUncertainties", () => {
   it("root-sum-squares independent components", () => {
     const u = combineUncertainties([
-      { id: "repeatability", type: "A", standardUncertainty: Quantity.of(3, "g") },
-      { id: "calibration", type: "B", standardUncertainty: Quantity.of(4, "g") },
+      {
+        id: "repeatability",
+        type: "A",
+        standardUncertainty: Quantity.of(3, "g"),
+      },
+      {
+        id: "calibration",
+        type: "B",
+        standardUncertainty: Quantity.of(4, "g"),
+      },
     ]);
     expect(u.value).toBeCloseTo(5, 12);
     expect(u.unit.symbol).toBe("g");
@@ -68,22 +76,33 @@ describe("combineUncertainties", () => {
     const kgU = { id: "b", standardUncertainty: Quantity.of(1, "kg") };
     expect(() => combineUncertainties([])).toThrow(InvalidMeasurementError);
     expect(() =>
-      combineUncertainties([g, { id: "c", standardUncertainty: Quantity.of(1, "m") }]),
+      combineUncertainties([
+        g,
+        { id: "c", standardUncertainty: Quantity.of(1, "m") },
+      ]),
     ).toThrow(InvalidMeasurementError);
     expect(() => combineUncertainties([g, kgU])).not.toThrow(); // same dimension, mixed units OK
     expect(() =>
-      combineUncertainties([g, { id: "b", standardUncertainty: Quantity.of(1, "g") }], {
-        correlations: [{ idA: "a", idB: "b", coefficient: 2 }],
-      }),
+      combineUncertainties(
+        [g, { id: "b", standardUncertainty: Quantity.of(1, "g") }],
+        {
+          correlations: [{ idA: "a", idB: "b", coefficient: 2 }],
+        },
+      ),
     ).toThrow(InvalidMeasurementError);
     expect(() =>
-      combineUncertainties([g, { id: "b", standardUncertainty: Quantity.of(1, "g") }], {
-        correlations: [{ idA: "a", idB: "zzz", coefficient: 0 }],
-      }),
+      combineUncertainties(
+        [g, { id: "b", standardUncertainty: Quantity.of(1, "g") }],
+        {
+          correlations: [{ idA: "a", idB: "zzz", coefficient: 0 }],
+        },
+      ),
     ).toThrow(InvalidMeasurementError);
     expect(() => combineUncertainties([g, g])).toThrow(InvalidMeasurementError);
     expect(() =>
-      combineUncertainties([{ id: "x", standardUncertainty: Quantity.of(-1, "g") }]),
+      combineUncertainties([
+        { id: "x", standardUncertainty: Quantity.of(-1, "g") },
+      ]),
     ).toThrow(InvalidMeasurementError);
   });
 
@@ -122,20 +141,24 @@ describe("CovarianceMatrix", () => {
     );
     expect(cov.correlation("a", "b")).toBeCloseTo(0.5, 12);
     // Dimension mismatch across entries throws.
-    expect(() => CovarianceMatrix.fromMeasurements([m(1, 0.1), kg(1, 0.1)] as never)).toThrow(
-      InvalidMeasurementError,
-    );
+    expect(() =>
+      CovarianceMatrix.fromMeasurements([m(1, 0.1), kg(1, 0.1)] as never),
+    ).toThrow(InvalidMeasurementError);
   });
 
   it("rejects non-square, asymmetric, negative-variance, non-PSD input", () => {
-    expect(() => CovarianceMatrix.fromData(["x"], "m", [[1, 2]])).toThrow(InvalidMeasurementError);
+    expect(() => CovarianceMatrix.fromData(["x"], "m", [[1, 2]])).toThrow(
+      InvalidMeasurementError,
+    );
     expect(() =>
       CovarianceMatrix.fromData(["x", "y"], "m", [
         [1, 0.5],
         [0.6, 1],
       ]),
     ).toThrow(InvalidMeasurementError);
-    expect(() => CovarianceMatrix.fromData(["x"], "m", [[-1]])).toThrow(InvalidMeasurementError);
+    expect(() => CovarianceMatrix.fromData(["x"], "m", [[-1]])).toThrow(
+      InvalidMeasurementError,
+    );
     // Correlation 0.99 with these variances is PSD; 2.0 coefficient rejected earlier.
     // Non-PSD: variances 1,1 with covariance 2.
     expect(() =>
@@ -145,8 +168,12 @@ describe("CovarianceMatrix", () => {
       ]),
     ).toThrow(InvalidMeasurementError);
     // Affine units have no covariance scale.
-    expect(() => CovarianceMatrix.fromData(["t"], "°C", [[1]])).toThrow(InvalidMeasurementError);
-    expect(() => CovarianceMatrix.fromData(["t"], "nope", [[1]])).toThrow(InvalidMeasurementError);
+    expect(() => CovarianceMatrix.fromData(["t"], "°C", [[1]])).toThrow(
+      InvalidMeasurementError,
+    );
+    expect(() => CovarianceMatrix.fromData(["t"], "nope", [[1]])).toThrow(
+      InvalidMeasurementError,
+    );
   });
 
   it("zero-variance rows must be uncorrelated", () => {
@@ -171,16 +198,25 @@ describe("CovarianceMatrix", () => {
     const json = JSON.stringify(cov.serialize());
     const back = CovarianceMatrix.deserialize(JSON.parse(json));
     expect(JSON.stringify(back.serialize())).toBe(json);
-    expect(back.correlation("x", "y")).toBeCloseTo(cov.correlation("x", "y"), 12);
-    expect(() => CovarianceMatrix.deserialize({ version: 2 })).toThrow(InvalidMeasurementError);
-    expect(() => CovarianceMatrix.deserialize("not json{[")).toThrow(InvalidMeasurementError);
+    expect(back.correlation("x", "y")).toBeCloseTo(
+      cov.correlation("x", "y"),
+      12,
+    );
+    expect(() => CovarianceMatrix.deserialize({ version: 2 })).toThrow(
+      InvalidMeasurementError,
+    );
+    expect(() => CovarianceMatrix.deserialize("not json{[")).toThrow(
+      InvalidMeasurementError,
+    );
   });
 
   it("enforces size limits", () => {
     const labels = Array.from({ length: 5 }, (_, i) => `x${i}`);
     const eye = labels.map((_, i) => labels.map((_, j) => (i === j ? 1 : 0)));
     expect(() =>
-      CovarianceMatrix.fromData(labels, "m", eye, { limits: { maxMatrixDimension: 2 } }),
+      CovarianceMatrix.fromData(labels, "m", eye, {
+        limits: { maxMatrixDimension: 2 },
+      }),
     ).toThrow(InvalidMeasurementError);
   });
 });
@@ -228,15 +264,21 @@ describe("MeasurementSeries", () => {
     // Inverse-variance: w = 100, 25, 100/9 → mean = (100+50+100/3)/(225+25/9…)
     const iv = s.weightedMean("inverse-variance");
     const w = [100, 25, 100 / 9];
-    const expected = (100 * 1 + 25 * 2 + (100 / 9) * 3) / w.reduce((a, b) => a + b, 0);
+    const expected =
+      (100 * 1 + 25 * 2 + (100 / 9) * 3) / w.reduce((a, b) => a + b, 0);
     expect(iv.value.value).toBeCloseTo(expected, 12);
-    expect(iv.uncertainty.value).toBeCloseTo(1 / Math.sqrt(w.reduce((a, b) => a + b, 0)), 12);
+    expect(iv.uncertainty.value).toBeCloseTo(
+      1 / Math.sqrt(w.reduce((a, b) => a + b, 0)),
+      12,
+    );
     expect(() => s.weightedMean([1, 2])).toThrow(InvalidMeasurementError);
     expect(() => s.weightedMean([0, 0, 0])).toThrow(InvalidMeasurementError);
     expect(() => s.weightedMean([-1, 1, 1])).toThrow(InvalidMeasurementError);
     // Zero uncertainty breaks inverse-variance explicitly.
     const exact = MeasurementSeries.of([m(1, 0), m(2, 0.1)]);
-    expect(() => exact.weightedMean("inverse-variance")).toThrow(InvalidMeasurementError);
+    expect(() => exact.weightedMean("inverse-variance")).toThrow(
+      InvalidMeasurementError,
+    );
   });
 
   it("min/max return original observations; summaries are deterministic", () => {
@@ -251,23 +293,27 @@ describe("MeasurementSeries", () => {
 
   it("rejects mixed dimensions and bad construction", () => {
     expect(() => MeasurementSeries.of([])).toThrow(InvalidMeasurementError);
-    expect(() => MeasurementSeries.of([m(1, 0.1), kg(1, 0.1)] as never)).toThrow(
-      InvalidMeasurementError,
-    );
-    expect(() => MeasurementSeries.of([m(1, 0.1)], { targetUnit: "kg" })).toThrow(
-      InvalidMeasurementError,
-    );
-    expect(() => MeasurementSeries.of([m(1, 0.1)], { targetUnit: "°C" })).toThrow(
-      InvalidMeasurementError,
-    );
+    expect(() =>
+      MeasurementSeries.of([m(1, 0.1), kg(1, 0.1)] as never),
+    ).toThrow(InvalidMeasurementError);
+    expect(() =>
+      MeasurementSeries.of([m(1, 0.1)], { targetUnit: "kg" }),
+    ).toThrow(InvalidMeasurementError);
+    expect(() =>
+      MeasurementSeries.of([m(1, 0.1)], { targetUnit: "°C" }),
+    ).toThrow(InvalidMeasurementError);
   });
 
   it("series serialization round-trips", () => {
     const s = series();
-    const back = MeasurementSeries.deserialize(JSON.parse(JSON.stringify(s.serialize())));
+    const back = MeasurementSeries.deserialize(
+      JSON.parse(JSON.stringify(s.serialize())),
+    );
     expect(back.count).toBe(3);
     expect(back.mean().value.value).toBeCloseTo(2, 12);
-    expect(() => MeasurementSeries.deserialize({ version: 9 })).toThrow(InvalidMeasurementError);
+    expect(() => MeasurementSeries.deserialize({ version: 9 })).toThrow(
+      InvalidMeasurementError,
+    );
   });
 
   it("property: mean(x,x,x)=x and std(x,x,x)=0", () => {
@@ -287,18 +333,23 @@ describe("intervals", () => {
     const u = expandUncertainty(Quantity.of(0.5, "m"), 2);
     expect(u.value).toBe(1);
     expect(u.unit.symbol).toBe("m");
-    expect(() => expandUncertainty(Quantity.of(1, "m"), 0)).toThrow(InvalidMeasurementError);
+    expect(() => expandUncertainty(Quantity.of(1, "m"), 0)).toThrow(
+      InvalidMeasurementError,
+    );
   });
 
   it("physical vs confidence intervals stay distinct types", () => {
-    const physical = makeMeasurementInterval(Quantity.of(5, "m"), Quantity.of(7, "m"));
+    const physical = makeMeasurementInterval(
+      Quantity.of(5, "m"),
+      Quantity.of(7, "m"),
+    );
     expect(physical.lower.value).toBe(5);
-    expect(() => makeMeasurementInterval(Quantity.of(7, "m"), Quantity.of(5, "m"))).toThrow(
-      InvalidMeasurementError,
-    );
-    expect(() => makeMeasurementInterval(Quantity.of(5, "m"), Quantity.of(7, "s"))).toThrow(
-      InvalidMeasurementError,
-    );
+    expect(() =>
+      makeMeasurementInterval(Quantity.of(7, "m"), Quantity.of(5, "m")),
+    ).toThrow(InvalidMeasurementError);
+    expect(() =>
+      makeMeasurementInterval(Quantity.of(5, "m"), Quantity.of(7, "s")),
+    ).toThrow(InvalidMeasurementError);
     const ci = makeConfidenceBounds({
       lower: Quantity.of(5, "m"),
       upper: Quantity.of(7, "m"),
@@ -308,7 +359,11 @@ describe("intervals", () => {
     });
     expect(ci.level).toBe(0.95);
     expect(() =>
-      makeConfidenceBounds({ lower: Quantity.of(5, "m"), upper: Quantity.of(7, "m"), level: 2 }),
+      makeConfidenceBounds({
+        lower: Quantity.of(5, "m"),
+        upper: Quantity.of(7, "m"),
+        level: 2,
+      }),
     ).toThrow(InvalidMeasurementError);
     // confidenceBoundsOf derives symmetric bounds from k·u.
     const from = confidenceBoundsOf(m(10, 0.5), 2, 0.95);
@@ -331,7 +386,9 @@ describe("intervals", () => {
     const phys = deserializeInterval(
       JSON.parse(
         JSON.stringify(
-          serializeInterval(makeMeasurementInterval(Quantity.of(1, "m"), Quantity.of(2, "m"))),
+          serializeInterval(
+            makeMeasurementInterval(Quantity.of(1, "m"), Quantity.of(2, "m")),
+          ),
         ),
       ),
     );
@@ -358,7 +415,10 @@ describe("propagation", () => {
   });
 
   it("propagateWithCovariance matches quadrature for independent inputs", () => {
-    const expr = Expression.add(Expression.variable("a"), Expression.variable("b"));
+    const expr = Expression.add(
+      Expression.variable("a"),
+      Expression.variable("b"),
+    );
     const bindings = { a: m(10, 0.3), b: m(5, 0.4) };
     const cov = CovarianceMatrix.fromMeasurements(bindings);
     const r = propagateWithCovariance(expr, bindings, cov);
@@ -367,7 +427,10 @@ describe("propagation", () => {
   });
 
   it("propagateWithCovariance honors correlations (fully correlated subtract cancels)", () => {
-    const expr = Expression.subtract(Expression.variable("a"), Expression.variable("b"));
+    const expr = Expression.subtract(
+      Expression.variable("a"),
+      Expression.variable("b"),
+    );
     const bindings = { a: m(10, 0.3), b: m(4, 0.3) };
     const indep = propagateWithCovariance(
       expr,
@@ -396,7 +459,10 @@ describe("propagation", () => {
     );
     expect(prod.value.toBase().value).toBeCloseTo(50, 9);
     const direct = bindings.a.multiply(bindings.b);
-    expect(prod.uncertainty.toBase().value).toBeCloseTo(direct.uncertainty.toBase().value, 6);
+    expect(prod.uncertainty.toBase().value).toBeCloseTo(
+      direct.uncertainty.toBase().value,
+      6,
+    );
     const pw = propagateWithCovariance(
       Expression.power(Expression.variable("a"), 2),
       bindings,
@@ -412,7 +478,11 @@ describe("propagation", () => {
     const bindings = { a: m(4, 0.1) };
     const cov = CovarianceMatrix.fromMeasurements(bindings);
     expect(() =>
-      propagateWithCovariance(Expression.call("sqrt", [Expression.variable("a")]), bindings, cov),
+      propagateWithCovariance(
+        Expression.call("sqrt", [Expression.variable("a")]),
+        bindings,
+        cov,
+      ),
     ).toThrow(UnsupportedTransformationError);
     expect(() =>
       propagateWithCovariance(
@@ -422,19 +492,26 @@ describe("propagation", () => {
       ),
     ).toThrow(InvalidMeasurementError);
     expect(() =>
-      propagateWithCovariance(Expression.variable("a"), { a: Quantity.of(1, "m") } as never, cov),
+      propagateWithCovariance(
+        Expression.variable("a"),
+        { a: Quantity.of(1, "m") } as never,
+        cov,
+      ),
     ).toThrow(InvalidMeasurementError);
   });
 
   it("dimension mismatch in bindings is rejected, not silently propagated", () => {
-    const expr = Expression.add(Expression.variable("a"), Expression.variable("b"));
+    const expr = Expression.add(
+      Expression.variable("a"),
+      Expression.variable("b"),
+    );
     const cov = CovarianceMatrix.fromData(["a", "b"], "m", [
       [0.01, 0],
       [0, 0.01],
     ]);
-    expect(() => propagateWithCovariance(expr, { a: m(1, 0.1), b: kg(1, 0.1) }, cov)).toThrow(
-      UnitMismatchError,
-    );
+    expect(() =>
+      propagateWithCovariance(expr, { a: m(1, 0.1), b: kg(1, 0.1) }, cov),
+    ).toThrow(UnitMismatchError);
   });
 });
 
@@ -472,7 +549,9 @@ describe("MeasurementDataset", () => {
     expect(() => ds.select(["nope"])).toThrow(InvalidMeasurementError);
     const normed = ds.normalize({ distance: "km" });
     expect(normed.variables.distance!.mean().value.value).toBeCloseTo(0.15, 12);
-    expect(normed.variables.distance!.originals[0]!.value.unit.symbol).toBe("m");
+    expect(normed.variables.distance!.originals[0]!.value.unit.symbol).toBe(
+      "m",
+    );
     const summary = ds.summarize();
     expect(summary.distance!.count).toBe(2);
     expect(summary.time!.mean.value.value).toBeCloseTo(15, 12);
@@ -482,7 +561,10 @@ describe("MeasurementDataset", () => {
     const ds = dataset();
     const velocity = defineFormula({
       id: "velocity",
-      expression: Expression.divide(Expression.variable("distance"), Expression.variable("time")),
+      expression: Expression.divide(
+        Expression.variable("distance"),
+        Expression.variable("time"),
+      ),
       inputs: { distance: { dimension: "m" }, time: { dimension: "s" } },
       outputName: "velocity",
     });
@@ -498,9 +580,9 @@ describe("MeasurementDataset", () => {
     const bare = ds.applyFormula(velocity, { provenance: "none" });
     expect(bare.observations[0]!.provenance).toBeUndefined();
     // Mapping + unknown variables fail explicitly.
-    expect(() => ds.applyFormula(velocity, { mapping: { distance: "nope" } })).toThrow(
-      InvalidMeasurementError,
-    );
+    expect(() =>
+      ds.applyFormula(velocity, { mapping: { distance: "nope" } }),
+    ).toThrow(InvalidMeasurementError);
   });
 
   it("serializes deterministically with round-trip", () => {
@@ -509,7 +591,9 @@ describe("MeasurementDataset", () => {
     const back = MeasurementDataset.deserialize(JSON.parse(json));
     expect(JSON.stringify(back.serialize())).toBe(json);
     expect(back.observationCount).toBe(2);
-    expect(() => MeasurementDataset.deserialize({ version: 2 })).toThrow(InvalidMeasurementError);
+    expect(() => MeasurementDataset.deserialize({ version: 2 })).toThrow(
+      InvalidMeasurementError,
+    );
   });
 
   it("enforces limits", () => {

@@ -36,7 +36,11 @@ describe("phase7 — physical vs semantic compatibility", () => {
 
   it("semantic identity via canonical id, aliases resolve", () => {
     const cp1 = NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed");
-    const cp2 = NutritionQuantity.of(Quantity.of(10, "g/kg"), "nutrient:crude-protein", "asFed");
+    const cp2 = NutritionQuantity.of(
+      Quantity.of(10, "g/kg"),
+      "nutrient:crude-protein",
+      "asFed",
+    );
     expect(cp1.nutrient.id).toBe(cp2.nutrient.id);
     expect(cp1.isCompatibleWith(cp2)).toBe(true);
   });
@@ -57,9 +61,13 @@ describe("phase7 — physical vs semantic compatibility", () => {
     // strict: different nutrients incompatible
     expect(isNutrientCompatible("cp", "ca", { mode: "strict" })).toBe(false);
     // permissive: still incompatible (different known nutrients)
-    expect(isNutrientCompatible("cp", "ca", { mode: "permissive" })).toBe(false);
+    expect(isNutrientCompatible("cp", "ca", { mode: "permissive" })).toBe(
+      false,
+    );
     // permissive with unknown → unknown, not compatible
-    const r = checkNutrientCompatibility("cp", "unknown_xyz_999", { mode: "permissive" });
+    const r = checkNutrientCompatibility("cp", "unknown_xyz_999", {
+      mode: "permissive",
+    });
     expect(r.status).toBe("unknown");
     // deterministic
     expect(checkNutrientCompatibility("cp", "ca", { mode: "strict" })).toEqual(
@@ -74,8 +82,16 @@ describe("phase7 — physical vs semantic compatibility", () => {
     expect(ca.nutrient.family).toBe("mineral");
     expect(p.nutrient.family).toBe("mineral");
     expect(ca.isCompatibleWith(p)).toBe(false);
-    const vitA = NutritionQuantity.of(Quantity.of(10, "IU/kg"), "vitA", "asFed");
-    const vitD = NutritionQuantity.of(Quantity.of(10, "IU/kg"), "vitD", "asFed");
+    const vitA = NutritionQuantity.of(
+      Quantity.of(10, "IU/kg"),
+      "vitA",
+      "asFed",
+    );
+    const vitD = NutritionQuantity.of(
+      Quantity.of(10, "IU/kg"),
+      "vitD",
+      "asFed",
+    );
     expect(vitA.nutrient.family).toBe("vitamin");
     expect(vitD.nutrient.family).toBe("vitamin");
     expect(vitA.isCompatibleWith(vitD)).toBe(false);
@@ -99,25 +115,45 @@ describe("phase7 — physical vs semantic compatibility", () => {
 
   it("molar semantic safety: requires chemical identity", () => {
     const si = createRegistry({ packs: [SI_PACK] });
-    const caMol = NutritionQuantity.of(Quantity.of(10, "mmol/kg", si), "ca", "asFed");
+    const caMol = NutritionQuantity.of(
+      Quantity.of(10, "mmol/kg", si),
+      "ca",
+      "asFed",
+    );
     expect(caMol.nutrient.id).toBe("ca");
     // cp with molar unit is allowed structurally (family), but conversion without molar mass throws
-    expect(() => NutritionQuantity.of(Quantity.of(10, "mmol/kg", si), "cp", "asFed")).not.toThrow();
-    expect(() => convertMolarToMass(Quantity.of(10, "mmol/kg", si), "cp")).toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "mmol/kg", si), "cp", "asFed"),
+    ).not.toThrow();
+    expect(() =>
+      convertMolarToMass(Quantity.of(10, "mmol/kg", si), "cp"),
+    ).toThrow();
   });
 
   it("unit compatibility: cp+g/kg valid, cp+MJ/kg rejected, me+MJ/kg valid, me+mg/kg rejected", () => {
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed")).not.toThrow();
-    expect(() => NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "cp", "asFed")).toThrow();
-    expect(() => NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "me", "asFed")).not.toThrow();
-    expect(() => NutritionQuantity.of(Quantity.of(10, "mg/kg"), "me", "asFed")).toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed"),
+    ).not.toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "cp", "asFed"),
+    ).toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "me", "asFed"),
+    ).not.toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "mg/kg"), "me", "asFed"),
+    ).toThrow();
   });
 
   it("typed errors and diagnostics", () => {
     const r = checkNutrientCompatibility("ca", "cp");
     expect(r.reason).toContain("incompatible");
-    expect(() => assertNutrientCompatible("ca", "cp")).toThrow(IncompatibleNutrientError);
-    expect(() => assertNutrientCompatible("unknown_xyz_999", "cp")).toThrow(UnknownNutrientError);
+    expect(() => assertNutrientCompatible("ca", "cp")).toThrow(
+      IncompatibleNutrientError,
+    );
+    expect(() => assertNutrientCompatible("unknown_xyz_999", "cp")).toThrow(
+      UnknownNutrientError,
+    );
     // canConvert API
     expect(canConvert("cp", "cp").isCompatible).toBe(true);
     expect(canConvert("cp", "ca").isCompatible).toBe(false);
@@ -194,37 +230,54 @@ describe("phase8 — metadata model", () => {
       createNutritionMetadata({ provenance: { sourceId: "bad id!" } as never }),
     ).toThrow();
     expect(() =>
-      createNutritionMetadata({ sample: { collectionTimestamp: "not-iso" } as never }),
-    ).toThrow();
-    expect(() => createNutritionMetadata({ qualityFlag: "unknown-flag" as never })).toThrow();
-    expect(() =>
       createNutritionMetadata({
-        detectionLimits: { limitOfDetection: { value: NaN, unit: "g" } } as never,
+        sample: { collectionTimestamp: "not-iso" } as never,
       }),
     ).toThrow();
     expect(() =>
-      createNutritionMetadata(JSON.parse('{"__proto__":{"polluted":true}}') as never),
+      createNutritionMetadata({ qualityFlag: "unknown-flag" as never }),
+    ).toThrow();
+    expect(() =>
+      createNutritionMetadata({
+        detectionLimits: {
+          limitOfDetection: { value: NaN, unit: "g" },
+        } as never,
+      }),
+    ).toThrow();
+    expect(() =>
+      createNutritionMetadata(
+        JSON.parse('{"__proto__":{"polluted":true}}') as never,
+      ),
     ).toThrow();
   });
 
   it("timestamps must be ISO 8601", () => {
     expect(() =>
-      createNutritionMetadata({ provenance: { timestamp: "2026-01-01" } as never }),
+      createNutritionMetadata({
+        provenance: { timestamp: "2026-01-01" } as never,
+      }),
     ).toThrow();
     expect(
-      createNutritionMetadata({ provenance: { timestamp: "2026-01-01T00:00:00.000Z" } }).provenance
-        ?.timestamp,
+      createNutritionMetadata({
+        provenance: { timestamp: "2026-01-01T00:00:00.000Z" },
+      }).provenance?.timestamp,
     ).toBe("2026-01-01T00:00:00.000Z");
   });
 
   it("immutable — nested cannot be mutated", () => {
     const meta = createNutritionMetadata({ sample: { sampleId: "S1" } });
     expect(Object.isFrozen(meta.sample!)).toBe(true);
-    expect(() => ((meta.sample as unknown as Record<string, unknown>).sampleId = "HACK")).toThrow();
+    expect(
+      () =>
+        ((meta.sample as unknown as Record<string, unknown>).sampleId = "HACK"),
+    ).toThrow();
   });
 
   it("NutritionQuantity metadata preserved through conversion and serialization", () => {
-    const meta = createNutritionMetadata({ sample: { sampleId: "S-100" }, method: { id: "M1" } });
+    const meta = createNutritionMetadata({
+      sample: { sampleId: "S-100" },
+      method: { id: "M1" },
+    });
     const nq = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed", {
       metadata: meta as unknown as Record<string, unknown>,
     });
@@ -240,19 +293,25 @@ describe("phase8 — metadata model", () => {
     const nq = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
     const ctx = createNutritionContext({ dryMatterFraction: 0.88 });
     const dm = nq.convertBasis("dryMatter", ctx);
-    expect((dm.metadata as unknown as Record<string, unknown>).conversion).toBeDefined();
+    expect(
+      (dm.metadata as unknown as Record<string, unknown>).conversion,
+    ).toBeDefined();
   });
 
   it("unknown metadata fields preserved safely without pollution", () => {
-    const meta = createNutritionMetadata({ custom: { unknownField: "keep-me", nested: { a: 1 } } });
-    expect((meta.custom as Record<string, unknown>).unknownField).toBe("keep-me");
+    const meta = createNutritionMetadata({
+      custom: { unknownField: "keep-me", nested: { a: 1 } },
+    });
+    expect((meta.custom as Record<string, unknown>).unknownField).toBe(
+      "keep-me",
+    );
     const nq = NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed", {
       metadata: meta as unknown as Record<string, unknown>,
     });
     const back = NutritionQuantity.fromJSON(nq.toJSON());
-    expect((back.metadata as unknown as Record<string, unknown>).custom).toEqual(
-      expect.objectContaining({ unknownField: "keep-me" }),
-    );
+    expect(
+      (back.metadata as unknown as Record<string, unknown>).custom,
+    ).toEqual(expect.objectContaining({ unknownField: "keep-me" }));
   });
 
   it("security: prototype pollution payload rejected", () => {
@@ -261,7 +320,9 @@ describe("phase8 — metadata model", () => {
     const evil2 = JSON.parse(
       '{"value":10,"unit":"g/kg","nutrient":"cp","basis":"asFed","version":1,"type":"nutrition-quantity","metadata":{"__proto__":{"polluted":true}}}',
     );
-    expect(() => deserializeNutritionQuantity(JSON.parse(JSON.stringify(evil2)))).toThrow();
+    expect(() =>
+      deserializeNutritionQuantity(JSON.parse(JSON.stringify(evil2))),
+    ).toThrow();
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
 
@@ -302,7 +363,9 @@ describe("phase8 — metadata model", () => {
       "suspect",
       "review-required",
     ] as const) {
-      expect(createNutritionMetadata({ qualityFlag: flag }).qualityFlag).toBe(flag);
+      expect(createNutritionMetadata({ qualityFlag: flag }).qualityFlag).toBe(
+        flag,
+      );
     }
   });
 
@@ -314,7 +377,9 @@ describe("phase8 — metadata model", () => {
   });
 
   it("replicates / sample references", () => {
-    const meta = createNutritionMetadata({ sample: { sampleId: "S-1", replicateId: "R-2" } });
+    const meta = createNutritionMetadata({
+      sample: { sampleId: "S-1", replicateId: "R-2" },
+    });
     expect(meta.sample?.sampleId).toBe("S-1");
     expect(meta.sample?.replicateId).toBe("R-2");
   });
@@ -360,7 +425,11 @@ describe("phase7+8 — property invariants", () => {
   });
 
   it("serialization round-trip", () => {
-    const nq = NutritionQuantity.of(Quantity.of(250, "g/kg"), "cp", "dryMatter");
+    const nq = NutritionQuantity.of(
+      Quantity.of(250, "g/kg"),
+      "cp",
+      "dryMatter",
+    );
     const back = deserializeNutritionQuantity(serializeNutritionQuantity(nq));
     expect(back.equals(nq)).toBe(true);
   });
@@ -371,7 +440,10 @@ describe("phase7+8 — property invariants", () => {
     });
     const before = JSON.stringify(orig.toJSON());
     orig.to("mg/kg");
-    orig.convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.88 }));
+    orig.convertBasis(
+      "dryMatter",
+      createNutritionContext({ dryMatterFraction: 0.88 }),
+    );
     expect(JSON.stringify(orig.toJSON())).toBe(before);
   });
 });
@@ -382,7 +454,9 @@ describe("phase7+8 — property invariants", () => {
 
 describe("phase7+8 — adversarial", () => {
   it("unknown nutrient IDs, malformed aliases, ambiguous", () => {
-    expect(() => defaultNutrientKindRegistry.require("unknown_xyz_999")).toThrow();
+    expect(() =>
+      defaultNutrientKindRegistry.require("unknown_xyz_999"),
+    ).toThrow();
     expect(checkNutrientCompatibility("unknown_xyz_999", "cp")).toEqual(
       expect.objectContaining({ status: "unknown" }),
     );
@@ -390,30 +464,36 @@ describe("phase7+8 — adversarial", () => {
 
   it("malformed metadata, pollution, invalid dates, NaN/Infinity", () => {
     expect(() =>
-      createNutritionMetadata({ provenance: { timestamp: "invalid-date" } as never }),
+      createNutritionMetadata({
+        provenance: { timestamp: "invalid-date" } as never,
+      }),
     ).toThrow();
-    expect(() => NutritionQuantity.of(Quantity.of(NaN, "g/kg"), "cp", "asFed")).toThrow(
-      InvalidNutritionQuantityError,
-    );
-    expect(() => NutritionQuantity.of(Quantity.of(Infinity, "g/kg"), "cp", "asFed")).toThrow(
-      InvalidNutritionQuantityError,
-    );
     expect(() =>
-      createNutritionMetadata(JSON.parse('{"custom":{"__proto__":{}}}') as never),
+      NutritionQuantity.of(Quantity.of(NaN, "g/kg"), "cp", "asFed"),
+    ).toThrow(InvalidNutritionQuantityError);
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(Infinity, "g/kg"), "cp", "asFed"),
+    ).toThrow(InvalidNutritionQuantityError);
+    expect(() =>
+      createNutritionMetadata(
+        JSON.parse('{"custom":{"__proto__":{}}}') as never,
+      ),
     ).toThrow();
   });
 
   it("deeply nested metadata, conflicting provenance", () => {
     expect(() =>
       createNutritionMetadata({
-        custom: { a: { b: { c: { d: { e: 1 } } } } } as unknown as Record<string, unknown>,
+        custom: { a: { b: { c: { d: { e: 1 } } } } } as unknown as Record<
+          string,
+          unknown
+        >,
       }),
     ).not.toThrow();
     // Very deep nesting (>6 levels) is still allowed but frozen — ensure no pollution and deterministic
-    const deep = JSON.parse('{"a":{"b":{"c":{"d":{"e":{"f":{"g":1}}}}}}}') as unknown as Record<
-      string,
-      unknown
-    >;
+    const deep = JSON.parse(
+      '{"a":{"b":{"c":{"d":{"e":{"f":{"g":1}}}}}}}',
+    ) as unknown as Record<string, unknown>;
     const meta = createNutritionMetadata({ custom: deep });
     expect((meta.custom as Record<string, unknown>).a).toBeDefined();
     expect(Object.isFrozen(meta.custom as Record<string, unknown>)).toBe(true);

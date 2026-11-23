@@ -26,7 +26,9 @@ import { serializeQuantity, deserializeQuantity } from "../src/serializer.js";
 
 describe("14.2 universal basis", () => {
   it("seed includes 7 SI + 3 generic", () => {
-    const ids = Dim.Mass ? ["M", "L", "T", "Temp", "Substance", "I", "J", "E", "C", "N"] : [];
+    const ids = Dim.Mass
+      ? ["M", "L", "T", "Temp", "Substance", "I", "J", "E", "C", "N"]
+      : [];
     for (const id of ids) {
       expect(defineDimension({ [id]: 1 })).toBeTruthy();
     }
@@ -60,7 +62,10 @@ describe("14.3 dimension registry", () => {
 
 describe("14.5 dimension vector", () => {
   it("Length^1, Mass^1, Time^-2 produces M·L·T^-2", () => {
-    const forceLike = multiplyDim(Dim.Mass, multiplyDim(Dim.Length, powDim(Dim.Time, -2)));
+    const forceLike = multiplyDim(
+      Dim.Mass,
+      multiplyDim(Dim.Length, powDim(Dim.Time, -2)),
+    );
     expect(dimensionKey(forceLike)).toBe("L^1·M^1·T^-2");
   });
   it("zero exponents eliminated", () => {
@@ -76,7 +81,10 @@ describe("14.6 algebra", () => {
     expect(powDim(Dim.Length, 2)).toEqual({ L: 2 });
   });
   it("M × L × T^-2 deterministic", () => {
-    const a = multiplyDim(Dim.Mass, multiplyDim(Dim.Length, powDim(Dim.Time, -2)));
+    const a = multiplyDim(
+      Dim.Mass,
+      multiplyDim(Dim.Length, powDim(Dim.Time, -2)),
+    );
     const b = defineDimension({ M: 1, L: 1, T: -2 });
     expect(dimensionsEqual(a, b)).toBe(true);
   });
@@ -84,7 +92,10 @@ describe("14.6 algebra", () => {
 
 describe("14.7 derived dimensions", () => {
   it("Force = M·L·T^-2 via algebra", () => {
-    const force = multiplyDim(Dim.Mass, multiplyDim(Dim.Length, powDim(Dim.Time, -2)));
+    const force = multiplyDim(
+      Dim.Mass,
+      multiplyDim(Dim.Length, powDim(Dim.Time, -2)),
+    );
     expect(force).toEqual({ M: 1, L: 1, T: -2 });
   });
   it("Energy = M·L²·T^-2 generic, but current E is base for compat", () => {
@@ -164,7 +175,10 @@ describe("14.15 backward compat", () => {
   it("Energy as base vs derived migration documented", () => {
     // Current E base still works, derived also works, they are distinct but both valid
     expect(Dim.Energy).toEqual({ E: 1 });
-    const derived = multiplyDim(Dim.Mass, multiplyDim(powDim(Dim.Length, 2), powDim(Dim.Time, -2)));
+    const derived = multiplyDim(
+      Dim.Mass,
+      multiplyDim(powDim(Dim.Length, 2), powDim(Dim.Time, -2)),
+    );
     expect(derived).not.toEqual(Dim.Energy);
   });
 });

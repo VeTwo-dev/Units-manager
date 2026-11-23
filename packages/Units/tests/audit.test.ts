@@ -79,12 +79,22 @@ describe("audit §3: immutability", () => {
   });
 
   it("Measurement nested metadata is deep-frozen (no caller-side mutation)", () => {
-    const meta = { source: "lab", provenance: { method: "scale", derivedFrom: [] as unknown[] } };
-    const m = Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.2, "kg"), meta);
+    const meta = {
+      source: "lab",
+      provenance: { method: "scale", derivedFrom: [] as unknown[] },
+    };
+    const m = Measurement.of(
+      Quantity.of(10, "kg"),
+      Quantity.of(0.2, "kg"),
+      meta,
+    );
     expect(Object.isFrozen(m)).toBe(true);
     expect(Object.isFrozen(m.metadata)).toBe(true);
     (meta.provenance.derivedFrom as unknown[]).push("CORRUPT");
-    expect((m.metadata?.provenance as { derivedFrom?: unknown[] })?.derivedFrom ?? []).toEqual([]);
+    expect(
+      (m.metadata?.provenance as { derivedFrom?: unknown[] })?.derivedFrom ??
+        [],
+    ).toEqual([]);
     expect(() => {
       ((m.metadata as Record<string, unknown>).source as string) = "x";
     }).toThrow(TypeError);
@@ -105,9 +115,19 @@ describe("audit §3: immutability", () => {
   it("registry snapshots isolate in both directions", () => {
     const r = createRegistry({});
     const s = r.snapshot();
-    s.registerAtomic({ symbol: "qx", dimension: { L: 1 }, toBaseFactor: 1, label: "x" });
+    s.registerAtomic({
+      symbol: "qx",
+      dimension: { L: 1 },
+      toBaseFactor: 1,
+      label: "x",
+    });
     expect(r.has("qx")).toBe(false);
-    r.registerAtomic({ symbol: "qy", dimension: { L: 1 }, toBaseFactor: 1, label: "y" });
+    r.registerAtomic({
+      symbol: "qy",
+      dimension: { L: 1 },
+      toBaseFactor: 1,
+      label: "y",
+    });
     expect(s.has("qy")).toBe(false);
   });
 
@@ -140,7 +160,10 @@ describe("audit §4: dimensions", () => {
     expect(dimensionsEqual(multiplyDim(A, ONE), A)).toBe(true);
     expect(dimensionsEqual(divideDim(A, A), ONE)).toBe(true);
     expect(
-      dimensionsEqual(multiplyDim(multiplyDim(A, B), C), multiplyDim(A, multiplyDim(B, C))),
+      dimensionsEqual(
+        multiplyDim(multiplyDim(A, B), C),
+        multiplyDim(A, multiplyDim(B, C)),
+      ),
     ).toBe(true);
     expect(dimensionsEqual(multiplyDim(A, B), multiplyDim(B, A))).toBe(true);
     expect(dimensionsEqual(powDim(A, 2), multiplyDim(A, A))).toBe(true);
@@ -151,7 +174,9 @@ describe("audit §4: dimensions", () => {
 
   it("parsed dimensions round-trip through canonical keys", () => {
     const si = createRegistry({ packs: [SI_PACK] });
-    expect(parseUnit("N", si).dimension).toEqual(parseUnit("kg*m/s^2", si).dimension);
+    expect(parseUnit("N", si).dimension).toEqual(
+      parseUnit("kg*m/s^2", si).dimension,
+    );
     expect(d("m/m")).toEqual({});
     expect(d("(m/s)^2")).toEqual({ L: 2, T: -2 });
     expect(key("kg*m/s^2")).toBe(key("m*kg/s^2"));
@@ -171,7 +196,9 @@ describe("audit §5: units", () => {
     expect(parseUnit("km").symbol).toBe("km");
     expect(Quantity.of(1, "km").to("m").value).toBe(1000);
     expect(parseUnit("h").symbol).toBe("hour");
-    expect(parseUnit("kg*m/s^2", si).dimension).toEqual(parseUnit("N", si).dimension);
+    expect(parseUnit("kg*m/s^2", si).dimension).toEqual(
+      parseUnit("N", si).dimension,
+    );
   });
 
   it("rejects stacked prefixes and unknown units", () => {
@@ -181,8 +208,12 @@ describe("audit §5: units", () => {
   });
 
   it("different dimensions never compare as equivalent", () => {
-    expect(Quantity.of(1, "kg").dimension).not.toEqual(Quantity.of(1, "m").dimension);
-    expect(() => Quantity.of(1, "kg").to("m")).toThrow(ImpossibleConversionError);
+    expect(Quantity.of(1, "kg").dimension).not.toEqual(
+      Quantity.of(1, "m").dimension,
+    );
+    expect(() => Quantity.of(1, "kg").to("m")).toThrow(
+      ImpossibleConversionError,
+    );
   });
 });
 
@@ -218,7 +249,9 @@ describe("audit §6: arithmetic", () => {
     expect(() => kg(1).add(m(1))).toThrow(UnitMismatchError);
     expect(() => kg(1).subtract(m(1))).toThrow(UnitMismatchError);
     expect(() => m(1).divide(s(0))).toThrow(DivisionByZeroError);
-    expect(() => Quantity.of(0, "kg").divide(Quantity.of(0, "kg"))).toThrow(DivisionByZeroError);
+    expect(() => Quantity.of(0, "kg").divide(Quantity.of(0, "kg"))).toThrow(
+      DivisionByZeroError,
+    );
     expect(() => m(1).to("kg")).toThrow(ImpossibleConversionError);
     expect(() => Quantity.of(-4, "m^2").sqrt()).toThrow();
     const r = kg(0).divide(s(1));
@@ -311,7 +344,9 @@ describe("audit §8: nonlinear units", () => {
       conversion: { kind: "logarithmic", reference: 1, factor: 10 },
       label: "decibel",
     });
-    expect(() => Measurement.of(Quantity.of(3, db), Quantity.of(0.1, db))).toThrow();
+    expect(() =>
+      Measurement.of(Quantity.of(3, db), Quantity.of(0.1, db)),
+    ).toThrow();
   });
 });
 
@@ -325,7 +360,9 @@ describe("audit §9: parser", () => {
     expect(parseUnit("m²").dimension).toEqual({ L: 2 });
     expect(parseUnit("(m/s)^2").dimension).toEqual({ L: 2, T: -2 });
     expect(parseUnit("m^-2").dimension).toEqual({ L: -2 });
-    expect(parseUnit("kg m s^-2", createRegistry({ packs: [SI_PACK] })).dimension).toEqual({
+    expect(
+      parseUnit("kg m s^-2", createRegistry({ packs: [SI_PACK] })).dimension,
+    ).toEqual({
       M: 1,
       L: 1,
       T: -2,
@@ -333,10 +370,21 @@ describe("audit §9: parser", () => {
   });
 
   it("rejects malformed, empty, overlong and over-deep input with typed errors", () => {
-    for (const bad of ["", "   ", "m//s", "(m/s", "m/s)", "m^2.5", "^m", "m^"]) {
+    for (const bad of [
+      "",
+      "   ",
+      "m//s",
+      "(m/s",
+      "m/s)",
+      "m^2.5",
+      "^m",
+      "m^",
+    ]) {
       expect(() => parseUnit(bad), JSON.stringify(bad)).toThrow();
     }
-    expect(() => parseUnit("a".repeat(5000))).toThrow(InvalidUnitExpressionError);
+    expect(() => parseUnit("a".repeat(5000))).toThrow(
+      InvalidUnitExpressionError,
+    );
     expect(() => parseUnit("(".repeat(500) + "m" + ")".repeat(500))).toThrow(
       InvalidUnitExpressionError,
     );
@@ -346,7 +394,15 @@ describe("audit §9: parser", () => {
     // Audit §5: pow(m/s,2) once emitted "m/s^2", which re-parses as m·s⁻²
     // while the stored dimension was L²·T⁻² — the symbol lied.
     const si = createRegistry({ packs: [SI_PACK] });
-    for (const text of ["kg*m", "kg/m", "kg*m/s^2", "kg/(m*s)", "(m/s)^2", "m^2", "(kg*m)/s^2"]) {
+    for (const text of [
+      "kg*m",
+      "kg/m",
+      "kg*m/s^2",
+      "kg/(m*s)",
+      "(m/s)^2",
+      "m^2",
+      "(kg*m)/s^2",
+    ]) {
       const u = parseUnit(text, si);
       const back = parseUnit(u.symbol, si);
       expect(back.dimension, `${text} → ${u.symbol}`).toEqual(u.dimension);
@@ -385,7 +441,9 @@ describe("audit §10: formatter", () => {
     expect(formatQuantity(Quantity.of(NaN, "m"))).toBe("NaN m");
     expect(formatQuantity(Quantity.of(Infinity, "m"))).toBe("Infinity m");
     const angleReg = createRegistry({ packs: [ANGLE_PACK] });
-    expect(formatQuantity(Quantity.of(1.5, "rad", angleReg), { showKind: true })).toContain("1.5");
+    expect(
+      formatQuantity(Quantity.of(1.5, "rad", angleReg), { showKind: true }),
+    ).toContain("1.5");
   });
 });
 
@@ -408,13 +466,26 @@ describe("audit §11: registries", () => {
 
   it("rejects duplicate symbols and imperial/US collisions", () => {
     const r = createRegistry({});
-    r.registerAtomic({ symbol: "qx", dimension: { L: 1 }, toBaseFactor: 1, label: "x" });
+    r.registerAtomic({
+      symbol: "qx",
+      dimension: { L: 1 },
+      toBaseFactor: 1,
+      label: "x",
+    });
     expect(() =>
-      r.registerAtomic({ symbol: "qx", dimension: { L: 1 }, toBaseFactor: 1, label: "x2" }),
+      r.registerAtomic({
+        symbol: "qx",
+        dimension: { L: 1 },
+        toBaseFactor: 1,
+        label: "x2",
+      }),
     ).toThrow();
-    expect(() => createRegistry({ packs: [IMPERIAL_PACK, US_CUSTOMARY_PACK] })).toThrow();
+    expect(() =>
+      createRegistry({ packs: [IMPERIAL_PACK, US_CUSTOMARY_PACK] }),
+    ).toThrow();
     expect(
-      Quantity.of(1, "ton", createRegistry({ packs: [IMPERIAL_PACK] })).to("kg").value,
+      Quantity.of(1, "ton", createRegistry({ packs: [IMPERIAL_PACK] })).to("kg")
+        .value,
     ).toBeCloseTo(1016.05, 2);
   });
 
@@ -423,7 +494,12 @@ describe("audit §11: registries", () => {
     expect(r.has("m")).toBe(true);
     const s = r.snapshot();
     expect(s.has("m")).toBe(true);
-    s.registerAtomic({ symbol: "qz", dimension: { L: 1 }, toBaseFactor: 1, label: "z" });
+    s.registerAtomic({
+      symbol: "qz",
+      dimension: { L: 1 },
+      toBaseFactor: 1,
+      label: "z",
+    });
     expect(r.has("qz")).toBe(false);
   });
 });
@@ -450,10 +526,12 @@ describe("audit §12: formulas and graphs", () => {
       }),
     ).toThrow(FormulaError);
     const f = ab();
-    expect(() => evaluateFormula(f, { a: Quantity.of(1, "m"), b: Quantity.of(0, "m") })).toThrow(
-      DivisionByZeroError,
+    expect(() =>
+      evaluateFormula(f, { a: Quantity.of(1, "m"), b: Quantity.of(0, "m") }),
+    ).toThrow(DivisionByZeroError);
+    expect(() => evaluateFormula(f, { a: Quantity.of(1, "m") })).toThrow(
+      FormulaError,
     );
-    expect(() => evaluateFormula(f, { a: Quantity.of(1, "m") })).toThrow(FormulaError);
     expect(() =>
       evaluateFormula(f, {
         a: Quantity.of(1, "m"),
@@ -486,7 +564,9 @@ describe("audit §12: formulas and graphs", () => {
       inputs: { a: { dimension: "m" } },
       outputName: "b",
     });
-    expect(() => createDependencyGraph([fa, fb])).toThrow(CyclicDependencyError);
+    expect(() => createDependencyGraph([fa, fb])).toThrow(
+      CyclicDependencyError,
+    );
     try {
       createDependencyGraph([fa, fb]);
     } catch (e) {
@@ -519,27 +599,36 @@ describe("audit §12: formulas and graphs", () => {
 
 describe("audit §13: measurements", () => {
   it("zero, affine, mixed, negative and NaN uncertainties behave safely", () => {
-    expect(Measurement.of(Quantity.of(0, "kg"), Quantity.of(0, "kg")).relativeUncertainty()).toBe(
-      0,
-    );
-    expect(() =>
-      Measurement.of(Quantity.of(0, "kg"), Quantity.of(0.1, "kg")).relativeUncertainty(),
-    ).toThrow();
-    expect(() => Measurement.of(Quantity.of(20, "°C"), Quantity.of(1, "°C"))).toThrow(
-      InvalidMeasurementError,
-    );
     expect(
-      Measurement.of(Quantity.of(10, "kg"), Quantity.of(200, "g")).relativeUncertainty(),
+      Measurement.of(
+        Quantity.of(0, "kg"),
+        Quantity.of(0, "kg"),
+      ).relativeUncertainty(),
+    ).toBe(0);
+    expect(() =>
+      Measurement.of(
+        Quantity.of(0, "kg"),
+        Quantity.of(0.1, "kg"),
+      ).relativeUncertainty(),
+    ).toThrow();
+    expect(() =>
+      Measurement.of(Quantity.of(20, "°C"), Quantity.of(1, "°C")),
+    ).toThrow(InvalidMeasurementError);
+    expect(
+      Measurement.of(
+        Quantity.of(10, "kg"),
+        Quantity.of(200, "g"),
+      ).relativeUncertainty(),
     ).toBeCloseTo(0.02, 12);
-    expect(() => Measurement.of(Quantity.of(10, "kg"), Quantity.of(-1, "kg"))).toThrow(
-      InvalidMeasurementError,
-    );
-    expect(() => Measurement.of(Quantity.of(10, "kg"), Quantity.of(NaN, "kg"))).toThrow(
-      InvalidMeasurementError,
-    );
-    expect(() => Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.1, "m"))).toThrow(
-      InvalidMeasurementError,
-    );
+    expect(() =>
+      Measurement.of(Quantity.of(10, "kg"), Quantity.of(-1, "kg")),
+    ).toThrow(InvalidMeasurementError);
+    expect(() =>
+      Measurement.of(Quantity.of(10, "kg"), Quantity.of(NaN, "kg")),
+    ).toThrow(InvalidMeasurementError);
+    expect(() =>
+      Measurement.of(Quantity.of(10, "kg"), Quantity.of(0.1, "m")),
+    ).toThrow(InvalidMeasurementError);
   });
 
   it("equality, overlap and affine conversion semantics", () => {
@@ -551,7 +640,9 @@ describe("audit §13: measurements", () => {
     expect(a.exactEquals(a)).toBe(true);
     expect(a.equals(b)).toBe(false);
     expect(a.approximatelyEquals(a)).toBe(true);
-    const t = Measurement.of(Quantity.of(10, "K"), Quantity.of(2, "K")).to("°C");
+    const t = Measurement.of(Quantity.of(10, "K"), Quantity.of(2, "K")).to(
+      "°C",
+    );
     expect(t.uncertainty.value).toBeCloseTo(2, 12);
   });
 
@@ -582,7 +673,11 @@ describe("audit §14: constants", () => {
       },
       { registry: si },
     );
-    const r = evaluateFormula(f, { mass: Quantity.of(1, "kg") }, { registry: si });
+    const r = evaluateFormula(
+      f,
+      { mass: Quantity.of(1, "kg") },
+      { registry: si },
+    );
     expect(r.dimension).toEqual({ M: 1, L: 2, T: -2 });
     // c² = 299792458² exactly in integers; relative error must be ~1e-12.
     const got = r.to("N*m", si).value;
@@ -623,11 +718,21 @@ describe("audit §15: systems", () => {
   const siOnly = createRegistry({ packs: [SI_PACK] });
 
   it("SI/CGS/Imperial/US preferred units and conversions", () => {
-    expect(normalizeToSystem(Quantity.of(1000, "g", siOnly), SI_SYSTEM, {}).unit.symbol).toBe("kg");
-    expect(normalizeToSystem(Quantity.of(1, "lb", siOnly), CGS_SYSTEM, {}).unit.symbol).toBe("g");
+    expect(
+      normalizeToSystem(Quantity.of(1000, "g", siOnly), SI_SYSTEM, {}).unit
+        .symbol,
+    ).toBe("kg");
+    expect(
+      normalizeToSystem(Quantity.of(1, "lb", siOnly), CGS_SYSTEM, {}).unit
+        .symbol,
+    ).toBe("g");
     // Composite dimensions without a profile mapping fail explicitly (never guessed).
-    expect(() => normalizeToSystem(Quantity.of(1, "N", siOnly), CGS_SYSTEM, {})).toThrow();
-    expect(() => normalizeToSystem(Quantity.of(1, "J", siOnly), CGS_SYSTEM, {})).toThrow();
+    expect(() =>
+      normalizeToSystem(Quantity.of(1, "N", siOnly), CGS_SYSTEM, {}),
+    ).toThrow();
+    expect(() =>
+      normalizeToSystem(Quantity.of(1, "J", siOnly), CGS_SYSTEM, {}),
+    ).toThrow();
     expect(
       Quantity.of(100, "km/h", siOnly).to(
         "mph",
@@ -664,14 +769,26 @@ describe("audit §16: serialization", () => {
   it("rejects pollution, version mismatch and wrong types", () => {
     expect(() =>
       deserializeQuantity(
-        JSON.parse('{"version":1,"type":"quantity","value":1,"unit":"kg","__proto__":{}}'),
+        JSON.parse(
+          '{"version":1,"type":"quantity","value":1,"unit":"kg","__proto__":{}}',
+        ),
       ),
     ).toThrow(InvalidUnitError);
     expect(() =>
-      deserializeQuantity({ version: 99, type: "quantity", value: 1, unit: "kg" }),
+      deserializeQuantity({
+        version: 99,
+        type: "quantity",
+        value: 1,
+        unit: "kg",
+      }),
     ).toThrow(InvalidUnitError);
     expect(() =>
-      deserializeQuantity({ version: 1, type: "measurement", value: 1, unit: "kg" }),
+      deserializeQuantity({
+        version: 1,
+        type: "measurement",
+        value: 1,
+        unit: "kg",
+      }),
     ).toThrow(InvalidUnitError);
     expect(() =>
       deserializeMeasurement({
@@ -684,10 +801,16 @@ describe("audit §16: serialization", () => {
   });
 
   it("measurement round-trips preserve value, uncertainty and metadata", () => {
-    const m = Measurement.of(Quantity.of(10.25, "kg"), Quantity.of(0.05, "kg"), {
-      source: "scale-3",
-    });
-    const back = deserializeMeasurement(JSON.parse(JSON.stringify(serializeMeasurement(m))));
+    const m = Measurement.of(
+      Quantity.of(10.25, "kg"),
+      Quantity.of(0.05, "kg"),
+      {
+        source: "scale-3",
+      },
+    );
+    const back = deserializeMeasurement(
+      JSON.parse(JSON.stringify(serializeMeasurement(m))),
+    );
     expect(back.value.value).toBe(10.25);
     expect(back.uncertainty.value).toBe(0.05);
     expect(back.metadata?.source).toBe("scale-3");
@@ -712,7 +835,9 @@ describe("audit §17: types", () => {
 
   it("package metadata is coherent", async () => {
     const { readFile } = await import("node:fs/promises");
-    const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")) as {
+    const pkg = JSON.parse(
+      await readFile(new URL("../package.json", import.meta.url), "utf8"),
+    ) as {
       name?: unknown;
       version?: unknown;
       dependencies?: unknown;

@@ -1,0 +1,44 @@
+# Bazel 9 configuration for the VeTwo monorepo.
+#
+# Bzlmod is the only module system in Bazel 9 (WORKSPACE is disabled by default),
+# so no --enable_bzlmod flag is required or recognized.
+
+# Build — sandboxing and hermeticity defaults
+build --sandbox_default_allow_network=false
+# Strict action environment is the default in Bazel 9; kept explicit to preserve intent.
+build --incompatible_strict_action_env
+
+# JVM heap — increased from default (~2GB) to 4GB to reduce GC pressure during
+# analysis of the 19,195-target graph. Startup-only option, no correctness impact.
+startup --host_jvm_args=-Xmx4g
+
+# Test — show output on failure, no network in tests
+test --test_output=errors
+test --sandbox_default_allow_network=false
+
+# Phase C — Remote execution explicitly disabled.
+# Remote execution is intentionally disabled for local-only builds.
+# No --remote_executor or --remote_cache is configured, so Bazel uses
+# local sandboxed execution only. Local disk caching (--disk_cache)
+# remains available and is passed explicitly per environment.
+# CI workflows must NOT pass --remote_executor or --remote_cache.
+
+# Developer convenience
+build --color=yes
+build --curses=yes
+
+# Stage B — Local disk cache (Phase 9)
+# Disk cache is intentionally NOT activated with a hard-coded path here:
+# Bazel 9 does not expand $HOME or ~ in .bazelrc values, so a shared path
+# would be developer-specific and non-portable, and an invalid path hangs
+# the build. Each environment enables it explicitly on the command line:
+#
+#   bazel build --disk_cache=<absolute-path> //...
+#
+# Recommended default location (per-machine, configurable):
+#   $HOME/.cache/bazel/disk-cache   (Linux/macOS)
+#   %USERPROFILE%\.cache\bazel\disk-cache  (Windows)
+#
+# CI workflows pass --disk_cache explicitly with a runner-appropriate path.
+# Never point a disk cache at a directory inside the source workspace, and
+# never share one directory through an unvalidated network filesystem (Stage C).

@@ -55,7 +55,12 @@ describe("serializeUnit → deserializeUnit", () => {
   it("custom registered unit", () => {
     const reg = new UnitRegistry([]);
     reg.register(
-      makeUnit({ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 42, label: "my unit" }),
+      makeUnit({
+        symbol: "myU",
+        dimension: Dim.Mass,
+        toBaseFactor: 42,
+        label: "my unit",
+      }),
     );
     const u = reg.resolve("myU");
     const ser = serializeUnit(u);
@@ -93,11 +98,20 @@ describe("serializeQuantity → deserializeQuantity", () => {
     expect(deserializeQuantity(serializeQuantity(q)).value).toBe(15);
   });
   it("ppm", () => {
-    expect(deserializeQuantity(serializeQuantity(Quantity.of(250, "ppm"))).value).toBe(250);
+    expect(
+      deserializeQuantity(serializeQuantity(Quantity.of(250, "ppm"))).value,
+    ).toBe(250);
   });
   it("custom unit quantity", () => {
     const reg = new UnitRegistry([]);
-    reg.register(makeUnit({ symbol: "myU", dimension: Dim.Length, toBaseFactor: 1, label: "my" }));
+    reg.register(
+      makeUnit({
+        symbol: "myU",
+        dimension: Dim.Length,
+        toBaseFactor: 1,
+        label: "my",
+      }),
+    );
     const q = Quantity.of(10, "myU", reg);
     const ser = serializeQuantity(q);
     expect(deserializeQuantity(ser, reg).value).toBe(10);
@@ -111,9 +125,16 @@ describe("serializeQuantity → deserializeQuantity", () => {
 describe("serialization version", () => {
   it("supported version 1", () => {
     expect(() =>
-      deserializeQuantity({ version: 1, type: "quantity", value: 1, unit: "kg" }),
+      deserializeQuantity({
+        version: 1,
+        type: "quantity",
+        value: 1,
+        unit: "kg",
+      }),
     ).not.toThrow();
-    expect(() => deserializeUnit({ version: 1, type: "unit", expression: "kg" })).not.toThrow();
+    expect(() =>
+      deserializeUnit({ version: 1, type: "unit", expression: "kg" }),
+    ).not.toThrow();
   });
   it("unsupported version throws", () => {
     expect(() =>
@@ -134,14 +155,17 @@ describe("serialization version", () => {
   });
   it("missing version throws", () => {
     expect(() =>
-      deserializeQuantity({ type: "quantity", value: 1, unit: "kg" } as unknown as Parameters<
-        typeof deserializeQuantity
-      >[0]),
+      deserializeQuantity({
+        type: "quantity",
+        value: 1,
+        unit: "kg",
+      } as unknown as Parameters<typeof deserializeQuantity>[0]),
     ).toThrow();
     expect(() =>
-      deserializeUnit({ type: "unit", expression: "kg" } as unknown as Parameters<
-        typeof deserializeUnit
-      >[0]),
+      deserializeUnit({
+        type: "unit",
+        expression: "kg",
+      } as unknown as Parameters<typeof deserializeUnit>[0]),
     ).toThrow();
   });
   it("malformed version type throws", () => {
@@ -161,17 +185,26 @@ describe("serialization version", () => {
 // ---------------------------------------------------------------------------
 
 describe("invalid serialized data", () => {
-  it.each([null, undefined, [], {}, "string", 123] as const)("rejects %p", (v) => {
-    expect(() =>
-      deserializeQuantity(v as unknown as Parameters<typeof deserializeQuantity>[0]),
-    ).toThrow();
-    expect(() => deserializeUnit(v as unknown as Parameters<typeof deserializeUnit>[0])).toThrow();
-  });
+  it.each([null, undefined, [], {}, "string", 123] as const)(
+    "rejects %p",
+    (v) => {
+      expect(() =>
+        deserializeQuantity(
+          v as unknown as Parameters<typeof deserializeQuantity>[0],
+        ),
+      ).toThrow();
+      expect(() =>
+        deserializeUnit(v as unknown as Parameters<typeof deserializeUnit>[0]),
+      ).toThrow();
+    },
+  );
   it("missing fields", () => {
     expect(() =>
-      deserializeQuantity({ version: 1, type: "quantity", value: 1 } as unknown as Parameters<
-        typeof deserializeQuantity
-      >[0]),
+      deserializeQuantity({
+        version: 1,
+        type: "quantity",
+        value: 1,
+      } as unknown as Parameters<typeof deserializeQuantity>[0]),
     ).toThrow();
     expect(() =>
       deserializeUnit({ version: 1, type: "unit" } as unknown as Parameters<
@@ -217,9 +250,11 @@ describe("invalid serialized data", () => {
       } as unknown as Parameters<typeof deserializeQuantity>[0]),
     ).toThrow();
     expect(() =>
-      deserializeUnit({ version: 1, type: "unit", expression: "/kg" } as unknown as Parameters<
-        typeof deserializeUnit
-      >[0]),
+      deserializeUnit({
+        version: 1,
+        type: "unit",
+        expression: "/kg",
+      } as unknown as Parameters<typeof deserializeUnit>[0]),
     ).toThrow();
   });
   it("unknown serialization type", () => {
@@ -233,9 +268,10 @@ describe("invalid serialized data", () => {
     ).toThrow();
   });
   it("legacy shape without version still works", () => {
-    const q = deserializeQuantity({ value: 12, unit: "kg" } as unknown as Parameters<
-      typeof deserializeQuantity
-    >[0]);
+    const q = deserializeQuantity({
+      value: 12,
+      unit: "kg",
+    } as unknown as Parameters<typeof deserializeQuantity>[0]);
     expect(q.value).toBe(12);
   });
 });
@@ -251,7 +287,9 @@ describe("serialization security: prototype pollution", () => {
     );
     const before = ({} as Record<string, unknown>).__proto__;
     expect(() =>
-      deserializeQuantity(payload as unknown as Parameters<typeof deserializeQuantity>[0]),
+      deserializeQuantity(
+        payload as unknown as Parameters<typeof deserializeQuantity>[0],
+      ),
     ).toThrow();
     expect(({} as Record<string, unknown>).__proto__).toBe(before);
   });
@@ -276,9 +314,11 @@ describe("serialization security: prototype pollution", () => {
   });
   it("does not execute arbitrary code in unit expression", () => {
     expect(() =>
-      deserializeUnit({ version: 1, type: "unit", expression: "eval(1)" } as unknown as Parameters<
-        typeof deserializeUnit
-      >[0]),
+      deserializeUnit({
+        version: 1,
+        type: "unit",
+        expression: "eval(1)",
+      } as unknown as Parameters<typeof deserializeUnit>[0]),
     ).toThrow();
   });
 });
@@ -292,8 +332,12 @@ describe("runtime guards", () => {
     expect(isQuantity(Quantity.of(1, "kg"))).toBe(true);
     // Plain object with correct shape is considered quantity cross-realm
     expect(isQuantity({ value: 1, unit: parseUnit("kg") })).toBe(true);
-    expect(isQuantity({ value: 1, unit: parseUnit("kg") } as unknown as Quantity)).toBe(true);
-    expect(isQuantity({ value: "1", unit: parseUnit("kg") } as unknown as Quantity)).toBe(false);
+    expect(
+      isQuantity({ value: 1, unit: parseUnit("kg") } as unknown as Quantity),
+    ).toBe(true);
+    expect(
+      isQuantity({ value: "1", unit: parseUnit("kg") } as unknown as Quantity),
+    ).toBe(false);
     expect(isQuantity(null)).toBe(false);
     expect(isQuantity(undefined)).toBe(false);
     expect(isQuantity([])).toBe(false);
@@ -323,16 +367,32 @@ describe("runtime guards", () => {
     expect(isDimension({ "bad id": 1 })).toBe(false);
   });
   it("isSerializedQuantity", () => {
-    expect(isSerializedQuantity({ version: 1, type: "quantity", value: 1, unit: "kg" })).toBe(true);
+    expect(
+      isSerializedQuantity({
+        version: 1,
+        type: "quantity",
+        value: 1,
+        unit: "kg",
+      }),
+    ).toBe(true);
     expect(isSerializedQuantity({ value: 1, unit: "kg" })).toBe(true); // legacy
     expect(isSerializedQuantity(null)).toBe(false);
-    expect(isSerializedQuantity({ version: 1, type: "quantity", value: "bad", unit: "kg" })).toBe(
-      false,
-    );
+    expect(
+      isSerializedQuantity({
+        version: 1,
+        type: "quantity",
+        value: "bad",
+        unit: "kg",
+      }),
+    ).toBe(false);
   });
   it("isSerializedUnit", () => {
-    expect(isSerializedUnit({ version: 1, type: "unit", expression: "kg" })).toBe(true);
-    expect(isSerializedUnit({ version: 1, type: "quantity", value: 1, unit: "kg" })).toBe(false);
+    expect(
+      isSerializedUnit({ version: 1, type: "unit", expression: "kg" }),
+    ).toBe(true);
+    expect(
+      isSerializedUnit({ version: 1, type: "quantity", value: 1, unit: "kg" }),
+    ).toBe(false);
     expect(isSerializedUnit(null)).toBe(false);
   });
 });
@@ -346,7 +406,12 @@ describe("serialization immutability", () => {
     const q = Quantity.of(10, "kg");
     const ser = serializeQuantity(q);
     (ser as unknown as Record<string, unknown>).value = 999;
-    const r = deserializeQuantity({ version: 1, type: "quantity", value: 10, unit: "kg" });
+    const r = deserializeQuantity({
+      version: 1,
+      type: "quantity",
+      value: 10,
+      unit: "kg",
+    });
     expect(r.value).toBe(10);
   });
   it("Quantity remains immutable after serialize", () => {
@@ -428,7 +493,9 @@ describe("deterministic serialization", () => {
   it("equivalent Quantities serialize identically", () => {
     const a = Quantity.of(10, "kg");
     const b = Quantity.of(10, "kg");
-    expect(JSON.stringify(serializeQuantity(a))).toBe(JSON.stringify(serializeQuantity(b)));
+    expect(JSON.stringify(serializeQuantity(a))).toBe(
+      JSON.stringify(serializeQuantity(b)),
+    );
   });
   it("key order is version,type,value,unit", () => {
     const ser = serializeQuantity(Quantity.of(1, "kg"));
@@ -443,7 +510,14 @@ describe("deterministic serialization", () => {
 describe("custom unit serialization policy", () => {
   it("custom unit serialized as expression, requires registry to deserialize", () => {
     const reg = new UnitRegistry([]);
-    reg.register(makeUnit({ symbol: "myU", dimension: Dim.Mass, toBaseFactor: 1, label: "my" }));
+    reg.register(
+      makeUnit({
+        symbol: "myU",
+        dimension: Dim.Mass,
+        toBaseFactor: 1,
+        label: "my",
+      }),
+    );
     const q = Quantity.of(10, "myU", reg);
     const ser = serializeQuantity(q);
     expect(ser.unit).toBe("myU");

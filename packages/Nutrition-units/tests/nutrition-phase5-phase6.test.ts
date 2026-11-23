@@ -24,7 +24,13 @@ import {
 
 describe("phase5 — basis model", () => {
   it("supports asFed / dryMatter / freshMatter / wet / normalized", () => {
-    for (const id of ["asFed", "dryMatter", "freshMatter", "wet", "normalized"]) {
+    for (const id of [
+      "asFed",
+      "dryMatter",
+      "freshMatter",
+      "wet",
+      "normalized",
+    ]) {
       expect(defaultBasisRegistry.has(id)).toBe(true);
       const def = defaultBasisRegistry.require(id);
       expect(def.id).toBe(id.toLowerCase());
@@ -63,7 +69,9 @@ describe("phase5 — dry matter fraction validation", () => {
     expect(() => createNutritionContext({ dryMatterFraction: -0.1 })).toThrow();
     expect(() => createNutritionContext({ dryMatterFraction: 1.5 })).toThrow();
     expect(() => createNutritionContext({ dryMatterFraction: NaN })).toThrow();
-    expect(() => createNutritionContext({ dryMatterFraction: Infinity })).toThrow();
+    expect(() =>
+      createNutritionContext({ dryMatterFraction: Infinity }),
+    ).toThrow();
     expect(() => createNutritionContext({ moistureFraction: 0 })).toThrow();
     expect(() =>
       createNutritionContext({ dryMatterFraction: 0.9, moistureFraction: 0.2 }),
@@ -78,11 +86,16 @@ describe("phase5 — dry matter fraction validation", () => {
 
   it("both supplied must be consistent DM+moisture≈1", () => {
     expect(() =>
-      createNutritionContext({ dryMatterFraction: 0.88, moistureFraction: 0.13 }),
+      createNutritionContext({
+        dryMatterFraction: 0.88,
+        moistureFraction: 0.13,
+      }),
     ).toThrow(NutritionContextError);
     expect(
-      createNutritionContext({ dryMatterFraction: 0.88, moistureFraction: 0.12 })
-        .resolvedDryMatterFraction,
+      createNutritionContext({
+        dryMatterFraction: 0.88,
+        moistureFraction: 0.12,
+      }).resolvedDryMatterFraction,
     ).toBeCloseTo(0.88, 9);
   });
 });
@@ -94,11 +107,17 @@ describe("phase5 — dry matter fraction validation", () => {
 describe("phase5 — basis conversion", () => {
   it("AF → DM and DM → AF with explicit context", () => {
     const af = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
-    const dm = af.convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.88 }));
+    const dm = af.convertBasis(
+      "dryMatter",
+      createNutritionContext({ dryMatterFraction: 0.88 }),
+    );
     expect(dm.basis.id).toBe("drymatter");
     expect(dm.quantity.value).toBeCloseTo(113.636363636, 6);
     expect(dm.nutrient.id).toBe("cp");
-    const back = dm.convertBasis("asFed", createNutritionContext({ dryMatterFraction: 0.88 }));
+    const back = dm.convertBasis(
+      "asFed",
+      createNutritionContext({ dryMatterFraction: 0.88 }),
+    );
     expect(back.basis.id).toBe("asfed");
     expect(back.quantity.value).toBeCloseTo(100, 6);
   });
@@ -106,17 +125,22 @@ describe("phase5 — basis conversion", () => {
   it("identity AF→AF and DM→DM preserves without calculation but still validates", () => {
     const af = NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed");
     expect(
-      af.convertBasis("asFed", createNutritionContext({ dryMatterFraction: 0.88 })).quantity.value,
+      af.convertBasis(
+        "asFed",
+        createNutritionContext({ dryMatterFraction: 0.88 }),
+      ).quantity.value,
     ).toBe(10);
     const dm = NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "dryMatter");
     expect(
-      dm.convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.88 })).quantity
-        .value,
+      dm.convertBasis(
+        "dryMatter",
+        createNutritionContext({ dryMatterFraction: 0.88 }),
+      ).quantity.value,
     ).toBe(10);
     // still validates nutrient
-    expect(() => NutritionQuantity.of(Quantity.of(NaN, "g"), "cp", "asFed")).toThrow(
-      InvalidNutritionQuantityError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(NaN, "g"), "cp", "asFed"),
+    ).toThrow(InvalidNutritionQuantityError);
   });
 
   it("with different physical units: mg/kg AF → mg/kg DM and g/kg AF → mg/kg DM", () => {
@@ -130,45 +154,73 @@ describe("phase5 — basis conversion", () => {
 
     const afG = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
     const dmMg2 = afG
-      .convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.5 }))
+      .convertBasis(
+        "dryMatter",
+        createNutritionContext({ dryMatterFraction: 0.5 }),
+      )
       .to("mg/kg");
     expect(dmMg2.quantity.value).toBeCloseTo(200000, 3);
     // commutativity: unit conversion + basis conversion in either order
     const viaUnitFirst = afG
       .to("mg/kg")
-      .convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.5 }));
+      .convertBasis(
+        "dryMatter",
+        createNutritionContext({ dryMatterFraction: 0.5 }),
+      );
     const viaBasisFirst = afG
-      .convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.5 }))
+      .convertBasis(
+        "dryMatter",
+        createNutritionContext({ dryMatterFraction: 0.5 }),
+      )
       .to("mg/kg");
-    expect(viaUnitFirst.quantity.value).toBeCloseTo(viaBasisFirst.quantity.value, 6);
+    expect(viaUnitFirst.quantity.value).toBeCloseTo(
+      viaBasisFirst.quantity.value,
+      6,
+    );
   });
 
   it("round-trip AF→DM→AF and DM→AF→DM within tolerance", () => {
     const ctx = createNutritionContext({ dryMatterFraction: 0.88 });
     const af = NutritionQuantity.of(Quantity.of(250, "g/kg"), "cp", "asFed");
-    const roundAf = af.convertBasis("dryMatter", ctx).convertBasis("asFed", ctx);
+    const roundAf = af
+      .convertBasis("dryMatter", ctx)
+      .convertBasis("asFed", ctx);
     expect(roundAf.quantity.value).toBeCloseTo(250, 9);
 
-    const dm = NutritionQuantity.of(Quantity.of(250, "g/kg"), "cp", "dryMatter");
-    const roundDm = dm.convertBasis("asFed", ctx).convertBasis("dryMatter", ctx);
+    const dm = NutritionQuantity.of(
+      Quantity.of(250, "g/kg"),
+      "cp",
+      "dryMatter",
+    );
+    const roundDm = dm
+      .convertBasis("asFed", ctx)
+      .convertBasis("dryMatter", ctx);
     expect(roundDm.quantity.value).toBeCloseTo(250, 9);
   });
 
   it("preserves nutrient identity and energy type", () => {
     const af = NutritionQuantity.of(Quantity.of(200, "g/kg"), "cp", "asFed");
-    const dm = af.convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.88 }));
+    const dm = af.convertBasis(
+      "dryMatter",
+      createNutritionContext({ dryMatterFraction: 0.88 }),
+    );
     expect(dm.nutrient.id).toBe("cp");
     expect(dm.nutrient.family).toBe("protein");
 
     const me = NutritionQuantity.of(Quantity.of(12.5, "MJ/kg"), "me", "asFed");
-    const meDm = me.convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.88 }));
+    const meDm = me.convertBasis(
+      "dryMatter",
+      createNutritionContext({ dryMatterFraction: 0.88 }),
+    );
     expect(meDm.nutrient.id).toBe("me");
     expect(meDm.nutrient.family).toBe("energy");
   });
 
   it("missing context throws MissingNutritionContextError", () => {
     const af = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
-    expect(() => af.convertBasis("dryMatter")).toThrow(MissingNutritionContextError);
+    expect(() => af.convertBasis("dryMatter")).toThrow(
+      MissingNutritionContextError,
+    );
     expect(() => af.convertBasis("dryMatter", {} as never)).toThrow();
   });
 
@@ -265,21 +317,21 @@ describe("phase6 — advanced families", () => {
 
 describe("phase6 — semantic safety", () => {
   it("Crude Protein + MJ/kg rejected", () => {
-    expect(() => NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "cp", "asFed")).toThrow(
-      NutritionUnitCompatibilityError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "cp", "asFed"),
+    ).toThrow(NutritionUnitCompatibilityError);
   });
 
   it("Calcium + MJ/kg rejected", () => {
-    expect(() => NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "ca", "asFed")).toThrow(
-      NutritionUnitCompatibilityError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "MJ/kg"), "ca", "asFed"),
+    ).toThrow(NutritionUnitCompatibilityError);
   });
 
   it("ME + mg/kg rejected", () => {
-    expect(() => NutritionQuantity.of(Quantity.of(10, "mg/kg"), "me", "asFed")).toThrow(
-      NutritionUnitCompatibilityError,
-    );
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "mg/kg"), "me", "asFed"),
+    ).toThrow(NutritionUnitCompatibilityError);
   });
 
   it("Vitamin A IU not interchangeable with Vitamin D IU", () => {
@@ -322,7 +374,9 @@ describe("phase5+6 — property invariants", () => {
 
   it("basis round-trip convertBasis(convertBasis(x,A,B),B,A)≈x", () => {
     const rand = mulberry32(0xcafe);
-    const ctx = createNutritionContext({ dryMatterFraction: 0.72 + rand() * 0.2 });
+    const ctx = createNutritionContext({
+      dryMatterFraction: 0.72 + rand() * 0.2,
+    });
     for (let i = 0; i < 20; i++) {
       const v = Math.round((rand() * 500 + 1) * 100) / 100;
       const af = NutritionQuantity.of(Quantity.of(v, "g/kg"), "cp", "asFed");
@@ -337,7 +391,10 @@ describe("phase5+6 — property invariants", () => {
     const af = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
     const viaBasisFirst = af.convertBasis("dryMatter", ctx).to("mg/kg");
     const viaUnitFirst = af.to("mg/kg").convertBasis("dryMatter", ctx);
-    expect(viaBasisFirst.quantity.value).toBeCloseTo(viaUnitFirst.quantity.value, 6);
+    expect(viaBasisFirst.quantity.value).toBeCloseTo(
+      viaUnitFirst.quantity.value,
+      6,
+    );
   });
 
   it("nutrient(result)===nutrient(input) and basis correctness", () => {
@@ -345,7 +402,10 @@ describe("phase5+6 — property invariants", () => {
     const conv = orig.to("mg/kg");
     expect(conv.nutrient.id).toBe("ca");
     expect(conv.basis.id).toBe("asfed");
-    const dm = orig.convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.9 }));
+    const dm = orig.convertBasis(
+      "dryMatter",
+      createNutritionContext({ dryMatterFraction: 0.9 }),
+    );
     expect(dm.nutrient.id).toBe("ca");
     expect(dm.basis.id).toBe("drymatter");
   });
@@ -361,7 +421,9 @@ describe("phase5+6 — adversarial", () => {
     expect(() => createNutritionContext({ dryMatterFraction: -0.1 })).toThrow();
     expect(() => createNutritionContext({ dryMatterFraction: 1.1 })).toThrow();
     expect(() => createNutritionContext({ dryMatterFraction: NaN })).toThrow();
-    expect(() => createNutritionContext({ dryMatterFraction: Infinity })).toThrow();
+    expect(() =>
+      createNutritionContext({ dryMatterFraction: Infinity }),
+    ).toThrow();
     expect(() =>
       NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed").convertBasis(
         "dryMatter",
@@ -375,17 +437,25 @@ describe("phase5+6 — adversarial", () => {
     const af = NutritionQuantity.of(Quantity.of(10, "g/kg"), "cp", "asFed");
     const dm = af.convertBasis("dryMatter", ctxSmall);
     expect(dm.quantity.value).toBeCloseTo(10000, 3);
-    const large = NutritionQuantity.of(Quantity.of(1e6, "mg/kg"), "zn", "asFed");
+    const large = NutritionQuantity.of(
+      Quantity.of(1e6, "mg/kg"),
+      "zn",
+      "asFed",
+    );
     expect(large.to("g/kg").quantity.value).toBeCloseTo(1000, 9);
   });
 
   it("malformed units, unknown nutrient, conflicting context, invalid ratios", () => {
-    expect(() => NutritionQuantity.of(Quantity.of(10, "g"), "unknown_xyz", "asFed")).toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(10, "g"), "unknown_xyz", "asFed"),
+    ).toThrow();
     expect(() => Quantity.of(10, "g/100g")).toThrow();
     expect(() =>
       createNutritionContext({ dryMatterFraction: 0.8, moistureFraction: 0.3 }),
     ).toThrow();
-    expect(() => NutritionQuantity.of(Quantity.of(NaN, "g"), "cp", "asFed")).toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(NaN, "g"), "cp", "asFed"),
+    ).toThrow();
   });
 
   it("unsupported IU cross-nutrient, missing molar mass, ambiguous ppm", () => {
@@ -394,22 +464,39 @@ describe("phase5+6 — adversarial", () => {
     expect(() => a.add(d)).toThrow();
     expect(() => convertMolarToMass(Quantity.of(1, "g/kg"), "cp")).toThrow();
     // ppm without family context still parses but we ensure deterministic error for incompatible nutrient
-    expect(() => NutritionQuantity.of(Quantity.of(1, "ppm"), "me", "asFed")).toThrow();
+    expect(() =>
+      NutritionQuantity.of(Quantity.of(1, "ppm"), "me", "asFed"),
+    ).toThrow();
   });
 
   it("context immutability", () => {
-    const ctx = createNutritionContext({ dryMatterFraction: 0.88, sampleId: "S1" });
+    const ctx = createNutritionContext({
+      dryMatterFraction: 0.88,
+      sampleId: "S1",
+    });
     expect(Object.isFrozen(ctx)).toBe(true);
-    expect(() => ((ctx as unknown as Record<string, unknown>).dryMatterFraction = 0.9)).toThrow();
+    expect(
+      () =>
+        ((ctx as unknown as Record<string, unknown>).dryMatterFraction = 0.9),
+    ).toThrow();
   });
 
   it("measurement conversion traceability via metadata", () => {
     const af = NutritionQuantity.of(Quantity.of(100, "g/kg"), "cp", "asFed");
-    const dm = af.convertBasis("dryMatter", createNutritionContext({ dryMatterFraction: 0.88 }));
-    expect((dm.metadata as unknown as Record<string, unknown>).conversion).toBeDefined();
+    const dm = af.convertBasis(
+      "dryMatter",
+      createNutritionContext({ dryMatterFraction: 0.88 }),
+    );
+    expect(
+      (dm.metadata as unknown as Record<string, unknown>).conversion,
+    ).toBeDefined();
     const conv = (
       dm.metadata as unknown as {
-        conversion: { sourceBasis: string; targetBasis: string; dryMatterFraction: number };
+        conversion: {
+          sourceBasis: string;
+          targetBasis: string;
+          dryMatterFraction: number;
+        };
       }
     ).conversion;
     expect(conv.sourceBasis).toBe("asfed");

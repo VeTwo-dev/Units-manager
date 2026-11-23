@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 import { Quantity } from "../src/quantity.js";
 import { parseUnit } from "../src/unit-parser.js";
 import { convert, toBase, fromBase } from "../src/conversion-engine.js";
-import { InvalidAffineOperationError, ImpossibleConversionError } from "../src/errors/index.js";
+import {
+  InvalidAffineOperationError,
+  ImpossibleConversionError,
+} from "../src/errors/index.js";
 
 describe("13.1 conversion model audit", () => {
   it("distinguishes linear vs affine", () => {
@@ -79,10 +82,14 @@ describe("13.5 offset safety", () => {
     );
   });
   it("divide affine by scalar throws", () => {
-    expect(() => Quantity.of(10, "°C").divide(2)).toThrow(InvalidAffineOperationError);
+    expect(() => Quantity.of(10, "°C").divide(2)).toThrow(
+      InvalidAffineOperationError,
+    );
   });
   it("scale with affine throws (scaling absolute temperature is not meaningful)", () => {
-    expect(() => Quantity.of(10, "°C").scale(2)).toThrow(InvalidAffineOperationError);
+    expect(() => Quantity.of(10, "°C").scale(2)).toThrow(
+      InvalidAffineOperationError,
+    );
   });
 });
 
@@ -115,13 +122,19 @@ describe("13.8 direct vs base", () => {
 
 describe("13.10 impossible conversions", () => {
   it("kg → m throws", () => {
-    expect(() => convert(1, parseUnit("kg"), parseUnit("m"))).toThrow(ImpossibleConversionError);
+    expect(() => convert(1, parseUnit("kg"), parseUnit("m"))).toThrow(
+      ImpossibleConversionError,
+    );
   });
   it("second → kelvin throws", () => {
-    expect(() => convert(1, parseUnit("s"), parseUnit("K"))).toThrow(ImpossibleConversionError);
+    expect(() => convert(1, parseUnit("s"), parseUnit("K"))).toThrow(
+      ImpossibleConversionError,
+    );
   });
   it("Quantity kg → m throws", () => {
-    expect(() => Quantity.of(1, "kg").to("m")).toThrow(ImpossibleConversionError);
+    expect(() => Quantity.of(1, "kg").to("m")).toThrow(
+      ImpossibleConversionError,
+    );
   });
 });
 

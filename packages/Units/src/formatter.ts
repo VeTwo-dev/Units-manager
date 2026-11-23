@@ -105,7 +105,10 @@ function normalizeSuperscripts(symbol: string, useAscii: boolean): string {
       if (SUPERSCRIPT_REVERSE[ch] !== undefined) {
         // Collect consecutive superscript chars
         let seq = "";
-        while (i < symbol.length && SUPERSCRIPT_REVERSE[symbol[i]!] !== undefined) {
+        while (
+          i < symbol.length &&
+          SUPERSCRIPT_REVERSE[symbol[i]!] !== undefined
+        ) {
           seq += SUPERSCRIPT_REVERSE[symbol[i]!]!;
           i++;
         }
@@ -179,7 +182,11 @@ export function formatUnit(unit: Unit, opts: FormatUnitOptions = {}): string {
   const mulSym = opts.multiplicationSymbol ?? "·";
   const useSuper = opts.superscript ?? !ascii;
 
-  const key = cacheKey(unit, { ascii, multiplicationSymbol: mulSym, superscript: useSuper });
+  const key = cacheKey(unit, {
+    ascii,
+    multiplicationSymbol: mulSym,
+    superscript: useSuper,
+  });
   const cached = cacheGet(key);
   if (cached) return cached;
 
@@ -208,7 +215,15 @@ export function formatUnit(unit: Unit, opts: FormatUnitOptions = {}): string {
 // Quantity formatting
 // ---------------------------------------------------------------------------
 
-const KNOWN_DIMENSIONLESS_SYMBOLS = new Set(["%", "‰", "ppm", "ppb", "ppt", "fraction", "1"]);
+const KNOWN_DIMENSIONLESS_SYMBOLS = new Set([
+  "%",
+  "‰",
+  "ppm",
+  "ppb",
+  "ppt",
+  "fraction",
+  "1",
+]);
 
 function formatNumeric(value: number, opts: FormatOptions): string {
   if (Number.isNaN(value)) return "NaN";
@@ -218,7 +233,12 @@ function formatNumeric(value: number, opts: FormatOptions): string {
   // We'll treat -0 as "0" with same decimals
   if (Object.is(value, -0)) value = 0;
 
-  const { decimals = 2, locale, significantFigures, notation = "standard" } = opts;
+  const {
+    decimals = 2,
+    locale,
+    significantFigures,
+    notation = "standard",
+  } = opts;
   // Significant-figure and notation paths take precedence over decimals/locale.
   // They render text only; the stored Quantity value is never altered.
   if (significantFigures !== undefined || notation !== "standard") {
@@ -257,30 +277,58 @@ export function formatQuantity(q: Quantity, opts: FormatOptions = {}): string {
   } = opts;
 
   // Numeric part (significantFigures/notation are presentation-only; value untouched)
-  const numberPart = formatNumeric(q.value, { decimals, locale, significantFigures, notation });
+  const numberPart = formatNumeric(q.value, {
+    decimals,
+    locale,
+    significantFigures,
+    notation,
+  });
 
   let result: string;
   // Unit part: handle purely dimensionless without semantic symbol
   if (isDimensionlessUnit(q.unit)) {
     const sym = q.unit.symbol;
     // Known semantic dimensionless: show symbol
-    if (KNOWN_DIMENSIONLESS_SYMBOLS.has(sym) && sym !== "1" && sym !== "fraction") {
-      const unitStr = formatUnit(q.unit, { ascii, multiplicationSymbol, superscript });
+    if (
+      KNOWN_DIMENSIONLESS_SYMBOLS.has(sym) &&
+      sym !== "1" &&
+      sym !== "fraction"
+    ) {
+      const unitStr = formatUnit(q.unit, {
+        ascii,
+        multiplicationSymbol,
+        superscript,
+      });
       const basisPart = showBasis && q.unit.basis ? ` ${q.unit.basis}` : "";
       result = `${numberPart}${spacing}${unitStr}${basisPart}`;
-    } else if (sym === "1" || sym === "fraction" || sym.includes("(") || sym.includes("/")) {
+    } else if (
+      sym === "1" ||
+      sym === "fraction" ||
+      sym.includes("(") ||
+      sym.includes("/")
+    ) {
       // For "1", "fraction", or composite like "m/m" / "(m)/(m)": show just number (no unit)
       // However if basis is present (e.g. "fraction DM"? unlikely) we show basis
       const basisPart = showBasis && q.unit.basis ? ` ${q.unit.basis}` : "";
-      result = basisPart ? `${numberPart}${spacing}${sym}${basisPart}` : numberPart;
+      result = basisPart
+        ? `${numberPart}${spacing}${sym}${basisPart}`
+        : numberPart;
     } else {
       // Fallback: show symbol
-      const unitStr = formatUnit(q.unit, { ascii, multiplicationSymbol, superscript });
+      const unitStr = formatUnit(q.unit, {
+        ascii,
+        multiplicationSymbol,
+        superscript,
+      });
       const basisPart = showBasis && q.unit.basis ? ` ${q.unit.basis}` : "";
       result = `${numberPart}${spacing}${unitStr}${basisPart}`;
     }
   } else {
-    const unitStr = formatUnit(q.unit, { ascii, multiplicationSymbol, superscript });
+    const unitStr = formatUnit(q.unit, {
+      ascii,
+      multiplicationSymbol,
+      superscript,
+    });
     const basisPart = showBasis && q.unit.basis ? ` ${q.unit.basis}` : "";
     result = `${numberPart}${spacing}${unitStr}${basisPart}`;
   }
@@ -290,11 +338,18 @@ export function formatQuantity(q: Quantity, opts: FormatOptions = {}): string {
 }
 
 /** Alias for display formatting (same as formatQuantity with defaults). */
-export function formatQuantityDisplay(q: Quantity, opts: FormatOptions = {}): string {
+export function formatQuantityDisplay(
+  q: Quantity,
+  opts: FormatOptions = {},
+): string {
   return formatQuantity(q, opts);
 }
 
 /** Alias for canonical formatting (superscript unicode, ·, decimals 2). */
 export function formatUnitCanonical(unit: Unit): string {
-  return formatUnit(unit, { ascii: false, multiplicationSymbol: "·", superscript: true });
+  return formatUnit(unit, {
+    ascii: false,
+    multiplicationSymbol: "·",
+    superscript: true,
+  });
 }

@@ -27,10 +27,19 @@ export interface UnitFamilyDefinition {
 // Registry ---------------------------------------------------------------
 
 const FAMILIES: Record<NutritionUnitFamily, UnitFamilyDefinition> = {
-  "mass-concentration": { id: "mass-concentration", name: "Mass concentration" },
+  "mass-concentration": {
+    id: "mass-concentration",
+    name: "Mass concentration",
+  },
   "energy-density": { id: "energy-density", name: "Energy density" },
-  "activity-concentration": { id: "activity-concentration", name: "Activity concentration" },
-  "molar-concentration": { id: "molar-concentration", name: "Molar concentration" },
+  "activity-concentration": {
+    id: "activity-concentration",
+    name: "Activity concentration",
+  },
+  "molar-concentration": {
+    id: "molar-concentration",
+    name: "Molar concentration",
+  },
   fraction: { id: "fraction", name: "Fraction" },
   ratio: { id: "ratio", name: "Ratio" },
   "ppm-family": { id: "ppm-family", name: "ppm/ppb family" },
@@ -42,7 +51,9 @@ export function listUnitFamilies(): readonly UnitFamilyDefinition[] {
 
 // Infer family from a Quantity's unit symbol / dimension ----------------
 
-export function inferUnitFamily(quantity: Quantity): NutritionUnitFamily | undefined {
+export function inferUnitFamily(
+  quantity: Quantity,
+): NutritionUnitFamily | undefined {
   const sym = quantity.unit.symbol;
   const dim = quantity.dimension as Record<string, number | undefined>;
 
@@ -68,7 +79,8 @@ export function inferUnitFamily(quantity: Quantity): NutritionUnitFamily | undef
   }
   // Fraction / ratio: dimensionless
   const isDimensionless =
-    Object.keys(dim).length === 0 || (Object.keys(dim).length === 1 && dim["Count"] !== undefined);
+    Object.keys(dim).length === 0 ||
+    (Object.keys(dim).length === 1 && dim["Count"] !== undefined);
   // Use symbol heuristics for fraction
   if (sym === "%" || sym === "fraction" || sym === "ratio") return "fraction";
   if (sym.includes("/") && isDimensionless) {
@@ -114,7 +126,10 @@ export function inferUnitFamily(quantity: Quantity): NutritionUnitFamily | undef
  * Determine if a nutrient category/family is compatible with a unit family.
  * Conservative: unknown combinations are allowed (do not over-restrict).
  */
-export function isFamilyCompatible(nutrient: NutrientKind, family: NutritionUnitFamily): boolean {
+export function isFamilyCompatible(
+  nutrient: NutrientKind,
+  family: NutritionUnitFamily,
+): boolean {
   const cat = nutrient.category ?? "";
   const fam = nutrient.family ?? "";
 
@@ -127,7 +142,11 @@ export function isFamilyCompatible(nutrient: NutrientKind, family: NutritionUnit
     if (family === "activity-concentration") {
       return nutrient.defaultUnit?.includes("IU") ?? false;
     }
-    if (family === "mass-concentration" || family === "fraction" || family === "ppm-family")
+    if (
+      family === "mass-concentration" ||
+      family === "fraction" ||
+      family === "ppm-family"
+    )
       return true;
     return false;
   }
@@ -156,7 +175,10 @@ export function isFamilyCompatible(nutrient: NutrientKind, family: NutritionUnit
   return true;
 }
 
-export function assertFamilyCompatible(nutrient: NutrientKind, quantity: Quantity): void {
+export function assertFamilyCompatible(
+  nutrient: NutrientKind,
+  quantity: Quantity,
+): void {
   const family = inferUnitFamily(quantity);
   if (!family) return; // unknown family → allow
   if (!isFamilyCompatible(nutrient, family)) {

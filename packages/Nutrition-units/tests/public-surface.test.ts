@@ -33,7 +33,9 @@ describe("public surface via package name", () => {
     const sOpts: NutritionSampleOptions = { id: "pub-1", measurements: [nm] };
     const s = new NutritionSample(sOpts);
     expect(s.measurements).toHaveLength(1);
-    const back = NutritionSample.fromJSON(JSON.parse(JSON.stringify(s.toJSON())));
+    const back = NutritionSample.fromJSON(
+      JSON.parse(JSON.stringify(s.toJSON())),
+    );
     expect(back.id).toBe("pub-1");
   });
 });

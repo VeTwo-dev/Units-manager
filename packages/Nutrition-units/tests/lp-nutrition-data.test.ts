@@ -16,7 +16,10 @@ import { describe, expect, it } from "vitest";
 // Side-effect import: registers the nutrition calculation rules exactly as a
 // real consumer gets them when importing the package entrypoint.
 import "../src/index.js";
-import { buildConstraintRow, toHighsColumn } from "../src/examples/lp-builder-example.js";
+import {
+  buildConstraintRow,
+  toHighsColumn,
+} from "../src/examples/lp-builder-example.js";
 import type { UnitSchema } from "../src/index.js";
 
 const schema: UnitSchema = {
@@ -50,7 +53,9 @@ describe("lp example — nutrition-data coefficient extraction (no solver)", () 
   });
 
   it("is deterministic for the same inputs", () => {
-    expect(buildConstraintRow(row, schema)).toEqual(buildConstraintRow(row, schema));
+    expect(buildConstraintRow(row, schema)).toEqual(
+      buildConstraintRow(row, schema),
+    );
   });
 
   it("protein coefficient matches hand arithmetic (8% of 1 kg = 80 g)", () => {
@@ -67,6 +72,8 @@ describe("lp example — nutrition-data coefficient extraction (no solver)", () 
     const col = toHighsColumn(buildConstraintRow(row, schema));
     expect(col.name).toBe("corn");
     expect(typeof col.obj).toBe("number");
-    expect(Object.values(col.constraintCoefs).every((v) => typeof v === "number")).toBe(true);
+    expect(
+      Object.values(col.constraintCoefs).every((v) => typeof v === "number"),
+    ).toBe(true);
   });
 });

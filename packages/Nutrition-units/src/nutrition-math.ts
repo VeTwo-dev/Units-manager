@@ -19,7 +19,10 @@ import {
   defaultCalculationRuleRegistry,
   type CalculationRuleRegistry,
 } from "@vetwo/units";
-import { NUTRIENT_CONTRIBUTION_RULE, DIET_COST_RULE } from "./nutrition-rules.js";
+import {
+  NUTRIENT_CONTRIBUTION_RULE,
+  DIET_COST_RULE,
+} from "./nutrition-rules.js";
 import {
   defaultTargetUnitRegistry,
   type TargetUnitRegistry,
@@ -42,7 +45,11 @@ export class NutritionMath {
     nutrientConcentration: Quantity,
     nutrientKey: NutrientKey,
   ): Quantity {
-    const raw = this.rules.run(NUTRIENT_CONTRIBUTION_RULE, feedIntake, nutrientConcentration);
+    const raw = this.rules.run(
+      NUTRIENT_CONTRIBUTION_RULE,
+      feedIntake,
+      nutrientConcentration,
+    );
     const targetUnit = this.targetUnits.getTargetUnit(nutrientKey);
     return raw.to(targetUnit);
   }
@@ -55,7 +62,8 @@ export class NutritionMath {
 
   /** Sum several nutrient contributions of the same nutrient across feeds. */
   sum(contributions: Quantity[]): Quantity {
-    if (contributions.length === 0) throw new Error("sum() requires at least one quantity");
+    if (contributions.length === 0)
+      throw new Error("sum() requires at least one quantity");
     return contributions.reduce((acc, q) => acc.add(q));
   }
 }

@@ -30,22 +30,38 @@ describe("MissingNutritionContextError — missing context fails explicitly", ()
   });
 
   it("measurement basis conversion without context throws the typed error", () => {
-    const nm = NutritionMeasurement.of(Measurement.exact(Quantity.of(10, "%")), "cp", "asFed");
-    expect(() => nm.convertBasis("dryMatter")).toThrow(MissingNutritionContextError);
+    const nm = NutritionMeasurement.of(
+      Measurement.exact(Quantity.of(10, "%")),
+      "cp",
+      "asFed",
+    );
+    expect(() => nm.convertBasis("dryMatter")).toThrow(
+      MissingNutritionContextError,
+    );
   });
 
   it("quantity basis conversion without context throws the typed error", () => {
     const nq = NutritionQuantity.of(Quantity.of(10, "%"), "cp", "asFed");
-    expect(() => nq.convertBasis("dryMatter")).toThrow(MissingNutritionContextError);
+    expect(() => nq.convertBasis("dryMatter")).toThrow(
+      MissingNutritionContextError,
+    );
   });
 
   it("resolveDryMatterFraction without context throws the typed error", () => {
-    expect(() => resolveDryMatterFraction(undefined)).toThrow(MissingNutritionContextError);
-    expect(() => resolveDryMatterFraction({} as never)).toThrow(MissingNutritionContextError);
+    expect(() => resolveDryMatterFraction(undefined)).toThrow(
+      MissingNutritionContextError,
+    );
+    expect(() => resolveDryMatterFraction({} as never)).toThrow(
+      MissingNutritionContextError,
+    );
   });
 
   it("failed conversion does not mutate the source object", () => {
-    const nm = NutritionMeasurement.of(Measurement.exact(Quantity.of(10, "%")), "cp", "asFed");
+    const nm = NutritionMeasurement.of(
+      Measurement.exact(Quantity.of(10, "%")),
+      "cp",
+      "asFed",
+    );
     const before = nm.value.value;
     expect(() => nm.convertBasis("dryMatter")).toThrow();
     expect(nm.basis.id).toBe("asfed");
@@ -58,33 +74,43 @@ describe("MissingNutritionContextError — missing context fails explicitly", ()
       expect.unreachable();
     } catch (e) {
       expect(e).toBeInstanceOf(MissingNutritionContextError);
-      expect((e as Error).message).toMatch(/dryMatterFraction|moistureFraction/);
+      expect((e as Error).message).toMatch(
+        /dryMatterFraction|moistureFraction/,
+      );
     }
   });
 });
 
 describe("InvalidNutritionContextError — malformed context fails explicitly", () => {
   it("non-object context is invalid", () => {
-    expect(() => createNutritionContext(null as never)).toThrow(InvalidNutritionContextError);
-    expect(() => createNutritionContext([] as never)).toThrow(InvalidNutritionContextError);
-    expect(() => createNutritionContext("0.9" as never)).toThrow(InvalidNutritionContextError);
+    expect(() => createNutritionContext(null as never)).toThrow(
+      InvalidNutritionContextError,
+    );
+    expect(() => createNutritionContext([] as never)).toThrow(
+      InvalidNutritionContextError,
+    );
+    expect(() => createNutritionContext("0.9" as never)).toThrow(
+      InvalidNutritionContextError,
+    );
   });
 
   it("forbidden prototype keys are invalid", () => {
     const evil = JSON.parse('{"__proto__":{"x":1},"dryMatterFraction":0.9}');
-    expect(() => createNutritionContext(evil)).toThrow(InvalidNutritionContextError);
+    expect(() => createNutritionContext(evil)).toThrow(
+      InvalidNutritionContextError,
+    );
   });
 
   it("inconsistent DM + moisture is invalid", () => {
-    expect(() => createNutritionContext({ dryMatterFraction: 0.9, moistureFraction: 0.2 })).toThrow(
-      InvalidNutritionContextError,
-    );
+    expect(() =>
+      createNutritionContext({ dryMatterFraction: 0.9, moistureFraction: 0.2 }),
+    ).toThrow(InvalidNutritionContextError);
   });
 
   it("non-Measurement dryMatterMeasurement is invalid", () => {
-    expect(() => createNutritionContext({ dryMatterMeasurement: { nope: true } as never })).toThrow(
-      InvalidNutritionContextError,
-    );
+    expect(() =>
+      createNutritionContext({ dryMatterMeasurement: { nope: true } as never }),
+    ).toThrow(InvalidNutritionContextError);
   });
 
   it("empty sampleState is invalid", () => {
@@ -116,9 +142,9 @@ describe("InvalidNutritionContextError — malformed context fails explicitly", 
     expect(() => createNutritionContext({ dryMatterFraction: 1.5 })).toThrow(
       InvalidNutritionBasisError,
     );
-    expect(() => createNutritionContext({ dryMatterFraction: Number.NaN })).toThrow(
-      NutritionContextError,
-    );
+    expect(() =>
+      createNutritionContext({ dryMatterFraction: Number.NaN }),
+    ).toThrow(NutritionContextError);
   });
 });
 
@@ -127,7 +153,11 @@ describe("valid context — errors are not triggered incorrectly", () => {
     const ctx = createNutritionContext({ dryMatterFraction: 0.9 });
     expect(ctx.resolvedDryMatterFraction).toBeCloseTo(0.9, 12);
     expect(ctx.resolvedMoistureFraction).toBeCloseTo(0.1, 12);
-    const nm = NutritionMeasurement.of(Measurement.exact(Quantity.of(9, "%")), "cp", "asFed");
+    const nm = NutritionMeasurement.of(
+      Measurement.exact(Quantity.of(9, "%")),
+      "cp",
+      "asFed",
+    );
     const dm = nm.convertBasis("dryMatter", ctx);
     expect(dm.basis.id).toBe("drymatter");
     expect(dm.value.value).toBeCloseTo(10, 9);

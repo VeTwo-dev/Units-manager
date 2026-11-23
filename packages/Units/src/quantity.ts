@@ -106,7 +106,10 @@ export class Quantity {
     if (typeof unitSymbol === "string" && unitSymbol.trim().length === 0) {
       throw new NumericalError("Unit symbol must be a non-empty string");
     }
-    const unit = typeof unitSymbol === "string" ? parseUnit(unitSymbol, registry) : unitSymbol;
+    const unit =
+      typeof unitSymbol === "string"
+        ? parseUnit(unitSymbol, registry)
+        : unitSymbol;
     return new Quantity(value, unit);
   }
 
@@ -119,7 +122,10 @@ export class Quantity {
   withKind(kindId: string): Quantity {
     const def = defaultQuantityKindRegistry.require(kindId);
     if (!dimensionsEqual(def.dimension, this.dimension)) {
-      throw new DimensionError(dimensionKey(def.dimension), dimensionKey(this.dimension));
+      throw new DimensionError(
+        dimensionKey(def.dimension),
+        dimensionKey(this.dimension),
+      );
     }
     return new Quantity(
       this.value,
@@ -130,7 +136,8 @@ export class Quantity {
         aliases: [...this.unit.aliases],
         dimension: this.unit.dimension,
         conversion:
-          this.unit.conversion.kind === "linear" || this.unit.conversion.kind === "affine"
+          this.unit.conversion.kind === "linear" ||
+          this.unit.conversion.kind === "affine"
             ? { ...this.unit.conversion }
             : this.unit.conversion,
         basis: this.unit.basis,
@@ -146,7 +153,10 @@ export class Quantity {
    * opt-in gate for kind-sensitive math, e.g.
    * `q.requireKind("angle").sin()`. Throws IncompatibleQuantityKindError.
    */
-  requireKind(kindId: string, policy: SemanticPolicy = "semantic-aware"): Quantity {
+  requireKind(
+    kindId: string,
+    policy: SemanticPolicy = "semantic-aware",
+  ): Quantity {
     defaultQuantityKindRegistry.require(kindId);
     assertSemanticCompatible(this.kind, kindId, policy);
     return this;
@@ -210,7 +220,11 @@ export class Quantity {
 
   add(other: Quantity, opts: QuantityArithmeticOptions = {}): Quantity {
     this.assertSameDimension(other);
-    assertSemanticCompatible(this.kind, other.kind, opts.semanticPolicy ?? "dimensional-only");
+    assertSemanticCompatible(
+      this.kind,
+      other.kind,
+      opts.semanticPolicy ?? "dimensional-only",
+    );
     // Affine safety: adding two absolute temperatures (with non-zero offset) is not meaningful
     if (isAffineUnit(this.unit) && isAffineUnit(other.unit)) {
       throw new InvalidAffineOperationError(
@@ -226,7 +240,9 @@ export class Quantity {
       const resultBase = baseThis + baseOther;
       checkFiniteResult(resultBase, "Quantity.add");
       const resultValue =
-        (resultBase - (this.unit.conversion as import("./unit.js").AffineConversion).offset) /
+        (resultBase -
+          (this.unit.conversion as import("./unit.js").AffineConversion)
+            .offset) /
         linearScaleOf(this.unit);
       return new Quantity(resultValue, this.unit);
     }
@@ -236,7 +252,9 @@ export class Quantity {
       const baseThis = this.value * linearScaleOf(this.unit);
       const resultBase = baseThis + baseOther;
       const resultValue =
-        (resultBase - (other.unit.conversion as import("./unit.js").AffineConversion).offset) /
+        (resultBase -
+          (other.unit.conversion as import("./unit.js").AffineConversion)
+            .offset) /
         linearScaleOf(other.unit);
       // Return in other's unit (absolute)
       return new Quantity(resultValue, other.unit);
@@ -249,7 +267,11 @@ export class Quantity {
 
   subtract(other: Quantity, opts: QuantityArithmeticOptions = {}): Quantity {
     this.assertSameDimension(other);
-    assertSemanticCompatible(this.kind, other.kind, opts.semanticPolicy ?? "dimensional-only");
+    assertSemanticCompatible(
+      this.kind,
+      other.kind,
+      opts.semanticPolicy ?? "dimensional-only",
+    );
     // Affine: absolute - absolute = delta (linear)
     if (isAffineUnit(this.unit) && isAffineUnit(other.unit)) {
       const baseThis = toBase(this.value, this.unit);
@@ -283,7 +305,9 @@ export class Quantity {
       const baseOther = other.value * linearScaleOf(other.unit);
       const resultBase = baseThis - baseOther;
       const resultValue =
-        (resultBase - (this.unit.conversion as import("./unit.js").AffineConversion).offset) /
+        (resultBase -
+          (this.unit.conversion as import("./unit.js").AffineConversion)
+            .offset) /
         linearScaleOf(this.unit);
       return new Quantity(resultValue, this.unit);
     }
@@ -299,7 +323,9 @@ export class Quantity {
         conversion: { kind: "linear", scale: linearScaleOf(this.unit) },
         label: `${this.unit.label} delta`,
         metadata: {
-          system: ((this.unit.metadata as Record<string, unknown>)?.system as string) ?? "general",
+          system:
+            ((this.unit.metadata as Record<string, unknown>)
+              ?.system as string) ?? "general",
           kind: "temperature-difference",
         },
       });
@@ -359,7 +385,9 @@ export class Quantity {
   divide(other: Quantity | number): Quantity {
     if (typeof other === "number") {
       if (other === 0)
-        throw new DivisionByZeroError(`Cannot divide quantity "${this.toString()}" by scalar 0.`);
+        throw new DivisionByZeroError(
+          `Cannot divide quantity "${this.toString()}" by scalar 0.`,
+        );
       if (isAffineUnit(this.unit)) {
         throw new InvalidAffineOperationError(
           `${this.unit.symbol} / ${other}`,
@@ -384,7 +412,8 @@ export class Quantity {
     const otherScale = linearScaleOf(other.unit);
     const resultScale = thisScale / otherScale;
     checkFiniteResult(resultScale, "Quantity.divide scale");
-    const resultBaseValue = (this.value * thisScale) / (other.value * otherScale);
+    const resultBaseValue =
+      (this.value * thisScale) / (other.value * otherScale);
     checkFiniteResult(resultBaseValue, "Quantity.divide");
     // Prompt-18 fix: same value/symbol/scale agreement as multiply — the old
     // base-value-with-scale-1 convention silently corrupted symbol-based
@@ -402,7 +431,9 @@ export class Quantity {
 
   scale(factor: number): Quantity {
     if (typeof factor !== "number")
-      throw new NumericalError(`Scale factor must be a number, got ${typeof factor}`);
+      throw new NumericalError(
+        `Scale factor must be a number, got ${typeof factor}`,
+      );
     if (isAffineUnit(this.unit)) {
       throw new InvalidAffineOperationError(
         `${this.unit.symbol} * ${factor}`,
@@ -434,7 +465,9 @@ export class Quantity {
    */
   pow(power: number): Quantity {
     if (!Number.isInteger(power)) {
-      throw new NumericalError(`Quantity.pow() power must be an integer, got ${power}`);
+      throw new NumericalError(
+        `Quantity.pow() power must be an integer, got ${power}`,
+      );
     }
     // Absolute temperatures (K, °C, °F, °R) cannot be powered except 0/1
     if (isAbsoluteTemperatureUnit(this.unit) && power !== 0 && power !== 1) {
@@ -464,7 +497,9 @@ export class Quantity {
     checkFiniteResult(newScale, `Quantity.pow(${power}) scale`);
     // Parenthesize composite bases so the symbol re-parses to the same
     // dimension (m/s)^2, not m/(s^2). Atomic symbols pass through bare.
-    const base = /[*·/×^()\s]/.test(this.unit.symbol) ? `(${this.unit.symbol})` : this.unit.symbol;
+    const base = /[*·/×^()\s]/.test(this.unit.symbol)
+      ? `(${this.unit.symbol})`
+      : this.unit.symbol;
     const newUnit = makeUnit({
       symbol: `${base}^${power}`,
       dimension: newDim,
@@ -741,7 +776,8 @@ export class Quantity {
    * normalizing to base units. Distinguish -0 vs 0 if policy preserves.
    */
   exactEquals(other: Quantity): boolean {
-    if (!dimensionsEqual(this.unit.dimension, other.unit.dimension)) return false;
+    if (!dimensionsEqual(this.unit.dimension, other.unit.dimension))
+      return false;
     return Object.is(this.toBase().value, other.toBase().value);
   }
 
@@ -751,13 +787,18 @@ export class Quantity {
    * Legacy signature `equals(other, epsilon)` is supported: if second arg is number, it is treated as epsilon (absolute).
    */
   equals(other: Quantity, epsilon: number | ComparisonOptions = 1e-9): boolean {
-    if (!dimensionsEqual(this.unit.dimension, other.unit.dimension)) return false;
-    const opts: ComparisonOptions = typeof epsilon === "number" ? { epsilon } : epsilon;
+    if (!dimensionsEqual(this.unit.dimension, other.unit.dimension))
+      return false;
+    const opts: ComparisonOptions =
+      typeof epsilon === "number" ? { epsilon } : epsilon;
     return approxEqualNumeric(this.toBase().value, other.toBase().value, opts);
   }
 
   /** Explicit alias for `equals` with tolerance — conveys intent that tolerance is expected. */
-  approximatelyEquals(other: Quantity, epsilon: number | ComparisonOptions = 1e-9): boolean {
+  approximatelyEquals(
+    other: Quantity,
+    epsilon: number | ComparisonOptions = 1e-9,
+  ): boolean {
     return this.equals(other, epsilon as number);
   }
 
@@ -801,6 +842,10 @@ export class Quantity {
 }
 
 /** Convenience factory — sugar for `Quantity.of(value, unit)`. */
-export function Q(value: number, unit: string | Unit, registry?: UnitRegistry): Quantity {
+export function Q(
+  value: number,
+  unit: string | Unit,
+  registry?: UnitRegistry,
+): Quantity {
   return Quantity.of(value, unit, registry);
 }

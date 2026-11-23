@@ -18,7 +18,12 @@ export {
   checkFiniteResult,
   roundValue,
 } from "./numerical.js";
-export type { ComparisonOptions, RoundingMode, NumericalPolicy, NumberKind } from "./numerical.js";
+export type {
+  ComparisonOptions,
+  RoundingMode,
+  NumericalPolicy,
+  NumberKind,
+} from "./numerical.js";
 export * from "./prefix.js";
 export * from "./unit.js";
 export * from "./unit-registry.js";
@@ -47,7 +52,12 @@ export * from "./testing.js";
 export * from "./errors/index.js";
 export type { AtomicUnitDef } from "./units/atomic-units.js";
 export { ATOMIC_UNITS } from "./units/atomic-units.js";
-export { SI_PACK, SI_BASE_EXTRA_UNITS, SI_DERIVED_UNITS, SI_ACCEPTED_UNITS } from "./packs/si.js";
+export {
+  SI_PACK,
+  SI_BASE_EXTRA_UNITS,
+  SI_DERIVED_UNITS,
+  SI_ACCEPTED_UNITS,
+} from "./packs/si.js";
 export {
   IMPERIAL_PACK,
   yardDef,

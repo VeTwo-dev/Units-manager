@@ -41,8 +41,18 @@ export interface Prefix {
 // ---------------------------------------------------------------------------
 
 /** Internal helper to build frozen prefixes. */
-function p(symbol: string, name: string, factor: number, aliases: readonly string[] = []): Prefix {
-  return Object.freeze({ symbol, name, factor, aliases: Object.freeze([...aliases]) });
+function p(
+  symbol: string,
+  name: string,
+  factor: number,
+  aliases: readonly string[] = [],
+): Prefix {
+  return Object.freeze({
+    symbol,
+    name,
+    factor,
+    aliases: Object.freeze([...aliases]),
+  });
 }
 
 /** The 24 standard decimal SI prefixes. */
@@ -98,11 +108,23 @@ export class PrefixRegistry {
 
   /** Register a prefix. Throws on duplicate symbol/alias or invalid factor. */
   register(prefix: Prefix): Prefix {
-    if (!prefix.symbol || typeof prefix.symbol !== "string" || prefix.symbol.trim().length === 0) {
-      throw new PrefixRegistrationError("Prefix symbol must be a non-empty string");
+    if (
+      !prefix.symbol ||
+      typeof prefix.symbol !== "string" ||
+      prefix.symbol.trim().length === 0
+    ) {
+      throw new PrefixRegistrationError(
+        "Prefix symbol must be a non-empty string",
+      );
     }
-    if (!prefix.name || typeof prefix.name !== "string" || prefix.name.trim().length === 0) {
-      throw new PrefixRegistrationError(`Prefix "${prefix.symbol}" name must be non-empty`);
+    if (
+      !prefix.name ||
+      typeof prefix.name !== "string" ||
+      prefix.name.trim().length === 0
+    ) {
+      throw new PrefixRegistrationError(
+        `Prefix "${prefix.symbol}" name must be non-empty`,
+      );
     }
     if (!Number.isFinite(prefix.factor) || prefix.factor === 0) {
       throw new PrefixRegistrationError(
@@ -135,7 +157,8 @@ export class PrefixRegistry {
       aliases: Object.freeze([...prefix.aliases]),
     });
     this.prefixes.set(frozen.symbol, frozen);
-    for (const alias of frozen.aliases) this.aliasIndex.set(alias, frozen.symbol);
+    for (const alias of frozen.aliases)
+      this.aliasIndex.set(alias, frozen.symbol);
     this.rebuildSorted();
     return frozen;
   }
@@ -178,7 +201,9 @@ export class PrefixRegistry {
 
   private rebuildSorted(): void {
     this.sortedPrefixes = Object.freeze(
-      [...this.prefixes.values()].sort((a, b) => b.symbol.length - a.symbol.length),
+      [...this.prefixes.values()].sort(
+        (a, b) => b.symbol.length - a.symbol.length,
+      ),
     );
   }
 }
